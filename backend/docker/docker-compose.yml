@@ -1,0 +1,106 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: uja-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: uja_iaph
+      POSTGRES_USER: uja
+      POSTGRES_PASSWORD: uja
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uja -d uja_iaph"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uja-net
+
+  embedding-service:
+    build:
+      context: ./embedding-service
+      dockerfile: Dockerfile
+    container_name: uja-embedding-service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - ../models/MrBERT:/app/model:ro
+    environment:
+      MODEL_PATH: /app/model
+      DEVICE: cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - uja-net
+
+  llm-service:
+    image: vllm/vllm-openai:latest
+    container_name: uja-llm-service
+    profiles:
+      - llm
+    ports:
+      - "8000:8000"
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    environment:
+      HF_HUB_CACHE: /root/.cache/huggingface
+    command: >
+      --model BSC-LT/salamandra-7b-instruct
+      --dtype bfloat16
+      --max-model-len 4096
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - uja-net
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/api/Dockerfile
+    container_name: uja-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      embedding-service:
+        condition: service_started
+    env_file:
+      - ../config/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://uja:uja@postgres:5432/uja_iaph
+      EMBEDDING_SERVICE_URL: http://embedding-service:8001
+      LLM_SERVICE_URL: http://llm-service:8000/v1
+    volumes:
+      - ../src:/app/src:ro
+    command: uv run fastapi dev src/main.py --host 0.0.0.0 --port 8080
+    networks:
+      - uja-net
+
+volumes:
+  postgres_data:
+  hf_cache:
+
+networks:
+  uja-net:
+    driver: bridge
