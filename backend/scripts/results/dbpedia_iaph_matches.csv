@@ -1,0 +1,803 @@
+asset_id,denomination,heritage_type,json_path,category,dbpedia_uri
+1310,Molino Harinero Hidraúlico Cucarrete,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+1310,Molino Harinero Hidraúlico Cucarrete,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+1310,Molino Harinero Hidraúlico Cucarrete,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+1310,Molino Harinero Hidraúlico Cucarrete,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+1310,Molino Harinero Hidraúlico Cucarrete,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+1310,Molino Harinero Hidraúlico Cucarrete,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+19963,Cercado del Vidrio,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+19963,Cercado del Vidrio,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+19963,Cercado del Vidrio,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Cala_(Huelva)
+19963,Cercado del Vidrio,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+19963,Cercado del Vidrio,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Cala_(Huelva)
+19963,Cercado del Vidrio,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Cala_(Huelva)
+19963,Cercado del Vidrio,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+19963,Cercado del Vidrio,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+19963,Cercado del Vidrio,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+19963,Cercado del Vidrio,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+217527,Facultad de Biología,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+217527,Facultad de Biología,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+217527,Facultad de Biología,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+217527,Facultad de Biología,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+217527,Facultad de Biología,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+217527,Facultad de Biología,inmueble,$.agenteList.agente[0].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+217527,Facultad de Biología,inmueble,$.agenteList.agente[1].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+217527,Facultad de Biología,inmueble,$.agenteList.agente[2].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+217527,Facultad de Biología,inmueble,$.agenteList.agente[3].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+217527,Facultad de Biología,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+217527,Facultad de Biología,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+217527,Facultad de Biología,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+217527,Facultad de Biología,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+217527,Facultad de Biología,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+7435,Córdoba II,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+7435,Córdoba II,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+7435,Córdoba II,inmueble,$.tipologiaList.tipologia[0].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Iberos
+7435,Córdoba II,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cultura_de_La_Tène
+7435,Córdoba II,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+7435,Córdoba II,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+7435,Córdoba II,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+7435,Córdoba II,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+7435,Córdoba II,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+7435,Córdoba II,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+7435,Córdoba II,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+7435,Córdoba II,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+7435,Córdoba II,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Bajo_Imperio_romano
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[2].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Ciudad
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Bajo_Imperio_romano
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[3].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Bajo_Imperio_romano
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[4].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Iberos
+5837,Puerta Norte,inmueble,$.tipologiaList.tipologia[4].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cultura_de_La_Tène
+5837,Puerta Norte,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5837,Puerta Norte,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cástulo
+5837,Puerta Norte,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cristo
+5837,Puerta Norte,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Linares_(Salas)
+5837,Puerta Norte,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5837,Puerta Norte,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cástulo
+5837,Puerta Norte,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cristo
+5837,Puerta Norte,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Linares_(Salas)
+5837,Puerta Norte,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Linares_(Salas)
+5837,Puerta Norte,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+5837,Puerta Norte,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+5837,Puerta Norte,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+5837,Puerta Norte,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.tipologiaList.tipologia.den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Barroco
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Aguilar_de_la_Frontera
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Aguilar_de_la_Frontera
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Aguilar_de_la_Frontera
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+1034,Iglesia del Monasterio de San José y San Roque,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+219309,Casa de Coria IV,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Utrera
+219309,Casa de Coria IV,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+219309,Casa de Coria IV,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Plenitud_de_la_Edad_Media
+219309,Casa de Coria IV,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+219309,Casa de Coria IV,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Coria
+219309,Casa de Coria IV,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Salpensa
+219309,Casa de Coria IV,inmueble,$.identifica.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Coria
+219309,Casa de Coria IV,inmueble,$.identifica.descripcion.Resources[3].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Alto_Imperio_romano
+219309,Casa de Coria IV,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Utrera
+219309,Casa de Coria IV,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+219309,Casa de Coria IV,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Coria
+219309,Casa de Coria IV,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Salpensa
+219309,Casa de Coria IV,inmueble,$.clob.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Coria
+219309,Casa de Coria IV,inmueble,$.clob.descripcion.Resources[3].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Alto_Imperio_romano
+219309,Casa de Coria IV,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Utrera
+219309,Casa de Coria IV,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+219309,Casa de Coria IV,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+219309,Casa de Coria IV,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+219309,Casa de Coria IV,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+19722,Depósito de agua,inmueble,$.tipologiaList.tipologia[0].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Iberos
+19722,Depósito de agua,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Fortificación
+19722,Depósito de agua,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cultura_de_Hallstatt
+19722,Depósito de agua,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+19722,Depósito de agua,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Neolítico
+19722,Depósito de agua,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+19722,Depósito de agua,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Iznájar
+19722,Depósito de agua,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+19722,Depósito de agua,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Iznájar
+19722,Depósito de agua,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Iznájar
+19722,Depósito de agua,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+19722,Depósito de agua,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+19722,Depósito de agua,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+19722,Depósito de agua,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Baja_Edad_Media
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Bajo_Imperio_romano
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[2].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[3].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10938,Cerro Pedreras,inmueble,$.tipologiaList.tipologia[3].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Protohistoria
+10938,Cerro Pedreras,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10938,Cerro Pedreras,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Lebrija_(Santander)
+10938,Cerro Pedreras,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10938,Cerro Pedreras,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Lebrija_(Santander)
+10938,Cerro Pedreras,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Lebrija_(Santander)
+10938,Cerro Pedreras,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10938,Cerro Pedreras,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+10938,Cerro Pedreras,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+10938,Cerro Pedreras,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+8139,Centro de Empresas,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Conil_de_la_Frontera
+8139,Centro de Empresas,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Oficina
+8139,Centro de Empresas,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+8139,Centro de Empresas,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+8139,Centro de Empresas,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Paterna
+8139,Centro de Empresas,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Conil_de_la_Frontera
+8139,Centro de Empresas,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+8139,Centro de Empresas,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Paterna
+8139,Centro de Empresas,inmueble,$.agenteList.agente[0].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+8139,Centro de Empresas,inmueble,$.agenteList.agente[2].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Aparejador
+8139,Centro de Empresas,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Conil_de_la_Frontera
+8139,Centro de Empresas,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+8139,Centro de Empresas,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+8139,Centro de Empresas,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+8139,Centro de Empresas,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+2430,Arroyo de Fernán García,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+2430,Arroyo de Fernán García,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+2430,Arroyo de Fernán García,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+2430,Arroyo de Fernán García,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Bujalance
+2430,Arroyo de Fernán García,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+2430,Arroyo de Fernán García,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Bujalance
+2430,Arroyo de Fernán García,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Bujalance
+2430,Arroyo de Fernán García,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+2430,Arroyo de Fernán García,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+2430,Arroyo de Fernán García,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+2430,Arroyo de Fernán García,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+5991,Cerro de la Ermita de la Virgen,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Ermita
+5991,Cerro de la Ermita de la Virgen,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+5991,Cerro de la Ermita de la Virgen,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+5991,Cerro de la Ermita de la Virgen,inmueble,$.tipologiaList.tipologia[2].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Aguas_termales
+5991,Cerro de la Ermita de la Virgen,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+5991,Cerro de la Ermita de la Virgen,inmueble,$.tipologiaList.tipologia[3].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+5991,Cerro de la Ermita de la Virgen,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5991,Cerro de la Ermita de la Virgen,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/2005
+5991,Cerro de la Ermita de la Virgen,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Baños_de_la_Encina
+5991,Cerro de la Ermita de la Virgen,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5991,Cerro de la Ermita de la Virgen,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/2005
+5991,Cerro de la Ermita de la Virgen,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Baños_de_la_Encina
+5991,Cerro de la Ermita de la Virgen,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Baños_de_la_Encina
+5991,Cerro de la Ermita de la Virgen,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+5991,Cerro de la Ermita de la Virgen,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+5991,Cerro de la Ermita de la Virgen,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+5991,Cerro de la Ermita de la Virgen,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+4604,La Fontanilla,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4604,La Fontanilla,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alberca
+4604,La Fontanilla,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+4604,La Fontanilla,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+4604,La Fontanilla,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+4604,La Fontanilla,inmueble,$.tipologiaList.tipologia[3].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+4604,La Fontanilla,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4604,La Fontanilla,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Fontanilla
+4604,La Fontanilla,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4604,La Fontanilla,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4604,La Fontanilla,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Fontanilla
+4604,La Fontanilla,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4604,La Fontanilla,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4604,La Fontanilla,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+4604,La Fontanilla,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+4604,La Fontanilla,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+12786,Carga de Paja,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Cártama
+12786,Carga de Paja,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+12786,Carga de Paja,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+12786,Carga de Paja,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Cártama
+12786,Carga de Paja,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+12786,Carga de Paja,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Cártama
+12786,Carga de Paja,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+12786,Carga de Paja,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+12786,Carga de Paja,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+12786,Carga de Paja,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Dos_Hermanas
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.tipologiaList.tipologia.den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Racionalismo_arquitectónico
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Dos_Hermanas
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Dos_Hermanas
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+232624,Edificio 45. Alexander Von Humboldt,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+8692,Pozo Victoria,inmueble,$.tipologiaList.tipologia.denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Minería
+8692,Pozo Victoria,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+8692,Pozo Victoria,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+8692,Pozo Victoria,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Derby
+8692,Pozo Victoria,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Derby
+8692,Pozo Victoria,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Linares_(Salas)
+8692,Pozo Victoria,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+8692,Pozo Victoria,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Derby
+8692,Pozo Victoria,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Derby
+8692,Pozo Victoria,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Linares_(Salas)
+8692,Pozo Victoria,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Linares_(Salas)
+8692,Pozo Victoria,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+8692,Pozo Victoria,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+8692,Pozo Victoria,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+8692,Pozo Victoria,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+4452,El Gandul : Cañada del Carrascal,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Dolmen
+4452,El Gandul : Cañada del Carrascal,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4452,El Gandul : Cañada del Carrascal,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Jorge_Bonsor
+4452,El Gandul : Cañada del Carrascal,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Mairena_del_Alcor
+4452,El Gandul : Cañada del Carrascal,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4452,El Gandul : Cañada del Carrascal,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Jorge_Bonsor
+4452,El Gandul : Cañada del Carrascal,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Mairena_del_Alcor
+4452,El Gandul : Cañada del Carrascal,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Mairena_del_Alcor
+4452,El Gandul : Cañada del Carrascal,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4452,El Gandul : Cañada del Carrascal,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+4452,El Gandul : Cañada del Carrascal,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+4452,El Gandul : Cañada del Carrascal,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+19616,Iglesia de San Pedro Apóstol,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Cártama
+19616,Iglesia de San Pedro Apóstol,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+19616,Iglesia de San Pedro Apóstol,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+19616,Iglesia de San Pedro Apóstol,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cártama
+19616,Iglesia de San Pedro Apóstol,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/22_de_abril
+19616,Iglesia de San Pedro Apóstol,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Cártama
+19616,Iglesia de San Pedro Apóstol,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+19616,Iglesia de San Pedro Apóstol,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cártama
+19616,Iglesia de San Pedro Apóstol,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/22_de_abril
+19616,Iglesia de San Pedro Apóstol,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Cártama
+19616,Iglesia de San Pedro Apóstol,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+19616,Iglesia de San Pedro Apóstol,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+19616,Iglesia de San Pedro Apóstol,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+19616,Iglesia de San Pedro Apóstol,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+14533,Calle Palos / San Francisco,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+14533,Calle Palos / San Francisco,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+14533,Calle Palos / San Francisco,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Huelva
+14533,Calle Palos / San Francisco,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+14533,Calle Palos / San Francisco,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Huelva
+14533,Calle Palos / San Francisco,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+14533,Calle Palos / San Francisco,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+14533,Calle Palos / San Francisco,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+14533,Calle Palos / San Francisco,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+14533,Calle Palos / San Francisco,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+3928,Los Regustos III,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Ayamonte
+3928,Los Regustos III,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_del_Bronce
+3928,Los Regustos III,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+3928,Los Regustos III,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Ayamonte
+3928,Los Regustos III,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+3928,Los Regustos III,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Ayamonte
+3928,Los Regustos III,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+3928,Los Regustos III,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+3928,Los Regustos III,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+3928,Los Regustos III,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+1843,Iglesia de Santa María,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+1843,Iglesia de Santa María,inmueble,$.tipologiaList.tipologia[0].den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Barroco
+1843,Iglesia de Santa María,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+1843,Iglesia de Santa María,inmueble,$.tipologiaList.tipologia[1].den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Arte_mudéjar
+1843,Iglesia de Santa María,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+1843,Iglesia de Santa María,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1843,Iglesia de Santa María,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Lúcar
+1843,Iglesia de Santa María,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+1843,Iglesia de Santa María,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1843,Iglesia de Santa María,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Lúcar
+1843,Iglesia de Santa María,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Lúcar
+1843,Iglesia de Santa María,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Almería
+1843,Iglesia de Santa María,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+1843,Iglesia de Santa María,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+1843,Iglesia de Santa María,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+6176,Ladera Occidental de Cerro Limón,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Villanueva_del_Rosario
+6176,Ladera Occidental de Cerro Limón,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+6176,Ladera Occidental de Cerro Limón,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+6176,Ladera Occidental de Cerro Limón,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Guadalhorce
+6176,Ladera Occidental de Cerro Limón,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Villanueva_del_Rosario
+6176,Ladera Occidental de Cerro Limón,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+6176,Ladera Occidental de Cerro Limón,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Guadalhorce
+6176,Ladera Occidental de Cerro Limón,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Villanueva_del_Rosario
+6176,Ladera Occidental de Cerro Limón,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+6176,Ladera Occidental de Cerro Limón,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+6176,Ladera Occidental de Cerro Limón,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+6176,Ladera Occidental de Cerro Limón,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+189893,Acequia del puente en Pecho Colorao,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Acequia
+189893,Acequia del puente en Pecho Colorao,inmueble,$.tipologiaList.tipologia.denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Red_de_abastecimiento_de_agua_potable
+189893,Acequia del puente en Pecho Colorao,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+189893,Acequia del puente en Pecho Colorao,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Gádor
+189893,Acequia del puente en Pecho Colorao,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Benahadux
+189893,Acequia del puente en Pecho Colorao,inmueble,$.identifica.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Gádor
+189893,Acequia del puente en Pecho Colorao,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Benahadux
+189893,Acequia del puente en Pecho Colorao,inmueble,$.clob.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Almería
+189893,Acequia del puente en Pecho Colorao,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+189893,Acequia del puente en Pecho Colorao,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+189893,Acequia del puente en Pecho Colorao,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+16324,Asido Caesarina,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+16324,Asido Caesarina,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+16324,Asido Caesarina,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Tiberio
+16324,Asido Caesarina,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/2005
+16324,Asido Caesarina,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+16324,Asido Caesarina,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Tiberio
+16324,Asido Caesarina,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/2005
+16324,Asido Caesarina,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+16324,Asido Caesarina,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+16324,Asido Caesarina,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+16324,Asido Caesarina,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+14558,Terrazas del Odiel II,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Gibraleón
+14558,Terrazas del Odiel II,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Paleolítico
+14558,Terrazas del Odiel II,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Paleolítico
+14558,Terrazas del Odiel II,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+14558,Terrazas del Odiel II,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Odiel
+14558,Terrazas del Odiel II,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Gibraleón
+14558,Terrazas del Odiel II,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+14558,Terrazas del Odiel II,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Odiel
+14558,Terrazas del Odiel II,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Gibraleón
+14558,Terrazas del Odiel II,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+14558,Terrazas del Odiel II,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+14558,Terrazas del Odiel II,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+14558,Terrazas del Odiel II,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+219567,Malavista II,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Utrera
+219567,Malavista II,inmueble,$.tipologiaList.tipologia.den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Turdetanos
+219567,Malavista II,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+219567,Malavista II,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cultura_de_La_Tène
+219567,Malavista II,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+219567,Malavista II,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Utrera
+219567,Malavista II,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+219567,Malavista II,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Utrera
+219567,Malavista II,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+219567,Malavista II,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+219567,Malavista II,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+219567,Malavista II,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+12965,Arroyo Matamoros,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Almogía
+12965,Arroyo Matamoros,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+12965,Arroyo Matamoros,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+12965,Arroyo Matamoros,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Almogía
+12965,Arroyo Matamoros,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+12965,Arroyo Matamoros,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Almogía
+12965,Arroyo Matamoros,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+12965,Arroyo Matamoros,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+12965,Arroyo Matamoros,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+12965,Arroyo Matamoros,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Aljibe
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/La_balsa
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Níjar
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/La_balsa
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Níjar
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Níjar
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Almería
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+1753,Aljibe junto al Molino de Manuel Gil,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+13726,El Albercón,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Mancha_Real
+13726,El Albercón,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+13726,El Albercón,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+13726,El Albercón,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Mancha_Real
+13726,El Albercón,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+13726,El Albercón,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Mancha_Real
+13726,El Albercón,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+13726,El Albercón,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+13726,El Albercón,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+13726,El Albercón,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+6364,Cortijo de Las Monjas,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Fuente_Palmera
+6364,Cortijo de Las Monjas,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+6364,Cortijo de Las Monjas,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+6364,Cortijo de Las Monjas,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Guadalquivir
+6364,Cortijo de Las Monjas,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Fuente_Palmera
+6364,Cortijo de Las Monjas,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+6364,Cortijo de Las Monjas,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Guadalquivir
+6364,Cortijo de Las Monjas,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Fuente_Palmera
+6364,Cortijo de Las Monjas,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+6364,Cortijo de Las Monjas,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+6364,Cortijo de Las Monjas,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+6364,Cortijo de Las Monjas,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+18344,Casa de los Pardo,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Antequera
+18344,Casa de los Pardo,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+18344,Casa de los Pardo,inmueble,$.tipologiaList.tipologia[0].den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Manierismo
+18344,Casa de los Pardo,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+18344,Casa de los Pardo,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+18344,Casa de los Pardo,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/España
+18344,Casa de los Pardo,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Banco_Hispano_Americano
+18344,Casa de los Pardo,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Antequera
+18344,Casa de los Pardo,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+18344,Casa de los Pardo,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/España
+18344,Casa de los Pardo,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Banco_Hispano_Americano
+18344,Casa de los Pardo,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Antequera
+18344,Casa de los Pardo,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+18344,Casa de los Pardo,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+18344,Casa de los Pardo,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+18344,Casa de los Pardo,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+3109,Cañada de María II,inmueble,$.tipologiaList.tipologia[0].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Pueblo_árabe
+3109,Cañada de María II,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Almunia_(edificio)
+3109,Cañada de María II,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alta_Edad_Media
+3109,Cañada de María II,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+3109,Cañada de María II,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+3109,Cañada de María II,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Huéscar
+3109,Cañada de María II,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+3109,Cañada de María II,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Huéscar
+3109,Cañada de María II,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Huéscar
+3109,Cañada de María II,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Granada
+3109,Cañada de María II,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+3109,Cañada de María II,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+3109,Cañada de María II,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+190099,Cuevas de Giribaile,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Vilches_(España)
+190099,Cuevas de Giribaile,inmueble,$.tipologiaList.tipologia[0].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Pueblo_visigodo
+190099,Cuevas de Giribaile,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alta_Edad_Media
+190099,Cuevas de Giribaile,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cortijo
+190099,Cuevas de Giribaile,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+190099,Cuevas de Giribaile,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+190099,Cuevas de Giribaile,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Casas_Altas
+190099,Cuevas de Giribaile,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Vilches_(España)
+190099,Cuevas de Giribaile,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+190099,Cuevas de Giribaile,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Casas_Altas
+190099,Cuevas de Giribaile,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Vilches_(España)
+190099,Cuevas de Giribaile,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+190099,Cuevas de Giribaile,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+190099,Cuevas de Giribaile,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+190099,Cuevas de Giribaile,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[1].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Pueblo_árabe
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[2].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_del_Hierro
+10965,Santa Luisa,inmueble,$.tipologiaList.tipologia[3].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+10965,Santa Luisa,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10965,Santa Luisa,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Lebrija_(Santander)
+10965,Santa Luisa,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10965,Santa Luisa,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Lebrija_(Santander)
+10965,Santa Luisa,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Lebrija_(Santander)
+10965,Santa Luisa,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10965,Santa Luisa,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+10965,Santa Luisa,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+10965,Santa Luisa,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Chimenea
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Guadalhorce
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Málaga
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Guadalhorce
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Málaga
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+19589,Chimenea de la central térmica de La Misericordia,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cástulo
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Torreblascopedro
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.identifica.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cástulo
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Linares_(Salas)
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cástulo
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Torreblascopedro
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.clob.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cástulo
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Linares_(Salas)
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Linares_(Salas)
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+5839,Las Corolas - Cerro de la Virgen,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Jaén
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_del_Bronce
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Jaén
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+5030,Cerro al Sur de Casa Echevarría,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+10481,Torneo nº 26,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Muralla
+10481,Torneo nº 26,inmueble,$.tipologiaList.tipologia.den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Imperio_almohade
+10481,Torneo nº 26,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Plenitud_de_la_Edad_Media
+10481,Torneo nº 26,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10481,Torneo nº 26,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10481,Torneo nº 26,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10481,Torneo nº 26,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10481,Torneo nº 26,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10481,Torneo nº 26,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10481,Torneo nº 26,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+10481,Torneo nº 26,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+10481,Torneo nº 26,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+6217,Aljibe de las Hoyuelas,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/El_Ejido_(Almería)
+6217,Aljibe de las Hoyuelas,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Aljibe
+6217,Aljibe de las Hoyuelas,inmueble,$.tipologiaList.tipologia.den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Pueblo_árabe
+6217,Aljibe de las Hoyuelas,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+6217,Aljibe de las Hoyuelas,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+6217,Aljibe de las Hoyuelas,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Arqueología
+6217,Aljibe de las Hoyuelas,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Berja
+6217,Aljibe de las Hoyuelas,inmueble,$.identifica.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Dalías
+6217,Aljibe de las Hoyuelas,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/El_Ejido_(Almería)
+6217,Aljibe de las Hoyuelas,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Almería
+6217,Aljibe de las Hoyuelas,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Arqueología
+6217,Aljibe de las Hoyuelas,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Berja
+6217,Aljibe de las Hoyuelas,inmueble,$.clob.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Dalías
+6217,Aljibe de las Hoyuelas,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/El_Ejido_(Almería)
+6217,Aljibe de las Hoyuelas,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Almería
+6217,Aljibe de las Hoyuelas,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+6217,Aljibe de las Hoyuelas,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+6217,Aljibe de las Hoyuelas,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Arjona_(Jaén)
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cripta
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[0].denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Sepultura
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[0].den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Arquitectura_neobizantina
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cripta
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[1].denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Sepultura
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Pantocrátor
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Esperanza
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Arjona_(Jaén)
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Pantocrátor
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Esperanza
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Arjona_(Jaén)
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+18813,Cripta Funeraria de la Familia Barón de Velasco,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+198345,Las Almas,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Dólar_(Granada)
+198345,Las Almas,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alta_Edad_Media
+198345,Las Almas,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Pueblo_(población_rural)
+198345,Las Almas,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alta_Edad_Media
+198345,Las Almas,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+198345,Las Almas,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Dólar_(Granada)
+198345,Las Almas,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+198345,Las Almas,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Dólar_(Granada)
+198345,Las Almas,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Granada
+198345,Las Almas,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+198345,Las Almas,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+198345,Las Almas,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+11238,El Rancho,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11238,El Rancho,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+11238,El Rancho,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+11238,El Rancho,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+11238,El Rancho,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11238,El Rancho,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11238,El Rancho,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11238,El Rancho,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11238,El Rancho,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11238,El Rancho,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+11238,El Rancho,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+11238,El Rancho,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+245301,Puente sobre el Río Múrtiga,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Cumbres_de_San_Bartolomé
+245301,Puente sobre el Río Múrtiga,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Puente
+245301,Puente sobre el Río Múrtiga,inmueble,$.tipologiaList.tipologia.denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Transporte
+245301,Puente sobre el Río Múrtiga,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+245301,Puente sobre el Río Múrtiga,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+245301,Puente sobre el Río Múrtiga,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Cumbres_de_San_Bartolomé
+245301,Puente sobre el Río Múrtiga,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+245301,Puente sobre el Río Múrtiga,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Cumbres_de_San_Bartolomé
+245301,Puente sobre el Río Múrtiga,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+245301,Puente sobre el Río Múrtiga,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+245301,Puente sobre el Río Múrtiga,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+245301,Puente sobre el Río Múrtiga,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+21161,Castillo,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Castillo
+21161,Castillo,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+21161,Castillo,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Odiel
+21161,Castillo,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Odiel
+21161,Castillo,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+21161,Castillo,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+21161,Castillo,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+21161,Castillo,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+20782,Antiguo Hotel Alameda,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Hotel
+20782,Antiguo Hotel Alameda,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+20782,Antiguo Hotel Alameda,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+20782,Antiguo Hotel Alameda,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+20782,Antiguo Hotel Alameda,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Granada
+20782,Antiguo Hotel Alameda,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+20782,Antiguo Hotel Alameda,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Granada
+20782,Antiguo Hotel Alameda,inmueble,$.agenteList.agente[0].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+20782,Antiguo Hotel Alameda,inmueble,$.agenteList.agente[1].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+20782,Antiguo Hotel Alameda,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Granada
+20782,Antiguo Hotel Alameda,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Granada
+20782,Antiguo Hotel Alameda,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+20782,Antiguo Hotel Alameda,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+20782,Antiguo Hotel Alameda,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+10541,Cortijo de Ciriaco,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Salteras
+10541,Cortijo de Ciriaco,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+10541,Cortijo de Ciriaco,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10541,Cortijo de Ciriaco,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Salteras
+10541,Cortijo de Ciriaco,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10541,Cortijo de Ciriaco,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Salteras
+10541,Cortijo de Ciriaco,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+10541,Cortijo de Ciriaco,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+10541,Cortijo de Ciriaco,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+10541,Cortijo de Ciriaco,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+11392,El Pilero,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11392,El Pilero,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+11392,El Pilero,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Baja_Edad_Media
+11392,El Pilero,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+11392,El Pilero,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11392,El Pilero,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11392,El Pilero,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11392,El Pilero,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11392,El Pilero,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11392,El Pilero,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+11392,El Pilero,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+11392,El Pilero,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+11624,Cueva del Ermitaño,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Almadén_de_la_Plata
+11624,Cueva del Ermitaño,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+11624,Cueva del Ermitaño,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11624,Cueva del Ermitaño,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Almadén_de_la_Plata
+11624,Cueva del Ermitaño,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11624,Cueva del Ermitaño,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Almadén_de_la_Plata
+11624,Cueva del Ermitaño,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11624,Cueva del Ermitaño,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+11624,Cueva del Ermitaño,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+11624,Cueva del Ermitaño,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Alto_Imperio_romano
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[1].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Iberos
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[1].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cultura_de_La_Tène
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[2].den_etnia.prov:wasAssociatedWith[0].@id,etnia_dbpedia,http://es.dbpedia.org/resource/Iberos
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[2].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Muralla
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Cultura_de_La_Tène
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cristo
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Martos
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Jaén
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cristo
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Martos
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Martos
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Jaén
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+5631,Cortijo de Los Yesares Cota 589,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Hacienda
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Alcalá_de_Guadaíra
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Alcalá_de_Guadaíra
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Alcalá_de_Guadaíra
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+8423,Hacienda la Cañada del Trance de Aragón,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+1103,Iglesia parroquial del Salvador,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Baja_Edad_Media
+1103,Iglesia parroquial del Salvador,inmueble,$.tipologiaList.tipologia[0].den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Arte_mudéjar
+1103,Iglesia parroquial del Salvador,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+1103,Iglesia parroquial del Salvador,inmueble,$.tipologiaList.tipologia[1].den_estilo.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Arte_gótico
+1103,Iglesia parroquial del Salvador,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[3].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[4].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Alonso_de_Vandelvira
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[5].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[6].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[7].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[8].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[9].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Sevilla
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.descripcion.Resources[10].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Sevilla
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Vejer_de_la_Frontera
+1103,Iglesia parroquial del Salvador,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[3].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[4].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Alonso_de_Vandelvira
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[5].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[6].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[7].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[8].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[9].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Sevilla
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[10].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Sevilla
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[11].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[12].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Iglesia
+1103,Iglesia parroquial del Salvador,inmueble,$.clob.descripcion.Resources[13].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cuéllar
+1103,Iglesia parroquial del Salvador,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Vejer_de_la_Frontera
+1103,Iglesia parroquial del Salvador,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Vejer_de_la_Frontera
+1103,Iglesia parroquial del Salvador,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Cádiz
+1103,Iglesia parroquial del Salvador,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+1103,Iglesia parroquial del Salvador,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+1103,Iglesia parroquial del Salvador,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+6390,Molino de Guadalora,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Hornachuelos
+6390,Molino de Guadalora,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+6390,Molino de Guadalora,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+6390,Molino de Guadalora,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Hornachuelos
+6390,Molino de Guadalora,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+6390,Molino de Guadalora,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Hornachuelos
+6390,Molino de Guadalora,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Córdoba_(España)
+6390,Molino de Guadalora,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+6390,Molino de Guadalora,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+6390,Molino de Guadalora,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+8759,Dehesa Espina,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Rociana_del_Condado
+8759,Dehesa Espina,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Hacienda
+8759,Dehesa Espina,inmueble,$.tipologiaList.tipologia[0].denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Agricultura
+8759,Dehesa Espina,inmueble,$.tipologiaList.tipologia[1].denom_acti.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Viticultura
+8759,Dehesa Espina,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+8759,Dehesa Espina,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Rociana_del_Condado
+8759,Dehesa Espina,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Huelva
+8759,Dehesa Espina,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Rociana_del_Condado
+8759,Dehesa Espina,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Huelva
+8759,Dehesa Espina,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+8759,Dehesa Espina,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+8759,Dehesa Espina,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+18076,Torre de la Iglesia de San Andrés,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+18076,Torre de la Iglesia de San Andrés,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+18076,Torre de la Iglesia de San Andrés,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Sedella
+18076,Torre de la Iglesia de San Andrés,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Málaga
+18076,Torre de la Iglesia de San Andrés,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Sedella
+18076,Torre de la Iglesia de San Andrés,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Sedella
+18076,Torre de la Iglesia de San Andrés,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Málaga
+18076,Torre de la Iglesia de San Andrés,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+18076,Torre de la Iglesia de San Andrés,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+18076,Torre de la Iglesia de San Andrés,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+4505,Gallega,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Valencina_de_la_Concepción
+4505,Gallega,inmueble,$.tipologiaList.tipologia[0].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+4505,Gallega,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+4505,Gallega,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Moderna
+4505,Gallega,inmueble,$.tipologiaList.tipologia[2].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+4505,Gallega,inmueble,$.tipologiaList.tipologia[2].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Paleolítico
+4505,Gallega,inmueble,$.tipologiaList.tipologia[3].den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Asentamiento
+4505,Gallega,inmueble,$.tipologiaList.tipologia[3].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+4505,Gallega,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4505,Gallega,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Valencina_de_la_Concepción
+4505,Gallega,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4505,Gallega,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Valencina_de_la_Concepción
+4505,Gallega,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+4505,Gallega,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+4505,Gallega,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+4505,Gallega,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Jardín
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Contemporánea
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Ligustrum
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Pittosporum_tobira
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cupressus
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.descripcion.Resources[3].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Palisandro
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.descripcion.Resources[4].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Palisandro
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Dos_Hermanas
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.clob.descripcion.Resources[0].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Ligustrum
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.clob.descripcion.Resources[1].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Pittosporum_tobira
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.clob.descripcion.Resources[2].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Cupressus
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.clob.descripcion.Resources[3].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Palisandro
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.clob.descripcion.Resources[4].@URI,entidad_descripcion,http://es.dbpedia.org/resource/Palisandro
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Dos_Hermanas
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.agenteList.agente[0].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.agenteList.agente[1].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.agenteList.agente[2].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.agenteList.agente[3].tipo_agen.prov:wasAssociatedWith[0].@id,asociacion_dbpedia,http://es.dbpedia.org/resource/Arquitecto
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Dos_Hermanas
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+245443,Jardines Edificio 13. Francisco José de Caldas.,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+3168,Cuerda del Pinarillo,inmueble,$.tipologiaList.tipologia.den_tipologia.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Pueblo_(población_rural)
+3168,Cuerda del Pinarillo,inmueble,$.tipologiaList.tipologia.periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+3168,Cuerda del Pinarillo,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+3168,Cuerda del Pinarillo,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Dólar_(Granada)
+3168,Cuerda del Pinarillo,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Granada
+3168,Cuerda del Pinarillo,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Dólar_(Granada)
+3168,Cuerda del Pinarillo,inmueble,$.fotoList.foto[0].municipio.@id,foto_geo,http://es.dbpedia.org/resource/Dólar_(Granada)
+3168,Cuerda del Pinarillo,inmueble,$.fotoList.foto[0].provincia.@id,foto_geo,http://es.dbpedia.org/resource/Granada
+3168,Cuerda del Pinarillo,inmueble,$.fotoList.foto[1].municipio.@id,foto_geo,http://es.dbpedia.org/resource/Baza_(Granada)
+3168,Cuerda del Pinarillo,inmueble,$.fotoList.foto[1].provincia.@id,foto_geo,http://es.dbpedia.org/resource/Granada
+3168,Cuerda del Pinarillo,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+3168,Cuerda del Pinarillo,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+3168,Cuerda del Pinarillo,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/
+11437,San Nicolas de Bari,inmueble,$.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11437,San Nicolas de Bari,inmueble,$.tipologiaList.tipologia[0].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Edad_Media
+11437,San Nicolas de Bari,inmueble,$.tipologiaList.tipologia[1].periodos.prov:wasAssociatedWith[0].@id,tipologia_dbpedia,http://es.dbpedia.org/resource/Época_romana
+11437,San Nicolas de Bari,inmueble,$.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11437,San Nicolas de Bari,inmueble,$.identifica.municipio.@id,municipio,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11437,San Nicolas de Bari,inmueble,$.identifica.provincia.@id,provincia,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11437,San Nicolas de Bari,inmueble,$.fotoList.foto.municipio.@id,foto_geo,http://es.dbpedia.org/resource/Carmona_(Cantabria)
+11437,San Nicolas de Bari,inmueble,$.fotoList.foto.provincia.@id,foto_geo,http://es.dbpedia.org/resource/Provincia_de_Sevilla
+11437,San Nicolas de Bari,inmueble,$.context.dbo,context_ns,http://dbpedia.org/ontology/
+11437,San Nicolas de Bari,inmueble,$.context.esdbpp,context_ns,http://es.dbpedia.org/property/
+11437,San Nicolas de Bari,inmueble,$.context.esdbpr,context_ns,http://es.dbpedia.org/resource/

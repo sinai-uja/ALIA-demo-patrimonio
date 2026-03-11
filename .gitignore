@@ -1,0 +1,80 @@
+# ===== Claude Code =====
+.claude/
+CLAUDE.md
+
+# ===== Python =====
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.venv/
+**/venv/
+**/*.egg-info/
+**/dist/
+**/build/
+**/.eggs/
+**/*.egg
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ===== Python tools =====
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.coverage
+**/htmlcov/
+**/coverage.xml
+**/.tox/
+**/.nox/
+
+# ===== Node.js / Next.js =====
+**/node_modules/
+**/.next/
+**/out/
+**/.pnp
+**/.pnp.*
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/versions
+**/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.tsbuildinfo
+
+# ===== Environment =====
+**/.env
+**/.env.local
+**/.env.*.local
+
+# ===== Docker =====
+**/.docker/
+
+# ===== IDE / Editor =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===== ML Models / Large files =====
+**/models/
+**/MrBERT*/
+
+# ===== Data files =====
+data/
+*.zip
+**/*.parquet
+
+# ===== Misc =====
+*.pem
+*.log
+
+# ===== Dev logs =====
+WORKLOG.md
