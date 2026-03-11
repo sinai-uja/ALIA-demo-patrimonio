@@ -1,0 +1,43 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Model files (mounted at runtime, not part of build context)
+models/
+
+# Environment files with secrets
+.env
+.env.local
+.env.production
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker (avoid recursive context)
+docker/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test and dev artifacts
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
