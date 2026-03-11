@@ -1,0 +1,107 @@
+from fastapi import APIRouter, Depends, HTTPException
+
+from src.api.v1.endpoints.chat.deps import get_chat_service
+from src.api.v1.endpoints.chat.schemas import (
+    CreateSessionRequest,
+    MessageResponse,
+    SendMessageRequest,
+    SessionResponse,
+)
+from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO
+from src.application.chat.services.chat_application_service import ChatApplicationService
+
+router = APIRouter()
+
+
+@router.post("/sessions", response_model=SessionResponse, status_code=201)
+async def create_session(
+    request: CreateSessionRequest,
+    service: ChatApplicationService = Depends(get_chat_service),
+) -> SessionResponse:
+    """Create a new chat session."""
+    dto = CreateSessionDTO(title=request.title)
+    result = await service.create_session(dto)
+    return SessionResponse(
+        id=result.id,
+        title=result.title,
+        created_at=result.created_at,
+        updated_at=result.updated_at,
+    )
+
+
+@router.get("/sessions", response_model=list[SessionResponse])
+async def list_sessions(
+    service: ChatApplicationService = Depends(get_chat_service),
+) -> list[SessionResponse]:
+    """List all chat sessions ordered by most recently updated."""
+    results = await service.list_sessions()
+    return [
+        SessionResponse(
+            id=s.id,
+            title=s.title,
+            created_at=s.created_at,
+            updated_at=s.updated_at,
+        )
+        for s in results
+    ]
+
+
+@router.delete("/sessions/{session_id}", status_code=204)
+async def delete_session(
+    session_id: str,
+    service: ChatApplicationService = Depends(get_chat_service),
+) -> None:
+    """Delete a chat session and all its messages."""
+    await service.delete_session(session_id)
+
+
+@router.get("/sessions/{session_id}/messages", response_model=list[MessageResponse])
+async def get_session_messages(
+    session_id: str,
+    service: ChatApplicationService = Depends(get_chat_service),
+) -> list[MessageResponse]:
+    """Get all messages for a chat session."""
+    results = await service.get_history(session_id)
+    return [
+        MessageResponse(
+            id=m.id,
+            role=m.role,
+            content=m.content,
+            sources=m.sources,
+            created_at=m.created_at,
+        )
+        for m in results
+    ]
+
+
+@router.post(
+    "/sessions/{session_id}/messages",
+    response_model=MessageResponse,
+    status_code=201,
+)
+async def send_message(
+    session_id: str,
+    request: SendMessageRequest,
+    service: ChatApplicationService = Depends(get_chat_service),
+) -> MessageResponse:
+    """Send a user message, trigger RAG pipeline, and return assistant response."""
+    dto = SendMessageDTO(
+        session_id=session_id,
+        content=request.content,
+        top_k=request.top_k,
+        heritage_type_filter=request.heritage_type_filter,
+        province_filter=request.province_filter,
+    )
+
+    try:
+        result = await service.send_message(dto)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return MessageResponse(
+        id=result.id,
+        role=result.role,
+        content=result.content,
+        sources=result.sources,
+        created_at=result.created_at,
+    )
