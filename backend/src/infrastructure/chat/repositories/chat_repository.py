@@ -45,6 +45,21 @@ class ChatRepositoryImpl(ChatRepository):
         )
         await self._db.commit()
 
+    async def update_session_title(self, session_id: uuid.UUID, title: str) -> ChatSession:
+        await self._db.execute(
+            update(ChatSessionModel)
+            .where(ChatSessionModel.id == session_id)
+            .values(title=title)
+        )
+        await self._db.commit()
+        result = await self._db.execute(
+            select(ChatSessionModel).where(ChatSessionModel.id == session_id)
+        )
+        model = result.scalar_one_or_none()
+        if model is None:
+            raise ValueError(f"Session {session_id} not found")
+        return self._to_session_entity(model)
+
     async def add_message(
         self,
         session_id: uuid.UUID,

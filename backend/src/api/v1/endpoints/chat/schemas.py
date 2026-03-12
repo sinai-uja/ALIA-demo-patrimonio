@@ -12,6 +12,10 @@ class SessionResponse(BaseModel):
     updated_at: str
 
 
+class UpdateSessionRequest(BaseModel):
+    title: str = Field(..., min_length=1, description="New session title")
+
+
 class SendMessageRequest(BaseModel):
     content: str = Field(..., min_length=1, description="The user message text")
     top_k: int = Field(default=5, ge=1, le=20, description="Number of chunks to retrieve")

@@ -6,8 +6,9 @@ from src.api.v1.endpoints.chat.schemas import (
     MessageResponse,
     SendMessageRequest,
     SessionResponse,
+    UpdateSessionRequest,
 )
-from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO
+from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO, UpdateSessionDTO
 from src.application.chat.services.chat_application_service import ChatApplicationService
 
 router = APIRouter()
@@ -53,6 +54,26 @@ async def delete_session(
 ) -> None:
     """Delete a chat session and all its messages."""
     await service.delete_session(session_id)
+
+
+@router.patch("/sessions/{session_id}", response_model=SessionResponse)
+async def update_session(
+    session_id: str,
+    request: UpdateSessionRequest,
+    service: ChatApplicationService = Depends(get_chat_service),
+) -> SessionResponse:
+    """Update a chat session title."""
+    dto = UpdateSessionDTO(session_id=session_id, title=request.title)
+    try:
+        result = await service.update_session_title(dto)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return SessionResponse(
+        id=result.id,
+        title=result.title,
+        created_at=result.created_at,
+        updated_at=result.updated_at,
+    )
 
 
 @router.get("/sessions/{session_id}/messages", response_model=list[MessageResponse])

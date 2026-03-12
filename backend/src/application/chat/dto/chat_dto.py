@@ -20,6 +20,14 @@ class SessionDTO:
 
 
 @dataclass(frozen=True)
+class UpdateSessionDTO:
+    """Input DTO for updating a chat session title."""
+
+    session_id: str
+    title: str
+
+
+@dataclass(frozen=True)
 class SendMessageDTO:
     """Input DTO for sending a message in a session."""
 
