@@ -30,8 +30,8 @@ class PgVectorSearchAdapter(VectorSearchPort):
                 content,
                 embedding <=> :query_vec AS score
             FROM document_chunks
-            WHERE (:heritage_type IS NULL OR heritage_type = :heritage_type)
-              AND (:province IS NULL OR province = :province)
+            WHERE (CAST(:heritage_type AS VARCHAR) IS NULL OR heritage_type = :heritage_type)
+              AND (CAST(:province AS VARCHAR) IS NULL OR province = :province)
             ORDER BY score ASC
             LIMIT :top_k
         """)
