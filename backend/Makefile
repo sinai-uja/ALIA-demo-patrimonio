@@ -17,13 +17,13 @@ help:
 	@echo "  ingest       Ingest all IAPH parquet datasets"
 
 dev: infra
-	uv run fastapi dev src/main.py
+	uv run fastapi dev src/main.py --port 18080
 
 infra:
 	$(COMPOSE) up -d postgres embedding-service
 
 infra-llm:
-	$(COMPOSE) --profile llm up -d
+	$(COMPOSE) --profile llm up -d postgres embedding-service llm-service
 
 infra-down:
 	$(COMPOSE) down

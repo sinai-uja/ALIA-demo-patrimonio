@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # LLM service
     llm_service_url: str = "http://localhost:8000/v1"
     llm_model_name: str = "BSC-LT/salamandra-7b-instruct"
-    llm_max_tokens: int = 2048
+    llm_max_tokens: int = 512
     llm_temperature: float = 0.7
 
     # RAG
