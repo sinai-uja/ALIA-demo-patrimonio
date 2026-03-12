@@ -3,69 +3,106 @@ import Link from "next/link";
 const features = [
   {
     href: "/chat",
-    icon: "💬",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+      </svg>
+    ),
     title: "Chatbot Patrimonial",
-    description: "Conversa con el asistente sobre el patrimonio histórico andaluz. Consulta bienes inmuebles, inmateriales, muebles y paisajes culturales.",
+    description: "Conversa con el asistente sobre patrimonio histórico andaluz. Consulta bienes inmuebles, inmateriales, muebles y paisajes culturales.",
     cta: "Iniciar conversación",
+    gradient: "from-amber-500 to-orange-500",
   },
   {
     href: "/routes",
-    icon: "🗺️",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+      </svg>
+    ),
     title: "Rutas Virtuales",
-    description: "Genera rutas culturales personalizadas según provincia, tipo de patrimonio e intereses. El sistema selecciona los mejores elementos para ti.",
+    description: "Genera rutas culturales personalizadas por provincia, tipo de patrimonio e intereses. El sistema selecciona los mejores elementos.",
     cta: "Crear mi ruta",
+    gradient: "from-emerald-500 to-teal-500",
   },
   {
     href: "/accessibility",
-    icon: "📖",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
     title: "Lectura Fácil",
-    description: "Transforma textos patrimoniales complejos en versiones accesibles siguiendo las directrices de Lectura Fácil para personas con discapacidad cognitiva.",
+    description: "Simplifica textos patrimoniales complejos en versiones accesibles siguiendo directrices de Lectura Fácil.",
     cta: "Simplificar texto",
+    gradient: "from-violet-500 to-purple-500",
   },
 ];
 
 export default function Home() {
   return (
-    <div className="space-y-12">
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-amber-900">
-          Patrimonio Histórico Andaluz
+    <div className="mx-auto max-w-6xl px-6">
+      {/* Hero */}
+      <div className="py-20 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200/60 px-4 py-1.5 text-sm text-amber-700 mb-6">
+          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+          Universidad de Jaén · IAPH
+        </div>
+        <h1 className="text-5xl font-bold tracking-tight text-stone-900 sm:text-6xl">
+          Patrimonio Histórico
+          <span className="block bg-gradient-to-r from-amber-600 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+            Andaluz
+          </span>
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Asistente inteligente del Instituto Andaluz de Patrimonio Histórico (IAPH).
+        <p className="mt-6 text-lg text-stone-500 max-w-2xl mx-auto leading-relaxed">
+          Asistente inteligente del Instituto Andaluz de Patrimonio Histórico.
           Explora, pregunta y descubre el rico patrimonio cultural de Andalucía.
-        </p>
-        <p className="text-xs text-gray-400">
-          Universidad de Jaén · RAG con MrBERT + Salamandra-7B
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      {/* Feature cards */}
+      <div className="grid gap-6 md:grid-cols-3 pb-16">
         {features.map((f) => (
           <Link
             key={f.href}
             href={f.href}
-            className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:border-amber-300 transition-all"
+            className="group relative overflow-hidden rounded-2xl border border-stone-200/60 bg-white p-7 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
           >
-            <div className="text-4xl mb-4">{f.icon}</div>
-            <h2 className="text-xl font-semibold text-gray-900 group-hover:text-amber-700 transition-colors mb-2">
+            <div className={`inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${f.gradient} text-white shadow-sm mb-5`}>
+              {f.icon}
+            </div>
+            <h2 className="text-lg font-semibold text-stone-900 mb-2">
               {f.title}
             </h2>
-            <p className="text-gray-600 text-sm leading-relaxed mb-6">
+            <p className="text-stone-500 text-sm leading-relaxed mb-6">
               {f.description}
             </p>
-            <span className="inline-flex items-center gap-1 text-sm font-medium text-amber-700 group-hover:gap-2 transition-all">
-              {f.cta} →
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 group-hover:gap-2.5 transition-all">
+              {f.cta}
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
             </span>
+            <div className={`absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r ${f.gradient} opacity-0 group-hover:opacity-100 transition-opacity`} />
           </Link>
         ))}
       </div>
 
-      <div className="rounded-xl bg-amber-50 border border-amber-100 p-6 text-center">
-        <p className="text-sm text-amber-800">
-          <strong>Corpus:</strong> más de 134.000 bienes del patrimonio andaluz —
-          Paisajes Culturales · Patrimonio Inmaterial · Patrimonio Inmueble · Patrimonio Mueble
-        </p>
+      {/* Stats bar */}
+      <div className="rounded-2xl bg-gradient-to-r from-stone-800 to-stone-900 p-8 mb-16 text-center">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[
+            { value: "134K+", label: "Bienes catalogados" },
+            { value: "30K", label: "Patrimonio Inmueble" },
+            { value: "100K", label: "Patrimonio Mueble" },
+            { value: "8", label: "Provincias andaluzas" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <p className="text-2xl font-bold text-white">{stat.value}</p>
+              <p className="text-sm text-stone-400 mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

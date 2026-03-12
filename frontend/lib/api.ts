@@ -68,6 +68,12 @@ export const chat = {
   deleteSession: (id: string) =>
     apiFetch<void>(`/chat/sessions/${id}`, { method: "DELETE" }),
 
+  updateSession: (id: string, title: string) =>
+    apiFetch<Session>(`/chat/sessions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    }),
+
   getMessages: (sessionId: string) =>
     apiFetch<Message[]>(`/chat/sessions/${sessionId}/messages`),
 

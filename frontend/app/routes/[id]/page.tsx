@@ -29,78 +29,118 @@ export default function RouteDetailPage() {
     }
   };
 
-  if (loading) return <p className="text-center text-gray-400 py-12">Cargando ruta…</p>;
-  if (!activeRoute) return <p className="text-center text-gray-400 py-12">Ruta no encontrada.</p>;
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="flex gap-1">
+          <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
+          <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
+          <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!activeRoute) {
+    return <p className="text-center text-stone-400 py-20">Ruta no encontrada.</p>;
+  }
 
   const hours = Math.floor(activeRoute.total_duration_minutes / 60);
   const mins = activeRoute.total_duration_minutes % 60;
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-3xl px-6 py-8 space-y-10">
       <div>
-        <Link href="/routes" className="text-sm text-amber-700 hover:underline">← Todas las rutas</Link>
-        <h1 className="mt-2 text-3xl font-bold text-gray-900">{activeRoute.title}</h1>
-        <p className="text-gray-500 mt-1">
-          {activeRoute.province} · {activeRoute.stops.length} paradas ·{" "}
-          {hours > 0 ? `${hours}h ` : ""}{mins}min
-        </p>
+        <Link href="/routes" className="inline-flex items-center gap-1 text-sm text-amber-600 hover:text-amber-700 transition-colors mb-3">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+          </svg>
+          Todas las rutas
+        </Link>
+        <h1 className="text-3xl font-bold text-stone-900">{activeRoute.title}</h1>
+        <div className="flex items-center gap-3 mt-2 text-sm text-stone-500">
+          <span className="inline-flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+            </svg>
+            {activeRoute.province}
+          </span>
+          <span>{activeRoute.stops.length} paradas</span>
+          <span>{hours > 0 ? `${hours}h ` : ""}{mins}min</span>
+        </div>
       </div>
 
-      <p className="text-gray-700 leading-relaxed">{activeRoute.narrative}</p>
+      <p className="text-stone-600 leading-relaxed">{activeRoute.narrative}</p>
 
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Paradas de la ruta</h2>
-        <div className="space-y-4">
-          {activeRoute.stops.map((stop) => (
-            <div key={stop.order} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800 font-semibold text-sm">
-                {stop.order}
+        <h2 className="text-xl font-semibold text-stone-900 mb-5">Paradas</h2>
+        <div className="space-y-3">
+          {activeRoute.stops.map((stop, i) => (
+            <div key={stop.order} className="group flex gap-4 rounded-xl border border-stone-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-all">
+              <div className="flex flex-col items-center">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white font-semibold text-sm shadow-sm">
+                  {stop.order}
+                </div>
+                {i < activeRoute.stops.length - 1 && (
+                  <div className="w-px flex-1 bg-stone-200 mt-2" />
+                )}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pb-2">
                 <a
                   href={stop.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-medium text-gray-900 hover:text-amber-700 transition-colors"
+                  className="font-semibold text-stone-900 hover:text-amber-700 transition-colors"
                 >
                   {stop.title}
                 </a>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {stop.heritage_type} · {stop.municipality ?? stop.province} · {stop.visit_duration_minutes}min
-                </p>
-                <p className="text-sm text-gray-600 mt-1 line-clamp-3">{stop.description}</p>
+                <div className="flex items-center gap-2 mt-1 text-xs text-stone-400">
+                  <span className="rounded-full bg-stone-100 px-2 py-0.5">{stop.heritage_type}</span>
+                  <span>{stop.municipality ?? stop.province}</span>
+                  <span>{stop.visit_duration_minutes}min</span>
+                </div>
+                <p className="text-sm text-stone-600 mt-2 leading-relaxed line-clamp-3">{stop.description}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-amber-900">Guía interactivo</h2>
-        <p className="text-sm text-amber-700">Pregunta al guía sobre esta ruta o cualquiera de sus elementos</p>
-        <div className="space-y-3 max-h-64 overflow-y-auto">
-          {guideMessages.map((m, i) => (
-            <div key={i} className={`text-sm ${m.role === "user" ? "text-right" : "text-left"}`}>
-              <span
-                className={`inline-block rounded-xl px-3 py-2 ${
-                  m.role === "user"
-                    ? "bg-amber-700 text-white"
-                    : "bg-white border border-amber-200 text-gray-800"
-                }`}
-              >
-                {m.content}
-              </span>
-            </div>
-          ))}
-          {guiding && (
-            <div className="text-sm text-left">
-              <span className="inline-block rounded-xl px-3 py-2 bg-white border border-amber-200 text-gray-400">
-                Consultando…
-              </span>
-            </div>
-          )}
+      <div className="rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-stone-900">Guía interactivo</h2>
+          <p className="text-sm text-stone-500 mt-0.5">Pregunta sobre esta ruta o cualquiera de sus elementos</p>
         </div>
-        <ChatInput onSend={handleGuideQuestion} disabled={guiding} placeholder="Pregunta sobre la ruta…" />
+        {guideMessages.length > 0 && (
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {guideMessages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <span
+                  className={`inline-block rounded-2xl px-4 py-2.5 text-sm max-w-[80%] ${
+                    m.role === "user"
+                      ? "bg-gradient-to-br from-amber-600 to-orange-600 text-white rounded-br-md"
+                      : "bg-stone-50 border border-stone-200 text-stone-700 rounded-bl-md"
+                  }`}
+                >
+                  {m.content}
+                </span>
+              </div>
+            ))}
+            {guiding && (
+              <div className="flex justify-start">
+                <span className="inline-block rounded-2xl rounded-bl-md bg-stone-50 border border-stone-200 px-4 py-2.5">
+                  <span className="flex gap-1">
+                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        <ChatInput onSend={handleGuideQuestion} disabled={guiding} placeholder="Pregunta sobre la ruta..." />
       </div>
     </div>
   );
