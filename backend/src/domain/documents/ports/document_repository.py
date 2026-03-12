@@ -18,3 +18,6 @@ class DocumentRepository(ABC):
 
     @abstractmethod
     async def chunk_exists(self, document_id: str, chunk_index: int) -> bool: ...
+
+    @abstractmethod
+    async def commit(self) -> None: ...

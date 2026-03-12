@@ -72,6 +72,7 @@ class IngestDocumentsUseCase:
                     )
 
             total_chunks += len(new_chunks)
+            await self._repository.commit()
 
             if total_documents % 50 == 0:
                 logger.info(

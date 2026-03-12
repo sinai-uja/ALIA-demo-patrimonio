@@ -61,3 +61,6 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
+
+    async def commit(self) -> None:
+        await self._session.commit()
