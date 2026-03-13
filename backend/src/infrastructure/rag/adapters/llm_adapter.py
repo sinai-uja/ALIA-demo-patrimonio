@@ -1,8 +1,12 @@
+import logging
+
 import httpx
 
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.llm_port import LLMPort
+
+logger = logging.getLogger(__name__)
 
 
 class VLLMAdapter(LLMPort):
@@ -18,7 +22,9 @@ class VLLMAdapter(LLMPort):
         self._base_url = base_url or settings.llm_service_url
         self._model_name = model_name or settings.llm_model_name
         self._max_tokens = max_tokens or settings.llm_max_tokens
-        self._temperature = temperature if temperature is not None else settings.llm_temperature
+        self._temperature = (
+            temperature if temperature is not None else settings.llm_temperature
+        )
 
     async def generate(
         self,
@@ -43,6 +49,20 @@ class VLLMAdapter(LLMPort):
                 f"{self._base_url}/chat/completions",
                 json=payload,
             )
+
+            if response.status_code == 400:
+                body = response.json()
+                error_msg = body.get("message", str(body))
+                logger.warning("LLM 400 error: %s", error_msg)
+                # Retry with reduced max_tokens if context is too long
+                reduced = max(64, self._max_tokens // 2)
+                payload["max_tokens"] = reduced
+                logger.info("Retrying with max_tokens=%d", reduced)
+                response = await client.post(
+                    f"{self._base_url}/chat/completions",
+                    json=payload,
+                )
+
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"]
