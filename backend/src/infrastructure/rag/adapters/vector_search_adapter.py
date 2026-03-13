@@ -1,9 +1,13 @@
+import logging
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.vector_search_port import VectorSearchPort
+
+logger = logging.getLogger("iaph.query")
 
 
 class PgVectorSearchAdapter(VectorSearchPort):
@@ -51,6 +55,10 @@ class PgVectorSearchAdapter(VectorSearchPort):
         )
 
         rows = result.fetchall()
+        logger.info(
+            "Vector search: top_k=%d, heritage_type=%s, province=%s → %d results",
+            top_k, heritage_type, province, len(rows),
+        )
 
         return [
             RetrievedChunk(

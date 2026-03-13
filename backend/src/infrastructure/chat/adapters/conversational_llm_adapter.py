@@ -5,7 +5,7 @@ import httpx
 from src.config import settings
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("iaph.llm")
 
 
 class ConversationalLLMAdapter(ConversationalLLMPort):
@@ -24,6 +24,11 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
         self._temperature = temperature
 
     async def generate(self, system_prompt: str, user_message: str) -> str:
+        logger.info(
+            "Conversational LLM request: model=%s, max_tokens=%d, message=%d chars",
+            self._model_name, self._max_tokens, len(user_message),
+        )
+
         payload = {
             "model": self._model_name,
             "messages": [
@@ -41,4 +46,6 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
+            logger.info("Conversational LLM response: %d chars", len(content))
+            return content

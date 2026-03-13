@@ -9,7 +9,7 @@ from src.domain.documents.ports.embedding_port import EmbeddingPort
 from src.domain.documents.services.chunking_service import ChunkingService
 from src.domain.documents.value_objects.heritage_type import HeritageType
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("iaph")
 
 EMBEDDING_BATCH_SIZE = 2
 

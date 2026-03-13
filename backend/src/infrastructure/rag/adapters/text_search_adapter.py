@@ -1,3 +1,4 @@
+import logging
 import re
 
 from sqlalchemy import text
@@ -6,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.text_search_port import TextSearchPort
+
+logger = logging.getLogger("iaph.query")
 
 # Common Spanish stopwords and conversational verbs to strip before FTS
 _STOPWORDS = {
@@ -35,6 +38,7 @@ class PgTextSearchAdapter(TextSearchPort):
     ) -> list[RetrievedChunk]:
         clean_query = self._clean_query(query)
         if not clean_query:
+            logger.info("FTS: empty query after cleaning, skipping")
             return []
 
         sql = text(f"""
@@ -76,6 +80,10 @@ class PgTextSearchAdapter(TextSearchPort):
         )
 
         rows = result.fetchall()
+        logger.info(
+            "FTS: query=%r, heritage_type=%s, province=%s → %d results",
+            clean_query, heritage_type, province, len(rows),
+        )
 
         return [
             RetrievedChunk(

@@ -1,3 +1,5 @@
+import logging
+
 from src.application.rag.dto.rag_dto import RAGQueryDTO, RAGResponseDTO, SourceDTO
 from src.domain.rag.ports.embedding_port import EmbeddingPort
 from src.domain.rag.ports.llm_port import LLMPort
@@ -8,6 +10,8 @@ from src.domain.rag.services.context_assembly_service import ContextAssemblyServ
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
+
+logger = logging.getLogger("iaph.llm")
 
 ABSTENTION_ANSWER = (
     "No he encontrado informacion suficientemente relevante en la base de datos del IAPH "
@@ -43,9 +47,14 @@ class RAGQueryUseCase:
         self._retrieval_k = retrieval_k
 
     async def execute(self, dto: RAGQueryDTO) -> RAGResponseDTO:
+        logger.info("RAG pipeline start: query=%s", dto.query[:80])
+
         # 1. Embed the user query
         embeddings = await self._embedding_port.embed([dto.query])
         query_embedding = embeddings[0]
+        logger.info(
+            "Query embedded: %d chars → %d-dim vector", len(dto.query), len(query_embedding),
+        )
 
         # 2. Run vector search and full-text search sequentially
         #    (both adapters share the same DB session, so parallel is not safe)
@@ -72,8 +81,14 @@ class RAGQueryUseCase:
         # 4. Filter by relevance score threshold
         filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
 
+        logger.info(
+            "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
+            len(vector_chunks), len(text_chunks), len(fused_chunks), len(filtered_chunks),
+        )
+
         # 5. If no chunks pass the threshold, abstain
         if not filtered_chunks:
+            logger.info("Abstaining: no chunks passed relevance threshold")
             return RAGResponseDTO(
                 answer=ABSTENTION_ANSWER,
                 sources=[],
@@ -94,6 +109,11 @@ class RAGQueryUseCase:
         # 8. Build prompts
         user_prompt = build_user_prompt(dto.query, context)
 
+        logger.info(
+            "Context assembled: %d final chunks, %d context chars, %d prompt chars",
+            len(final_chunks), len(context), len(user_prompt),
+        )
+
         # 9. Generate answer via LLM
         answer = await self._llm_port.generate(
             system_prompt=SYSTEM_PROMPT,
@@ -112,6 +132,11 @@ class RAGQueryUseCase:
             )
             for chunk in final_chunks
         ]
+
+        logger.info(
+            "RAG pipeline complete: %d chars answer, %d sources",
+            len(answer), len(sources),
+        )
 
         return RAGResponseDTO(
             answer=answer,

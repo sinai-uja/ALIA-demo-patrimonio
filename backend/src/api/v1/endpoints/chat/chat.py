@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.v1.endpoints.chat.deps import get_chat_service
@@ -10,6 +12,8 @@ from src.api.v1.endpoints.chat.schemas import (
 )
 from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO, UpdateSessionDTO
 from src.application.chat.services.chat_application_service import ChatApplicationService
+
+logger = logging.getLogger("iaph.query")
 
 router = APIRouter()
 
@@ -106,6 +110,11 @@ async def send_message(
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> MessageResponse:
     """Send a user message, trigger RAG pipeline, and return assistant response."""
+    logger.info(
+        "POST /chat/sessions/%s/messages content=%r",
+        session_id, request.content[:80],
+    )
+
     dto = SendMessageDTO(
         session_id=session_id,
         content=request.content,
@@ -118,6 +127,11 @@ async def send_message(
         result = await service.send_message(dto)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    logger.info(
+        "Response: %d chars, %d sources",
+        len(result.content), len(result.sources),
+    )
 
     return MessageResponse(
         id=result.id,

@@ -1,9 +1,13 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.v1.endpoints.rag.deps import get_rag_service
 from src.api.v1.endpoints.rag.schemas import QueryRequest, QueryResponse, SourceSchema
 from src.application.rag.dto.rag_dto import RAGQueryDTO
 from src.application.rag.services.rag_application_service import RAGApplicationService
+
+logger = logging.getLogger("iaph.query")
 
 router = APIRouter()
 
@@ -14,6 +18,12 @@ async def rag_query(
     service: RAGApplicationService = Depends(get_rag_service),
 ) -> QueryResponse:
     """Execute a RAG query: embed -> search -> assemble context -> generate answer."""
+    logger.info(
+        "POST /rag/query query=%r, top_k=%d, heritage_type=%s, province=%s",
+        request.query[:80], request.top_k,
+        request.heritage_type_filter, request.province_filter,
+    )
+
     dto = RAGQueryDTO(
         query=request.query,
         top_k=request.top_k,
@@ -36,6 +46,11 @@ async def rag_query(
         )
         for s in result.sources
     ]
+
+    logger.info(
+        "RAG response: %d chars, %d sources, abstained=%s",
+        len(result.answer), len(sources), result.abstained,
+    )
 
     return QueryResponse(
         answer=result.answer,

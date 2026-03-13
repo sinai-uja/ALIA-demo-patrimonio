@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,6 +9,11 @@ from src.api.v1.endpoints.documents.documents import router as documents_router
 from src.api.v1.endpoints.rag.rag import router as rag_router
 from src.api.v1.endpoints.routes.routes import router as routes_router
 from src.config import settings
+from src.logging_config import setup_logging
+
+setup_logging()
+logger = logging.getLogger("iaph")
+logger.info("Starting %s", settings.project_name)
 
 app = FastAPI(
     title=settings.project_name,

@@ -6,7 +6,7 @@ from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.llm_port import LLMPort
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("iaph.llm")
 
 
 class VLLMAdapter(LLMPort):
@@ -37,6 +37,11 @@ class VLLMAdapter(LLMPort):
             {"role": "user", "content": user_prompt},
         ]
 
+        logger.info(
+            "RAG LLM request: model=%s, max_tokens=%d, prompt=%d chars, chunks=%d",
+            self._model_name, self._max_tokens, len(user_prompt), len(context_chunks),
+        )
+
         payload = {
             "model": self._model_name,
             "messages": messages,
@@ -54,7 +59,6 @@ class VLLMAdapter(LLMPort):
                 body = response.json()
                 error_msg = body.get("message", str(body))
                 logger.warning("LLM 400 error: %s", error_msg)
-                # Retry with reduced max_tokens if context is too long
                 reduced = max(64, self._max_tokens // 2)
                 payload["max_tokens"] = reduced
                 logger.info("Retrying with max_tokens=%d", reduced)
@@ -65,4 +69,6 @@ class VLLMAdapter(LLMPort):
 
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
+            logger.info("RAG LLM response: %d chars", len(content))
+            return content

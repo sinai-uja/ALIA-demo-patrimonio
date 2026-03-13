@@ -10,7 +10,7 @@ from src.domain.chat.prompts import CONVERSATIONAL_SYSTEM_PROMPT
 from src.domain.chat.services.intent_classifier import IntentClassifier, MessageIntent
 from src.domain.chat.services.query_reformulator import QueryReformulator
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("iaph.llm")
 
 
 class SendMessageUseCase:
@@ -32,6 +32,7 @@ class SendMessageUseCase:
 
     async def execute(self, dto: SendMessageDTO) -> MessageDTO:
         session_id = UUID(dto.session_id)
+        logger.info("Processing message for session %s: %s", dto.session_id, dto.content[:80])
 
         # 1. Verify session exists
         session = await self._chat_repository.get_session(session_id)
@@ -85,6 +86,11 @@ class SendMessageUseCase:
             role=MessageRole.ASSISTANT,
             content=answer,
             sources=sources,
+        )
+
+        logger.info(
+            "Response: %d chars, %d sources, intent=%s",
+            len(answer), len(sources), intent.value,
         )
 
         # 7. Return the assistant MessageDTO
