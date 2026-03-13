@@ -109,3 +109,18 @@ def setup_logging() -> None:
     root = logging.getLogger()
     root.setLevel(logging.WARNING)
     root.addHandler(error_handler)
+
+    # Silence noisy third-party loggers from console
+    for name in (
+        "sqlalchemy.engine",
+        "uvicorn.access",
+        "uvicorn.error",
+        "uvicorn",
+        "httpx",
+        "httpcore",
+        "watchfiles",
+    ):
+        lib_logger = logging.getLogger(name)
+        lib_logger.setLevel(logging.WARNING)
+        lib_logger.handlers.clear()
+        lib_logger.propagate = True
