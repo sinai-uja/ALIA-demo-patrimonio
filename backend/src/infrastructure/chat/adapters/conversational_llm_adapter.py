@@ -28,6 +28,8 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
             "Conversational LLM request: model=%s, max_tokens=%d, message=%d chars",
             self._model_name, self._max_tokens, len(user_message),
         )
+        logger.debug("Conversational LLM system_prompt:\n%s", system_prompt)
+        logger.debug("Conversational LLM user_message:\n%s", user_message)
 
         payload = {
             "model": self._model_name,
@@ -48,4 +50,5 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
             data = response.json()
             content = data["choices"][0]["message"]["content"]
             logger.info("Conversational LLM response: %d chars", len(content))
+            logger.debug("Conversational LLM full response:\n%s", content)
             return content

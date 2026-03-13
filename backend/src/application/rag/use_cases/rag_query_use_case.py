@@ -137,6 +137,7 @@ class RAGQueryUseCase:
             "RAG pipeline complete: %d chars answer, %d sources",
             len(answer), len(sources),
         )
+        logger.debug("RAG LLM answer:\n%s", answer)
 
         return RAGResponseDTO(
             answer=answer,

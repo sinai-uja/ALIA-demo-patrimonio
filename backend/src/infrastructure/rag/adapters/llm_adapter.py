@@ -41,6 +41,8 @@ class VLLMAdapter(LLMPort):
             "RAG LLM request: model=%s, max_tokens=%d, prompt=%d chars, chunks=%d",
             self._model_name, self._max_tokens, len(user_prompt), len(context_chunks),
         )
+        logger.debug("RAG LLM system_prompt:\n%s", system_prompt)
+        logger.debug("RAG LLM user_prompt:\n%s", user_prompt)
 
         payload = {
             "model": self._model_name,
@@ -71,4 +73,5 @@ class VLLMAdapter(LLMPort):
             data = response.json()
             content = data["choices"][0]["message"]["content"]
             logger.info("RAG LLM response: %d chars", len(content))
+            logger.debug("RAG LLM full response:\n%s", content)
             return content
