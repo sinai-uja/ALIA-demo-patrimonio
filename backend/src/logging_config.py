@@ -8,6 +8,29 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
 BACKUP_COUNT = 3
 
+# ANSI color codes
+_CYAN = "\033[36m"
+_GREEN = "\033[32m"
+_RESET = "\033[0m"
+
+# Prefixes that mark user input lines (colored cyan)
+_INPUT_PREFIXES = ("Processing message", "RAG pipeline start", "POST /")
+# Prefixes that mark LLM output lines (colored green)
+_OUTPUT_PREFIXES = ("Conversational LLM response", "RAG LLM response", "RAG pipeline complete")
+
+
+class _ColorConsoleFormatter(logging.Formatter):
+    """Console formatter that highlights user queries in cyan and LLM responses in green."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        result = super().format(record)
+        msg = record.getMessage()
+        if any(msg.startswith(p) for p in _INPUT_PREFIXES):
+            return f"{_CYAN}{result}{_RESET}"
+        if any(msg.startswith(p) for p in _OUTPUT_PREFIXES):
+            return f"{_GREEN}{result}{_RESET}"
+        return result
+
 
 class _ExcludeLoggerFilter(logging.Filter):
     """Exclude logs from a specific logger and its children."""
@@ -84,9 +107,10 @@ def setup_logging() -> None:
     error_handler.setFormatter(formatter)
 
     # --- Console handler (info + llm, NOT queries) ---
+    color_formatter = _ColorConsoleFormatter(LOG_FORMAT, datefmt=DATE_FORMAT)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(formatter)
+    console_handler.setFormatter(color_formatter)
     console_handler.addFilter(_ExcludeLoggerFilter("iaph.query"))
 
     # --- Configure loggers ---
