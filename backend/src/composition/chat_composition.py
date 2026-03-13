@@ -8,6 +8,9 @@ from src.application.chat.use_cases.list_sessions import ListSessionsUseCase
 from src.application.chat.use_cases.send_message import SendMessageUseCase
 from src.application.chat.use_cases.update_session_title import UpdateSessionTitleUseCase
 from src.composition.rag_composition import build_rag_application_service
+from src.domain.chat.services.intent_classifier import IntentClassifier
+from src.domain.chat.services.query_reformulator import QueryReformulator
+from src.infrastructure.chat.adapters.conversational_llm_adapter import ConversationalLLMAdapter
 from src.infrastructure.chat.adapters.rag_adapter import InProcessRAGAdapter
 from src.infrastructure.chat.repositories.chat_repository import ChatRepositoryImpl
 
@@ -19,10 +22,18 @@ def build_chat_application_service(db: AsyncSession) -> ChatApplicationService:
     rag_service = build_rag_application_service(db)
     rag_adapter = InProcessRAGAdapter(rag_service)
 
+    conversational_llm = ConversationalLLMAdapter()
+    intent_classifier = IntentClassifier(llm_port=conversational_llm)
+    query_reformulator = QueryReformulator()
+
     return ChatApplicationService(
         create_session_use_case=CreateSessionUseCase(chat_repository=chat_repo),
         send_message_use_case=SendMessageUseCase(
-            chat_repository=chat_repo, rag_port=rag_adapter
+            chat_repository=chat_repo,
+            rag_port=rag_adapter,
+            intent_classifier=intent_classifier,
+            query_reformulator=query_reformulator,
+            conversational_llm_port=conversational_llm,
         ),
         get_session_history_use_case=GetSessionHistoryUseCase(chat_repository=chat_repo),
         list_sessions_use_case=ListSessionsUseCase(chat_repository=chat_repo),

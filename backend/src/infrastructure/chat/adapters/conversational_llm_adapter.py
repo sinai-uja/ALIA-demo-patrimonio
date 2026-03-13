@@ -1,0 +1,44 @@
+import logging
+
+import httpx
+
+from src.config import settings
+from src.domain.chat.ports.llm_port import ConversationalLLMPort
+
+logger = logging.getLogger(__name__)
+
+
+class ConversationalLLMAdapter(ConversationalLLMPort):
+    """Calls vLLM for conversational (non-RAG) responses."""
+
+    def __init__(
+        self,
+        base_url: str | None = None,
+        model_name: str | None = None,
+        max_tokens: int = 128,
+        temperature: float = 0.3,
+    ) -> None:
+        self._base_url = base_url or settings.llm_service_url
+        self._model_name = model_name or settings.llm_model_name
+        self._max_tokens = max_tokens
+        self._temperature = temperature
+
+    async def generate(self, system_prompt: str, user_message: str) -> str:
+        payload = {
+            "model": self._model_name,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message},
+            ],
+            "max_tokens": self._max_tokens,
+            "temperature": self._temperature,
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{self._base_url}/chat/completions",
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
