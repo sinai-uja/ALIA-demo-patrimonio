@@ -3,6 +3,7 @@ import re
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.text_search_port import TextSearchPort
 
@@ -19,10 +20,11 @@ _STOPWORDS = {
 
 
 class PgTextSearchAdapter(TextSearchPort):
-    """Full-text search using PostgreSQL tsvector on document_chunks table."""
+    """Full-text search using PostgreSQL tsvector."""
 
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
+        self._table = settings.chunks_table_name
 
     async def search(
         self,
@@ -35,7 +37,7 @@ class PgTextSearchAdapter(TextSearchPort):
         if not clean_query:
             return []
 
-        sql = text("""
+        sql = text(f"""
             SELECT
                 id,
                 document_id,
@@ -49,7 +51,7 @@ class PgTextSearchAdapter(TextSearchPort):
                     search_vector,
                     plainto_tsquery('spanish', :query)
                 ) AS score
-            FROM document_chunks
+            FROM {self._table}
             WHERE search_vector @@ plainto_tsquery('spanish', :query)
               AND (
                 CAST(:heritage_type AS VARCHAR) IS NULL

@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     rag_score_threshold: float = 0.35
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64
+    chunks_table_version: str = "v1"
+
+    @property
+    def chunks_table_name(self) -> str:
+        return f"document_chunks_{self.chunks_table_version}"
 
     # API
     api_v1_prefix: str = "/api/v1"

@@ -6,11 +6,12 @@ from sqlalchemy import DateTime, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.config import settings
 from src.db.base import Base
 
 
 class DocumentChunkModel(Base):
-    __tablename__ = "document_chunks"
+    __tablename__ = settings.chunks_table_name
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -30,5 +31,5 @@ class DocumentChunkModel(Base):
     )
 
     __table_args__ = (
-        Index("ix_document_chunks_document_id", "document_id"),
+        Index(f"ix_{settings.chunks_table_name}_document_id", "document_id"),
     )

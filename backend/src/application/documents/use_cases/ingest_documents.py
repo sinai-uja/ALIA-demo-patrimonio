@@ -57,9 +57,12 @@ class IngestDocumentsUseCase:
                     new_chunks.append(chunk)
 
             # Embed and persist in batches
+            # Prepend metadata to each chunk for richer embeddings
             for batch_start in range(0, len(new_chunks), EMBEDDING_BATCH_SIZE):
                 batch = new_chunks[batch_start : batch_start + EMBEDDING_BATCH_SIZE]
-                texts = [c.content for c in batch]
+                texts = [
+                    self._enrich_for_embedding(document, c.content) for c in batch
+                ]
                 embeddings = await self._embedding_port.embed(texts)
 
                 for chunk, embedding_vector in zip(batch, embeddings):
@@ -93,3 +96,18 @@ class IngestDocumentsUseCase:
             total_chunks=total_chunks,
             skipped_chunks=skipped_chunks,
         )
+
+    @staticmethod
+    def _enrich_for_embedding(document, content: str) -> str:
+        """Prepend document metadata to chunk content for richer embeddings.
+
+        The embedding model encodes title, heritage type, and location alongside
+        the chunk text, improving retrieval for queries by name or place.
+        """
+        parts = [f"Titulo: {document.title}"]
+        parts.append(f"Tipo: {document.heritage_type.value}")
+        parts.append(f"Provincia: {document.province}")
+        if document.municipality:
+            parts.append(f"Municipio: {document.municipality}")
+        header = " | ".join(parts)
+        return f"{header}\n---\n{content}"

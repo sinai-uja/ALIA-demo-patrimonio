@@ -1,15 +1,17 @@
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.vector_search_port import VectorSearchPort
 
 
 class PgVectorSearchAdapter(VectorSearchPort):
-    """Vector similarity search using pgvector cosine distance on document_chunks table."""
+    """Vector similarity search using pgvector cosine distance."""
 
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
+        self._table = settings.chunks_table_name
 
     async def search(
         self,
@@ -18,7 +20,7 @@ class PgVectorSearchAdapter(VectorSearchPort):
         heritage_type: str | None = None,
         province: str | None = None,
     ) -> list[RetrievedChunk]:
-        query = text("""
+        query = text(f"""
             SELECT
                 id,
                 document_id,
@@ -29,7 +31,7 @@ class PgVectorSearchAdapter(VectorSearchPort):
                 url,
                 content,
                 embedding <=> :query_vec AS score
-            FROM document_chunks
+            FROM {self._table}
             WHERE (CAST(:heritage_type AS VARCHAR) IS NULL OR heritage_type = :heritage_type)
               AND (CAST(:province AS VARCHAR) IS NULL OR province = :province)
             ORDER BY score ASC
