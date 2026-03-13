@@ -33,7 +33,7 @@ class SendMessageDTO:
 
     session_id: str
     content: str
-    top_k: int = 5
+    top_k: int = 3
     heritage_type_filter: str | None = None
     province_filter: str | None = None
 

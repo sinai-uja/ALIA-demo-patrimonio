@@ -24,3 +24,4 @@ class QueryResponse(BaseModel):
     answer: str
     sources: list[SourceSchema]
     query: str
+    abstained: bool = False

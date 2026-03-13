@@ -2,7 +2,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file="config/.env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file="config/.env", env_file_encoding="utf-8", extra="ignore"
+    )
 
     # Database
     database_url: str = "postgresql+asyncpg://uja:uja@localhost:5432/uja_iaph"
@@ -15,10 +17,12 @@ class Settings(BaseSettings):
     llm_service_url: str = "http://localhost:8000/v1"
     llm_model_name: str = "BSC-LT/salamandra-7b-instruct"
     llm_max_tokens: int = 512
-    llm_temperature: float = 0.7
+    llm_temperature: float = 0.3
 
     # RAG
-    rag_top_k: int = 5
+    rag_top_k: int = 3
+    rag_retrieval_k: int = 20
+    rag_score_threshold: float = 0.35
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64
 

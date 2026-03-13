@@ -29,3 +29,4 @@ class RAGResponseDTO:
     answer: str
     sources: list[SourceDTO] = field(default_factory=list)
     query: str = ""
+    abstained: bool = False

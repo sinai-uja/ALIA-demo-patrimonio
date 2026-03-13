@@ -41,4 +41,5 @@ async def rag_query(
         answer=result.answer,
         sources=sources,
         query=result.query,
+        abstained=result.abstained,
     )
