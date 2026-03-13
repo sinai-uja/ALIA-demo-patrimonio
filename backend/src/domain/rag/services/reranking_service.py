@@ -64,10 +64,14 @@ class RerankingService:
             normalized = 1.0 - (final / max_score) if max_score > 0 else 1.0
             results.append(replace(chunk, score=normalized))
             logger.info(
-                "Reranked #%d: %.3f (base=%.2f title=%.2f cov=%.2f pos=%.2f)"
-                " | %s (%s, %s)",
-                i + 1, final, base, title, cov, pos,
-                chunk.title[:50], chunk.heritage_type or "-", chunk.province or "-",
+                "Reranked #%d: score=%.3f\n"
+                "          title:    %s\n"
+                "          type:     %s | province: %s\n"
+                "          base=%.2f  title=%.2f  coverage=%.2f  position=%.2f",
+                i + 1, final,
+                chunk.title[:80],
+                chunk.heritage_type or "-", chunk.province or "-",
+                base, title, cov, pos,
             )
 
         return results
