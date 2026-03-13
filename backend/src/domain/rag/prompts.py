@@ -9,7 +9,10 @@ SYSTEM_PROMPT = (
     "4. Cita las fuentes usando el numero de referencia [N] que aparece en el contexto.\n"
     "5. Si el contexto contiene informacion parcial, indica explicitamente que es parcial.\n"
     "6. Responde en espanol de forma clara y precisa.\n"
-    "7. No completes con conocimiento externo bajo ninguna circunstancia."
+    "7. No completes con conocimiento externo bajo ninguna circunstancia.\n"
+    "8. Cuando la pregunta pida listar elementos (ej. 'que castillos hay', 'que patrimonio existe'), "
+    "menciona TODOS los elementos distintos que aparezcan en el contexto, no solo el primero.\n"
+    "9. Estructura la respuesta con una breve descripcion de cada elemento encontrado."
 )
 
 

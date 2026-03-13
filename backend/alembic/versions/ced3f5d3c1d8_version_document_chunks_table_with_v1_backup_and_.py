@@ -35,7 +35,7 @@ def upgrade() -> None:
             "id",
             sa.UUID(),
             primary_key=True,
-            server_default=sa.text("uuid_generate_v4()"),
+            server_default=sa.text("gen_random_uuid()"),
         ),
         sa.Column("document_id", sa.String(), nullable=False),
         sa.Column("heritage_type", sa.String(), nullable=False),

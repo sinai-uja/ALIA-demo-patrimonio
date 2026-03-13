@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.3
 
     # RAG
-    rag_top_k: int = 3
+    rag_top_k: int = 5
     rag_retrieval_k: int = 20
     rag_score_threshold: float = 0.35
     rag_chunk_size: int = 512

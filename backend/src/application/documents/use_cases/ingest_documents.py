@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from src.application.documents.dto.ingest_dto import IngestDocumentsCommand, IngestResultDTO
@@ -10,7 +11,7 @@ from src.domain.documents.value_objects.heritage_type import HeritageType
 
 logger = logging.getLogger(__name__)
 
-EMBEDDING_BATCH_SIZE = 8
+EMBEDDING_BATCH_SIZE = 2
 
 
 class IngestDocumentsUseCase:
@@ -63,7 +64,8 @@ class IngestDocumentsUseCase:
                 texts = [
                     self._enrich_for_embedding(document, c.content) for c in batch
                 ]
-                embeddings = await self._embedding_port.embed(texts)
+
+                embeddings = await self._embed_with_retry(texts)
 
                 for chunk, embedding_vector in zip(batch, embeddings):
                     embedding = ChunkEmbedding(
@@ -96,6 +98,23 @@ class IngestDocumentsUseCase:
             total_chunks=total_chunks,
             skipped_chunks=skipped_chunks,
         )
+
+    async def _embed_with_retry(self, texts: list[str]) -> list[list[float]]:
+        """Embed texts with fallback to one-by-one on OOM errors."""
+        try:
+            return await self._embedding_port.embed(texts)
+        except Exception:
+            if len(texts) <= 1:
+                raise
+            logger.warning(
+                "Embedding batch of %d failed, retrying one-by-one", len(texts)
+            )
+            await asyncio.sleep(2)
+            results = []
+            for t in texts:
+                result = await self._embedding_port.embed([t])
+                results.append(result[0])
+            return results
 
     @staticmethod
     def _enrich_for_embedding(document, content: str) -> str:
