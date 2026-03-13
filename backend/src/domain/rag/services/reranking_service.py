@@ -52,12 +52,7 @@ class RerankingService:
                 + self._w_coverage * coverage_score
                 + self._w_position * position_score
             )
-            scored.append((chunk, final))
-            logger.debug(
-                "Rerank: %s | base=%.3f title=%.3f coverage=%.3f pos=%.3f → final=%.3f",
-                chunk.title[:50], base_score, title_score, coverage_score,
-                position_score, final,
-            )
+            scored.append((chunk, final, base_score, title_score, coverage_score, position_score))
 
         scored.sort(key=lambda x: x[1], reverse=True)
 
@@ -65,15 +60,14 @@ class RerankingService:
         max_score = scored[0][1] if scored else 1.0
 
         results = []
-        for chunk, final in scored[:top_k]:
+        for i, (chunk, final, base, title, cov, pos) in enumerate(scored[:top_k]):
             normalized = 1.0 - (final / max_score) if max_score > 0 else 1.0
             results.append(replace(chunk, score=normalized))
-
-        for r in results:
             logger.info(
-                "Reranked #%d: score=%.3f | %s (%s, %s)",
-                results.index(r) + 1, r.score, r.title[:60],
-                r.heritage_type or "-", r.province or "-",
+                "Reranked #%d: %.3f (base=%.2f title=%.2f cov=%.2f pos=%.2f)"
+                " | %s (%s, %s)",
+                i + 1, final, base, title, cov, pos,
+                chunk.title[:50], chunk.heritage_type or "-", chunk.province or "-",
             )
 
         return results
