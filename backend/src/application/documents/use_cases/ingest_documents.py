@@ -10,7 +10,7 @@ from src.domain.documents.value_objects.heritage_type import HeritageType
 
 logger = logging.getLogger(__name__)
 
-EMBEDDING_BATCH_SIZE = 32
+EMBEDDING_BATCH_SIZE = 8
 
 
 class IngestDocumentsUseCase:

@@ -62,7 +62,7 @@ services:
     command: >
       --model BSC-LT/salamandra-7b-instruct
       --dtype bfloat16
-      --max-model-len 2048
+      --max-model-len 4096
       --gpu-memory-utilization 0.9
     deploy:
       resources:
