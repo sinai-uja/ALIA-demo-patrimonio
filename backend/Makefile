@@ -1,4 +1,4 @@
-.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest help
+.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest load-assets fetch-assets help
 
 COMPOSE = docker compose -f docker/docker-compose.yml
 ENV_FILE = config/.env
@@ -15,6 +15,8 @@ help:
 	@echo "  lint         Run ruff check on src/"
 	@echo "  test         Run test suite with pytest"
 	@echo "  ingest       Ingest all IAPH parquet datasets"
+	@echo "  load-assets  Load IAPH API data from ZIP into heritage_assets"
+	@echo "  fetch-assets Fetch IAPH API data live (requires IAPH_API_TOKEN)"
 
 dev: infra
 	uv run fastapi dev src/main.py --port 18080
@@ -42,3 +44,9 @@ test:
 
 ingest:
 	uv run python -m scripts.ingest --dataset all
+
+load-assets:
+	uv run python -m scripts.load_api_assets --source ../data/API_IAPH.zip
+
+fetch-assets:
+	uv run python -m scripts.fetch_iaph_api
