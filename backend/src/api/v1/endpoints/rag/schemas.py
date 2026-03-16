@@ -18,6 +18,8 @@ class SourceSchema(BaseModel):
     score: float
     heritage_type: str
     province: str
+    municipality: str | None = None
+    metadata: dict | None = None
 
 
 class QueryResponse(BaseModel):

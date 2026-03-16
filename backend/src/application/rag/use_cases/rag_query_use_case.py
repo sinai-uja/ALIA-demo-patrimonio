@@ -103,6 +103,16 @@ class RAGQueryUseCase:
             top_k=dto.top_k,
         )
 
+        # 6b. If reranking discarded all chunks (no lexical match), abstain
+        if not final_chunks:
+            logger.info("Abstaining: all chunks discarded by lexical filter")
+            return RAGResponseDTO(
+                answer=ABSTENTION_ANSWER,
+                sources=[],
+                query=dto.query,
+                abstained=True,
+            )
+
         # 7. Assemble context from retrieved chunks
         context = self._context_assembly_service.assemble(final_chunks)
 
@@ -129,6 +139,8 @@ class RAGQueryUseCase:
                 score=chunk.score,
                 heritage_type=chunk.heritage_type,
                 province=chunk.province,
+                municipality=chunk.municipality,
+                metadata=chunk.metadata,
             )
             for chunk in final_chunks
         ]

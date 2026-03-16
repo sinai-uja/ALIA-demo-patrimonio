@@ -16,6 +16,7 @@ class PgVectorSearchAdapter(VectorSearchPort):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
         self._table = settings.chunks_table_name
+        self._has_metadata = settings.chunks_table_version >= "v3"
 
     async def search(
         self,
@@ -24,6 +25,7 @@ class PgVectorSearchAdapter(VectorSearchPort):
         heritage_type: str | None = None,
         province: str | None = None,
     ) -> list[RetrievedChunk]:
+        metadata_col = ", metadata" if self._has_metadata else ""
         query = text(f"""
             SELECT
                 id,
@@ -35,6 +37,7 @@ class PgVectorSearchAdapter(VectorSearchPort):
                 url,
                 content,
                 embedding <=> :query_vec AS score
+                {metadata_col}
             FROM {self._table}
             WHERE (CAST(:heritage_type AS VARCHAR) IS NULL OR heritage_type = :heritage_type)
               AND (CAST(:province AS VARCHAR) IS NULL OR province = :province)
@@ -71,6 +74,7 @@ class PgVectorSearchAdapter(VectorSearchPort):
                 url=row.url,
                 content=row.content,
                 score=float(row.score),
+                metadata=row.metadata if self._has_metadata else None,
             )
             for row in rows
         ]

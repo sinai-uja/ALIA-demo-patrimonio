@@ -14,3 +14,4 @@ class RetrievedChunk:
     url: str
     content: str
     score: float
+    metadata: dict | None = None

@@ -20,6 +20,8 @@ class SourceDTO:
     score: float
     heritage_type: str
     province: str
+    municipality: str | None = None
+    metadata: dict | None = None
 
 
 @dataclass(frozen=True)

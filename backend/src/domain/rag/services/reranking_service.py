@@ -39,8 +39,25 @@ class RerankingService:
         if not query_terms:
             return chunks[:top_k]
 
-        scored = []
+        # Pre-filter: discard chunks with zero lexical match (no query term in title or content)
+        candidates = []
         for chunk in chunks:
+            title_score = self._title_match_score(query_terms, chunk.title)
+            coverage_score = self._coverage_score(query_terms, chunk.content)
+            if title_score == 0.0 and coverage_score == 0.0:
+                logger.info(
+                    "Discarded (no lexical match): %s | score=%.3f",
+                    chunk.title[:80], chunk.score,
+                )
+                continue
+            candidates.append(chunk)
+
+        if not candidates:
+            logger.info("All %d chunks discarded (no lexical match)", len(chunks))
+            return []
+
+        scored = []
+        for chunk in candidates:
             base_score = 1.0 - chunk.score  # Convert distance to relevance (0=worst, 1=best)
             title_score = self._title_match_score(query_terms, chunk.title)
             coverage_score = self._coverage_score(query_terms, chunk.content)

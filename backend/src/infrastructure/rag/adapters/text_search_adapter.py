@@ -28,6 +28,7 @@ class PgTextSearchAdapter(TextSearchPort):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
         self._table = settings.chunks_table_name
+        self._has_metadata = settings.chunks_table_version >= "v3"
 
     async def search(
         self,
@@ -41,6 +42,7 @@ class PgTextSearchAdapter(TextSearchPort):
             logger.info("FTS: empty query after cleaning, skipping")
             return []
 
+        metadata_col = ", metadata" if self._has_metadata else ""
         sql = text(f"""
             SELECT
                 id,
@@ -55,6 +57,7 @@ class PgTextSearchAdapter(TextSearchPort):
                     search_vector,
                     plainto_tsquery('spanish', :query)
                 ) AS score
+                {metadata_col}
             FROM {self._table}
             WHERE search_vector @@ plainto_tsquery('spanish', :query)
               AND (
@@ -96,6 +99,7 @@ class PgTextSearchAdapter(TextSearchPort):
                 url=row.url,
                 content=row.content,
                 score=float(row.score),
+                metadata=row.metadata if self._has_metadata else None,
             )
             for row in rows
         ]
