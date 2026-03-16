@@ -31,7 +31,8 @@ src/
 │   ├── rag/            # RAGQuery, RetrievedChunk, RAGResponse; ContextAssemblyService; VectorSearchPort, LLMPort
 │   ├── chat/           # ChatSession, Message, MessageRole; ChatRepository, RAGPort
 │   ├── routes/         # VirtualRoute, RouteStop, HeritageTypeFilter; RouteBuilderService
-│   └── accessibility/  # SimplifiedText, SimplificationLevel; LLMPort
+│   ├── accessibility/  # SimplifiedText, SimplificationLevel; LLMPort
+│   └── heritage/       # HeritageAsset, typed raw_data value objects; HeritageRepository
 ├── application/        # Use cases and DTOs (no framework dependencies)
 ├── infrastructure/     # SQLAlchemy ORM, httpx adapters, parquet loader
 ├── composition/        # Dependency wiring (composition root per bounded context)
@@ -42,7 +43,7 @@ src/
 └── tests/              # pytest tests
 ```
 
-Five bounded contexts: **documents**, **rag**, **chat**, **routes**, and **accessibility**. Each context has its own domain, application, infrastructure, composition, and API layers.
+Six bounded contexts: **documents**, **rag**, **chat**, **routes**, **accessibility**, and **heritage**. Each context has its own domain, application, infrastructure, composition, and API layers.
 
 ---
 
@@ -81,6 +82,7 @@ Configuration is loaded from a `.env` file via `pydantic-settings`. See `.env.ex
 | `RAG_TOP_K` | `5` | Number of chunks retrieved per query |
 | `RAG_CHUNK_SIZE` | `512` | Words per chunk during ingestion |
 | `RAG_CHUNK_OVERLAP` | `64` | Overlap words between consecutive chunks |
+| `CHUNKS_TABLE_VERSION` | `v1` | Versioned chunk table suffix (table name: `document_chunks_{version}`) |
 | `API_V1_PREFIX` | `/api/v1` | API version prefix |
 | `PROJECT_NAME` | `IAPH Heritage RAG` | Project name (shown in OpenAPI docs) |
 | `DEBUG` | `false` | Enable debug mode |
@@ -182,6 +184,33 @@ curl -X POST http://localhost:8080/api/v1/rag/query \
 | `POST` | `/accessibility/simplify` | Simplify text following Lectura Facil guidelines |
 
 Simplification levels: `basic` (ILSMH, maximum simplification) and `intermediate` (accessible for the general public).
+
+### Heritage
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/heritage` | List heritage assets with filters and pagination |
+| `GET` | `/heritage/{id}` | Get a single asset with full typed details |
+
+**Query parameters for list:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `heritage_type` | string | Filter: `inmueble`, `mueble`, `inmaterial`, `paisaje` |
+| `province` | string | Filter by province |
+| `municipality` | string | Filter by municipality |
+| `limit` | int | Page size (1-200, default 50) |
+| `offset` | int | Offset for pagination |
+
+The detail endpoint returns a `details` object whose shape depends on `heritage_type` (typed as `InmuebleDetails`, `MuebleDetails`, `InmaterialDetails`, or `PaisajeDetails`). The raw JSONB data from the IAPH API is parsed into clean, strongly-typed fields including typologies, images, bibliography, and related assets.
+
+**Data loading:** The `heritage_assets` table is populated from the IAPH API, not from the parquet ingestion pipeline.
+
+```bash
+# From backend/
+make load-assets     # Load from ZIP file (data/API_IAPH.zip)
+make fetch-assets    # Fetch live from IAPH API (requires IAPH_API_TOKEN env var)
+```
 
 ---
 

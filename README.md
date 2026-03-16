@@ -7,7 +7,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 ```
 /
 ├── backend/          # FastAPI API — hexagonal architecture, Python 3.11, uv
-│   ├── src/          # 5 bounded contexts: documents, rag, chat, routes, accessibility
+│   ├── src/          # 6 bounded contexts: documents, rag, chat, routes, accessibility, heritage
 │   ├── docker/       # docker-compose.yml + service Dockerfiles
 │   └── alembic/      # DB migrations
 ├── frontend/         # Next.js 15 web application
@@ -66,6 +66,12 @@ docker compose -f backend/docker/docker-compose.yml --profile llm up -d
 ```
 
 Heritage types for ingestion: `PAISAJE_CULTURAL` · `PATRIMONIO_INMATERIAL` · `PATRIMONIO_INMUEBLE` · `PATRIMONIO_MUEBLE`
+
+```bash
+# 7. Load heritage assets from IAPH API data (run once)
+cd backend && make load-assets     # from ZIP file (data/API_IAPH.zip)
+# or: make fetch-assets            # fetch live from IAPH API (requires IAPH_API_TOKEN)
+```
 
 ## Development
 
