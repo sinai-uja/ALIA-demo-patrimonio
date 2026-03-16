@@ -63,7 +63,7 @@ class SendMessageUseCase:
 
         elif intent == MessageIntent.CONTEXTUAL_RAG:
             reformulated = self._query_reformulator.reformulate(dto.content, history)
-            logger.info("Routing to RAG with reformulated query: %s", reformulated)
+            logger.info("Routing to RAG with reformulated query: %s", reformulated[:120])
             answer, sources = await self._rag_port.query(
                 question=reformulated,
                 top_k=dto.top_k,
@@ -72,9 +72,22 @@ class SendMessageUseCase:
             )
 
         else:  # RAG_QUERY
-            logger.info("Routing to RAG with direct query")
+            # If there's conversation history, enrich the query with context
+            # to avoid losing intent on follow-up questions misclassified as new queries
+            if history:
+                reformulated = self._query_reformulator.reformulate(
+                    dto.content, history,
+                )
+                logger.info(
+                    "Routing to RAG with context-enriched query: %s",
+                    reformulated[:120],
+                )
+                query = reformulated
+            else:
+                logger.info("Routing to RAG with direct query")
+                query = dto.content
             answer, sources = await self._rag_port.query(
-                question=dto.content,
+                question=query,
                 top_k=dto.top_k,
                 heritage_type_filter=dto.heritage_type_filter,
                 province_filter=dto.province_filter,
