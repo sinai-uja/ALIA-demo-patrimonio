@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1.endpoints.accessibility.accessibility import router as accessibility_router
 from src.api.v1.endpoints.chat.chat import router as chat_router
 from src.api.v1.endpoints.documents.documents import router as documents_router
+from src.api.v1.endpoints.heritage.heritage import router as heritage_router
 from src.api.v1.endpoints.rag.rag import router as rag_router
 from src.api.v1.endpoints.routes.routes import router as routes_router
 from src.config import settings
@@ -41,6 +42,11 @@ app.include_router(
 )
 app.include_router(
     routes_router, prefix=f"{settings.api_v1_prefix}/routes", tags=["routes"]
+)
+app.include_router(
+    heritage_router,
+    prefix=f"{settings.api_v1_prefix}/heritage",
+    tags=["heritage"],
 )
 
 
