@@ -1,26 +1,56 @@
 "use client";
 
 import type { Message, RagSource } from "@/lib/api";
+import { type ReactNode } from "react";
 
-function SourceCard({ source }: { source: RagSource }) {
+function SourceCard({ index, source }: { index: number; source: RagSource }) {
   return (
     <a
+      id={`source-${index}`}
       href={source.url}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs hover:border-amber-300 hover:bg-amber-50/50 transition-colors group"
     >
-      <svg className="w-3.5 h-3.5 mt-0.5 shrink-0 text-stone-400 group-hover:text-amber-500 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
-      </svg>
+      <span className="shrink-0 mt-0.5 flex items-center justify-center h-4 w-4 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">
+        {index}
+      </span>
       <div className="min-w-0">
         <p className="font-medium text-stone-700 truncate">{source.title}</p>
         <p className="text-stone-400 mt-0.5">
           {source.heritage_type} · {source.province}
+          {source.municipality ? ` · ${source.municipality}` : ""}
         </p>
       </div>
     </a>
   );
+}
+
+/** Replace [N] references in text with clickable links that scroll to the source card. */
+function renderContentWithRefs(content: string, sources: RagSource[]): ReactNode[] {
+  const parts = content.split(/(\[\d+\])/g);
+  return parts.map((part, i) => {
+    const match = part.match(/^\[(\d+)\]$/);
+    if (match) {
+      const idx = parseInt(match[1], 10);
+      const source = sources[idx - 1];
+      if (source) {
+        return (
+          <a
+            key={i}
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center h-4 min-w-[1rem] px-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold no-underline hover:bg-amber-200 transition-colors cursor-pointer align-baseline"
+            title={source.title}
+          >
+            {idx}
+          </a>
+        );
+      }
+    }
+    return <span key={i}>{part}</span>;
+  });
 }
 
 export function MessageBubble({ message }: { message: Message }) {
@@ -44,13 +74,17 @@ export function MessageBubble({ message }: { message: Message }) {
               : "bg-white border border-stone-200 text-stone-700 rounded-bl-md shadow-sm"
           }`}
         >
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          <p className="whitespace-pre-wrap">
+            {isUser || message.sources.length === 0
+              ? message.content
+              : renderContentWithRefs(message.content, message.sources)}
+          </p>
         </div>
         {message.sources.length > 0 && (
           <div className="mt-2 space-y-1.5 ml-1">
             <p className="text-[11px] font-medium text-stone-400 uppercase tracking-wide">Fuentes</p>
-            {message.sources.slice(0, 3).map((src, i) => (
-              <SourceCard key={i} source={src} />
+            {message.sources.map((src, i) => (
+              <SourceCard key={i} index={i + 1} source={src} />
             ))}
           </div>
         )}
