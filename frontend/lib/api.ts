@@ -19,6 +19,8 @@ export interface RagSource {
   score: number;
   heritage_type: string;
   province: string;
+  municipality?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface RagResponse {
@@ -136,6 +138,165 @@ export const routes = {
       `/routes/${routeId}/guide`,
       { method: "POST", body: JSON.stringify({ question }) }
     ),
+};
+
+// ── Heritage Assets ──────────────────────────────────────────────────────────
+export interface ImageInfo {
+  id?: string | null;
+  title?: string | null;
+  author?: string | null;
+  date?: string | null;
+  url?: string | null;
+}
+
+export interface BibliographyEntry {
+  title?: string | null;
+  author?: string | null;
+  publisher?: string | null;
+  year?: string | null;
+  isbn?: string | null;
+  pages?: string | null;
+  location?: string | null;
+}
+
+export interface TypologyInfo {
+  typology?: string | null;
+  style?: string | null;
+  period?: string | null;
+  chrono_start?: string | null;
+  chrono_end?: string | null;
+}
+
+export interface RelatedAsset {
+  code?: string | null;
+  denomination?: string | null;
+  relation_type?: string | null;
+}
+
+export interface InmuebleDetails {
+  type: "inmueble";
+  code?: string | null;
+  other_denominations?: string | null;
+  characterisation?: string | null;
+  postal_address?: string | null;
+  historical_data?: string | null;
+  description?: string | null;
+  protection?: string | null;
+  typologies: TypologyInfo[];
+  images: ImageInfo[];
+  bibliography: BibliographyEntry[];
+  related_assets: RelatedAsset[];
+  historical_periods: string[];
+}
+
+export interface MuebleDetails {
+  type: "mueble";
+  code?: string | null;
+  other_denominations?: string | null;
+  characterisation?: string | null;
+  measurements?: string | null;
+  chronology?: string | null;
+  description?: string | null;
+  protection?: string | null;
+  typologies: TypologyInfo[];
+  images: ImageInfo[];
+  bibliography: BibliographyEntry[];
+  related_assets: RelatedAsset[];
+}
+
+export interface InmaterialDetails {
+  type: "inmaterial";
+  code?: string | null;
+  other_denominations?: string | null;
+  scope?: string | null;
+  framework_activities?: string | null;
+  activity_dates?: string | null;
+  periodicity?: string | null;
+  typologies_text?: string | null;
+  district?: string | null;
+  local_entity?: string | null;
+  description?: string | null;
+  development?: string | null;
+  spatial_description?: string | null;
+  agents_description?: string | null;
+  evolution?: string | null;
+  origins?: string | null;
+  preparations?: string | null;
+  clothing?: string | null;
+  instruments?: string | null;
+  transmission_mode?: string | null;
+  transformations?: string | null;
+  protection?: string | null;
+  typologies: TypologyInfo[];
+  images: ImageInfo[];
+  bibliography: BibliographyEntry[];
+  related_assets: RelatedAsset[];
+}
+
+export interface PaisajeDetails {
+  type: "paisaje";
+  pdf_url?: string | null;
+  search_terms: string[];
+}
+
+export type HeritageDetails =
+  | InmuebleDetails
+  | MuebleDetails
+  | InmaterialDetails
+  | PaisajeDetails;
+
+export interface HeritageAsset {
+  id: string;
+  heritage_type: string;
+  denomination?: string | null;
+  province?: string | null;
+  municipality?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  image_url?: string | null;
+  image_ids: string[];
+  protection?: string | null;
+  details?: HeritageDetails | null;
+}
+
+export interface HeritageAssetSummary {
+  id: string;
+  heritage_type: string;
+  denomination?: string | null;
+  province?: string | null;
+  municipality?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  image_url?: string | null;
+  protection?: string | null;
+}
+
+export interface HeritageAssetList {
+  items: HeritageAssetSummary[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export const heritage = {
+  list: (params?: {
+    heritage_type?: string;
+    province?: string;
+    municipality?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.heritage_type) searchParams.set("heritage_type", params.heritage_type);
+    if (params?.province) searchParams.set("province", params.province);
+    if (params?.municipality) searchParams.set("municipality", params.municipality);
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    if (params?.offset) searchParams.set("offset", String(params.offset));
+    const qs = searchParams.toString();
+    return apiFetch<HeritageAssetList>(`/heritage${qs ? `?${qs}` : ""}`);
+  },
+
+  get: (id: string) => apiFetch<HeritageAsset>(`/heritage/${id}`),
 };
 
 // ── Accessibility ─────────────────────────────────────────────────────────────
