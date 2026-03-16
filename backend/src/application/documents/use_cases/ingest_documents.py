@@ -13,6 +13,34 @@ logger = logging.getLogger("iaph")
 
 EMBEDDING_BATCH_SIZE = 2
 
+# Type-specific metadata fields to prepend to chunk content for richer embeddings.
+# Each entry is (parquet_column_name, human_readable_label).
+_ENRICHMENT_FIELDS: dict[HeritageType, list[tuple[str, str]]] = {
+    HeritageType.PATRIMONIO_MUEBLE: [
+        ("authors", "Autor"),
+        ("styles", "Estilo"),
+        ("historic_periods", "Periodo"),
+        ("chronology", "Cronologia"),
+        ("materials", "Material"),
+        ("techniques", "Tecnica"),
+        ("type", "Tipo bien"),
+        ("protection", "Proteccion"),
+        ("iconographies", "Iconografia"),
+    ],
+    HeritageType.PATRIMONIO_INMUEBLE: [
+        ("characterisation", "Caracterizacion"),
+        ("protection", "Proteccion"),
+    ],
+    HeritageType.PATRIMONIO_INMATERIAL: [
+        ("activity_types", "Tipo actividad"),
+        ("subject_topic", "Tema"),
+    ],
+    HeritageType.PAISAJE_CULTURAL: [
+        ("topic", "Tema"),
+        ("landscape_demarcation", "Demarcacion"),
+    ],
+}
+
 
 class IngestDocumentsUseCase:
     """Orchestrates the full document ingestion pipeline:
@@ -120,13 +148,21 @@ class IngestDocumentsUseCase:
     def _enrich_for_embedding(document, content: str) -> str:
         """Prepend document metadata to chunk content for richer embeddings.
 
-        The embedding model encodes title, heritage type, and location alongside
-        the chunk text, improving retrieval for queries by name or place.
+        Includes base fields (title, type, province, municipality) plus
+        type-specific metadata fields (authors, styles, chronology, etc.)
+        to improve retrieval for domain-specific queries.
         """
         parts = [f"Titulo: {document.title}"]
         parts.append(f"Tipo: {document.heritage_type.value}")
         parts.append(f"Provincia: {document.province}")
         if document.municipality:
             parts.append(f"Municipio: {document.municipality}")
+
+        # Type-specific enrichment from parquet metadata
+        for field_key, label in _ENRICHMENT_FIELDS.get(document.heritage_type, []):
+            value = document.metadata.get(field_key)
+            if value is not None and str(value).strip() and str(value).lower() != "nan":
+                parts.append(f"{label}: {value}")
+
         header = " | ".join(parts)
         return f"{header}\n---\n{content}"

@@ -1,3 +1,5 @@
+import math
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,9 +33,26 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
             content=chunk.content,
             token_count=chunk.token_count,
             embedding=embedding.embedding,
+            metadata_=self._sanitize_metadata(document.metadata),
         )
         self._session.add(model)
         await self._session.flush()
+
+    @staticmethod
+    def _sanitize_metadata(data: dict) -> dict:
+        """Sanitize pandas/numpy values for JSONB storage."""
+        clean = {}
+        for key, value in data.items():
+            if value is None:
+                clean[key] = None
+            elif isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+                clean[key] = None
+            elif hasattr(value, "item"):
+                # numpy scalar → native Python
+                clean[key] = value.item()
+            else:
+                clean[key] = value
+        return clean
 
     async def get_chunks_by_document(self, document_id: str) -> list[Chunk]:
         stmt = (

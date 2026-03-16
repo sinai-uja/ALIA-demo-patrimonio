@@ -7,7 +7,8 @@ La tabla `document_chunks` utiliza un esquema de versionado (`document_chunks_v1
 | Version | Tabla | Estrategia de chunking | Contenido del embedding | Tamano chunk | Overlap | Registros |
 |---------|-------|------------------------|-------------------------|--------------|---------|-----------|
 | v1 | `document_chunks_v1` | Ventana fija por palabras | Solo texto del chunk | 512 palabras | 64 | ~149,290 |
-| v2 | `document_chunks_v2` | Por parrafos (respeta `\n\n`) | Metadata + texto del chunk | 1024 palabras | 128 | Pendiente de ingesta |
+| v2 | `document_chunks_v2` | Por parrafos (respeta `\n\n`) | Metadata basica + texto | 1024 palabras | 128 | Pendiente de ingesta |
+| v3 | `document_chunks_v3` | Por parrafos (respeta `\n\n`) | Metadata tipo-especifica + texto | 1024 palabras | 128 | Pendiente de ingesta |
 
 ## Como cambiar de version
 
@@ -17,8 +18,11 @@ Configurar la variable de entorno `CHUNKS_TABLE_VERSION` en `backend/config/.env
 # Usar v1 (chunking original)
 CHUNKS_TABLE_VERSION=v1
 
-# Usar v2 (chunking por parrafos + embeddings enriquecidos con metadata)
+# Usar v2 (chunking por parrafos + embeddings enriquecidos con metadata basica)
 CHUNKS_TABLE_VERSION=v2
+
+# Usar v3 (v2 + metadata tipo-especifica en content + columna metadata JSONB)
+CHUNKS_TABLE_VERSION=v3
 ```
 
 Reiniciar el backend tras el cambio. No hace falta migracion ni re-ingesta para cambiar — ambas tablas coexisten.
@@ -74,6 +78,62 @@ Reiniciar el backend tras el cambio. No hace falta migracion ni re-ingesta para 
 4. Verificar:
    ```sql
    SELECT COUNT(*) FROM document_chunks_v2;
+   ```
+
+### v3 — Metadata tipo-especifica en content + columna JSONB
+
+- **Tabla**: `document_chunks_v3`
+- **Estrategia**: Misma que v2 (parrafos, sin cortar a mitad de parrafo)
+- **Contenido del embedding**: Cabecera enriquecida con campos tipo-especificos del parquet:
+  ```
+  Titulo: X | Tipo: Y | Provincia: Z | Municipio: W | Autor: A | Estilo: B | Periodo: C
+  ---
+  {contenido del chunk}
+  ```
+- **Campos de enrichment por tipo de activo**:
+
+  | Tipo patrimonial | Campos en cabecera |
+  |------------------|--------------------|
+  | Patrimonio Mueble | authors, styles, historic_periods, chronology, materials, techniques, type, protection, iconographies |
+  | Patrimonio Inmueble | characterisation, protection |
+  | Patrimonio Inmaterial | activity_types, subject_topic |
+  | Paisaje Cultural | topic, landscape_demarcation |
+
+- **Columna `metadata` JSONB**: Almacena TODOS los campos extra del parquet (tanto los de enrichment como los de solo display: code, dimensions, sources, description, etc.). Disponible para la UI del frontend.
+- **Configuracion recomendada**:
+  ```bash
+  CHUNKS_TABLE_VERSION=v3
+  RAG_CHUNK_SIZE=1024
+  RAG_CHUNK_OVERLAP=128
+  ```
+- **Registros**: Vacia hasta ejecutar `make ingest` con `CHUNKS_TABLE_VERSION=v3`
+
+## Como ingestar en v3
+
+1. Aplicar la migracion:
+   ```bash
+   make migrate
+   ```
+
+2. Configurar variables de entorno en `backend/config/.env`:
+   ```bash
+   CHUNKS_TABLE_VERSION=v3
+   RAG_CHUNK_SIZE=1024
+   RAG_CHUNK_OVERLAP=128
+   ```
+
+3. Ejecutar la ingesta:
+   ```bash
+   cd backend && make ingest
+   ```
+
+4. Verificar:
+   ```sql
+   SELECT COUNT(*) FROM document_chunks_v3;
+   -- Verificar cabecera en content
+   SELECT LEFT(content, 200) FROM document_chunks_v3 LIMIT 1;
+   -- Verificar metadata JSONB
+   SELECT metadata FROM document_chunks_v3 LIMIT 1;
    ```
 
 ## Como anadir una nueva version

@@ -15,19 +15,19 @@ logger = logging.getLogger(__name__)
 
 DATASETS = {
     "paisaje_cultural": (
-        "../data/Guia_Digital_Patrimonio_Andalucia_Paisaje_Cultural.parquet",
+        "../data/Guia_Digital_Patrimonio_Andalucia/Guia_Digital_Patrimonio_Andalucia_Paisaje_Cultural.parquet",
         "paisaje_cultural",
     ),
     "patrimonio_inmaterial": (
-        "../data/Guia_Digital_Patrimonio_Andalucia_Patrimonio_Inmaterial.parquet",
+        "../data/Guia_Digital_Patrimonio_Andalucia/Guia_Digital_Patrimonio_Andalucia_Patrimonio_Inmaterial.parquet",
         "patrimonio_inmaterial",
     ),
     "patrimonio_inmueble": (
-        "../data/Guia_Digital_Patrimonio_Andalucia_Patrimonio_Inmueble.parquet",
+        "../data/Guia_Digital_Patrimonio_Andalucia/Guia_Digital_Patrimonio_Andalucia_Patrimonio_Inmueble.parquet",
         "patrimonio_inmueble",
     ),
     "patrimonio_mueble": (
-        "../data/Guia_Digital_Patrimonio_Andalucia_Patrimonio_Mueble.parquet",
+        "../data/Guia_Digital_Patrimonio_Andalucia/Guia_Digital_Patrimonio_Andalucia_Patrimonio_Mueble.parquet",
         "patrimonio_mueble",
     ),
 }

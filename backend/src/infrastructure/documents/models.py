@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DateTime, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import ARRAY, DateTime, Float, Index, Integer, String, Text, func, text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.config import settings
@@ -26,10 +26,43 @@ class DocumentChunkModel(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False)
     embedding = mapped_column(Vector(768), nullable=False)
+    metadata_: Mapped[dict | None] = mapped_column(
+        "metadata", JSONB, nullable=True, server_default=text("'{}'::jsonb")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     __table_args__ = (
         Index(f"ix_{settings.chunks_table_name}_document_id", "document_id"),
+    )
+
+
+class HeritageAssetModel(Base):
+    """Enriched heritage asset data from the IAPH API.
+
+    Linked to document_chunks via the asset_id (numeric part of chunk.document_id).
+    E.g. chunk.document_id='ficha-inmueble-20831' matches asset.id='20831'.
+    """
+
+    __tablename__ = "heritage_assets"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    heritage_type: Mapped[str] = mapped_column(String, nullable=False)
+    denomination: Mapped[str | None] = mapped_column(String, nullable=True)
+    province: Mapped[str | None] = mapped_column(String, nullable=True)
+    municipality: Mapped[str | None] = mapped_column(String, nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    image_ids: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    protection: Mapped[str | None] = mapped_column(String, nullable=True)
+    raw_data: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
