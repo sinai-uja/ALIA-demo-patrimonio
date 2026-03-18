@@ -2,7 +2,18 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import ARRAY, DateTime, Float, Index, Integer, String, Text, func, text
+from sqlalchemy import (
+    ARRAY,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+    text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,7 +27,9 @@ class DocumentChunkModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    document_id: Mapped[str] = mapped_column(String, nullable=False)
+    document_id: Mapped[str] = mapped_column(
+        String, ForeignKey("heritage_assets.id"), nullable=False
+    )
     heritage_type: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=False)
     province: Mapped[str] = mapped_column(String, nullable=False)
@@ -41,8 +54,7 @@ class DocumentChunkModel(Base):
 class HeritageAssetModel(Base):
     """Enriched heritage asset data from the IAPH API.
 
-    Linked to document_chunks via the asset_id (numeric part of chunk.document_id).
-    E.g. chunk.document_id='ficha-inmueble-20831' matches asset.id='20831'.
+    Linked to document_chunks via FK: chunk.document_id → heritage_assets.id.
     """
 
     __tablename__ = "heritage_assets"
