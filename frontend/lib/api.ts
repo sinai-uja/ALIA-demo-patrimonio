@@ -299,6 +299,68 @@ export const heritage = {
   get: (id: string) => apiFetch<HeritageAsset>(`/heritage/${id}`),
 };
 
+// ── Search ───────────────────────────────────────────────────────────────────
+export interface SearchResult {
+  chunk_id: string;
+  document_id: string;
+  title: string;
+  heritage_type: string;
+  province: string;
+  municipality: string | null;
+  url: string;
+  content: string;
+  score: number;
+}
+
+export interface SimilaritySearchResponse {
+  results: SearchResult[];
+  query: string;
+  total_results: number;
+}
+
+export interface DetectedEntity {
+  entity_type: "province" | "municipality" | "heritage_type";
+  value: string;
+  display_label: string;
+  matched_text: string;
+}
+
+export interface SuggestionResponse {
+  query: string;
+  search_label: string;
+  detected_entities: DetectedEntity[];
+}
+
+export interface FilterValues {
+  heritage_types: string[];
+  provinces: string[];
+  municipalities: string[];
+}
+
+export const search = {
+  similarity: (params: {
+    query: string;
+    top_k?: number;
+    heritage_type_filter?: string[] | null;
+    province_filter?: string[] | null;
+    municipality_filter?: string[] | null;
+  }) =>
+    apiFetch<SimilaritySearchResponse>("/search/similarity", {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
+
+  suggestions: (query: string) =>
+    apiFetch<SuggestionResponse>(
+      `/search/suggestions?query=${encodeURIComponent(query)}`
+    ),
+
+  filters: (province?: string) => {
+    const qs = province ? `?province=${encodeURIComponent(province)}` : "";
+    return apiFetch<FilterValues>(`/search/filters${qs}`);
+  },
+};
+
 // ── Accessibility ─────────────────────────────────────────────────────────────
 export interface SimplifyResponse {
   original_text: string;
