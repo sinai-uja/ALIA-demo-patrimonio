@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import {
+  heritage as heritageApi,
   search as searchApi,
+  type HeritageAsset,
   type SearchResult,
   type SuggestionResponse,
+  type DetectedEntity,
   type FilterValues,
 } from "@/lib/api";
 
@@ -10,27 +13,63 @@ export interface ActiveFilter {
   type: "province" | "municipality" | "heritage_type";
   value: string;
   label: string;
+  matchedText: string;
 }
 
 interface SearchState {
   query: string;
   results: SearchResult[];
   totalResults: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
   activeFilters: ActiveFilter[];
+  /** Full suggestion response (for dropdown). Cleared when dropdown closes. */
   suggestions: SuggestionResponse | null;
+  /** Detected entities persisted for overlay highlights. Only cleared on new query. */
+  detectedEntities: DetectedEntity[];
   filterValues: FilterValues | null;
   loading: boolean;
   suggestionsLoading: boolean;
   hasSearched: boolean;
 
+  // Detail panel
+  selectedAssetId: string | null;
+  selectedAsset: HeritageAsset | null;
+  detailLoading: boolean;
+
   setQuery: (q: string) => void;
-  performSearch: () => Promise<void>;
+  syncFiltersWithQuery: (q: string) => void;
+  performSearch: (page?: number) => Promise<void>;
+  goToPage: (page: number) => Promise<void>;
   fetchSuggestions: (q: string) => Promise<void>;
-  loadFilterValues: (province?: string) => Promise<void>;
+  loadFilterValues: (provinces?: string[]) => Promise<void>;
   addFilter: (filter: ActiveFilter) => void;
   removeFilter: (filter: ActiveFilter) => void;
   clearFilters: () => void;
   clearSuggestions: () => void;
+  openDetail: (documentId: string) => Promise<void>;
+  closeDetail: () => void;
+}
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Extract numeric asset ID from document_id (e.g. "ficha-inmueble-20831" → "20831"). */
+function extractAssetId(documentId: string): string {
+  return documentId.replace(/^ficha-\w+-/, "");
+}
+
+/** Remove active filter matched texts from the query before sending to API. */
+function buildCleanQuery(query: string, filters: ActiveFilter[]): string {
+  let clean = query;
+  for (const f of filters) {
+    if (f.matchedText) {
+      clean = clean.replace(new RegExp(escapeRegex(f.matchedText), "gi"), "");
+    }
+  }
+  return clean.replace(/\s{2,}/g, " ").trim();
 }
 
 function collectFilters(filters: ActiveFilter[]) {
@@ -53,44 +92,86 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   query: "",
   results: [],
   totalResults: 0,
+  page: 1,
+  pageSize: 10,
+  totalPages: 0,
   activeFilters: [],
   suggestions: null,
+  detectedEntities: [],
   filterValues: null,
   loading: false,
   suggestionsLoading: false,
   hasSearched: false,
 
+  // Detail panel
+  selectedAssetId: null,
+  selectedAsset: null,
+  detailLoading: false,
+
   setQuery: (q) => set({ query: q }),
 
-  performSearch: async () => {
-    const { query, activeFilters } = get();
+  syncFiltersWithQuery: (q: string) => {
+    const { activeFilters } = get();
+    if (activeFilters.length === 0) return;
+    const lower = q.toLowerCase();
+    const remaining = activeFilters.filter((f) => {
+      if (!f.matchedText) return true;
+      return lower.includes(f.matchedText.toLowerCase());
+    });
+    if (remaining.length !== activeFilters.length) {
+      set({ activeFilters: remaining });
+    }
+  },
+
+  performSearch: async (page?: number) => {
+    const { query, activeFilters, pageSize } = get();
     if (!query.trim()) return;
 
-    set({ loading: true, hasSearched: true });
+    const cleanQuery = buildCleanQuery(query, activeFilters);
+    if (!cleanQuery) return;
+
+    const targetPage = page ?? 1;
+    set({
+      loading: true,
+      hasSearched: true,
+      selectedAssetId: null,
+      selectedAsset: null,
+    });
     try {
       const filters = collectFilters(activeFilters);
       const res = await searchApi.similarity({
-        query: query.trim(),
-        top_k: 20,
+        query: cleanQuery,
+        page: targetPage,
+        page_size: pageSize,
         ...filters,
       });
-      set({ results: res.results, totalResults: res.total_results });
+      set({
+        results: res.results,
+        totalResults: res.total_results,
+        page: res.page,
+        totalPages: res.total_pages,
+      });
     } catch {
-      set({ results: [], totalResults: 0 });
+      set({ results: [], totalResults: 0, page: 1, totalPages: 0 });
     } finally {
       set({ loading: false });
     }
   },
 
+  goToPage: async (page: number) => {
+    set({ selectedAssetId: null, selectedAsset: null });
+    await get().performSearch(page);
+  },
+
   fetchSuggestions: async (q) => {
     if (!q.trim() || q.trim().length < 2) {
-      set({ suggestions: null });
+      set({ suggestions: null, detectedEntities: [] });
       return;
     }
     set({ suggestionsLoading: true });
     try {
       const res = await searchApi.suggestions(q.trim());
-      set({ suggestions: res });
+      set({ suggestions: res, detectedEntities: res.detected_entities });
     } catch {
       set({ suggestions: null });
     } finally {
@@ -98,9 +179,9 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     }
   },
 
-  loadFilterValues: async (province) => {
+  loadFilterValues: async (provinces) => {
     try {
-      const values = await searchApi.filters(province);
+      const values = await searchApi.filters(provinces);
       set({ filterValues: values });
     } catch {
       /* ignore */
@@ -109,14 +190,16 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
   addFilter: (filter) => {
     const { activeFilters } = get();
-    // Allow multiple of the same type (OR), but not duplicate value
     const exists = activeFilters.some(
       (f) => f.type === filter.type && f.value === filter.value
     );
     if (exists) return;
     const updated = [...activeFilters, filter];
-    set({ activeFilters: updated, suggestions: null });
-    // Auto-search if we have a query
+    set({ activeFilters: updated });
+    if (filter.type === "province") {
+      const provinces = updated.filter((f) => f.type === "province").map((f) => f.value);
+      get().loadFilterValues(provinces);
+    }
     if (get().query.trim()) {
       get().performSearch();
     }
@@ -128,6 +211,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       (f) => !(f.type === filter.type && f.value === filter.value)
     );
     set({ activeFilters: updated });
+    if (filter.type === "province") {
+      const provinces = updated.filter((f) => f.type === "province").map((f) => f.value);
+      get().loadFilterValues(provinces.length ? provinces : undefined);
+    }
     if (get().query.trim()) {
       get().performSearch();
     }
@@ -135,10 +222,25 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
   clearFilters: () => {
     set({ activeFilters: [] });
+    get().loadFilterValues();
     if (get().query.trim()) {
       get().performSearch();
     }
   },
 
   clearSuggestions: () => set({ suggestions: null }),
+
+  openDetail: async (documentId: string) => {
+    const assetId = extractAssetId(documentId);
+    set({ selectedAssetId: assetId, selectedAsset: null, detailLoading: true });
+    try {
+      const asset = await heritageApi.get(assetId);
+      set({ selectedAsset: asset, detailLoading: false });
+    } catch {
+      set({ detailLoading: false });
+    }
+  },
+
+  closeDetail: () =>
+    set({ selectedAssetId: null, selectedAsset: null, detailLoading: false }),
 }));

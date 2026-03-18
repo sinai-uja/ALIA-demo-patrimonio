@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSearchStore, type ActiveFilter } from "@/store/search";
 
 const HERITAGE_TYPE_LABELS: Record<string, string> = {
@@ -10,61 +10,138 @@ const HERITAGE_TYPE_LABELS: Record<string, string> = {
   paisaje_cultural: "Paisaje Cultural",
 };
 
-const ENTITY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  province: { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
-  municipality: { bg: "bg-emerald-100", text: "text-emerald-700", border: "border-emerald-300" },
-  heritage_type: { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300" },
-};
-
 const TYPE_LABELS: Record<string, string> = {
   province: "Provincia",
   municipality: "Municipio",
   heritage_type: "Tipo",
 };
 
+const TOOLTIP_COLORS: Record<string, string> = {
+  province: "bg-blue-100 text-blue-800 hover:bg-blue-200",
+  municipality: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200",
+  heritage_type: "bg-amber-100 text-amber-800 hover:bg-amber-200",
+};
+
+// Raw color values for gradient construction
+const ACTIVE_COLOR: Record<string, string> = {
+  province: "rgb(191 219 254)",       // blue-200
+  municipality: "rgb(167 243 208)",   // emerald-200
+  heritage_type: "rgb(253 230 138)",  // amber-200
+};
+
+// Tailwind classes for single-entity active highlights
+const ACTIVE_BG: Record<string, string> = {
+  province: "bg-blue-200/80",
+  municipality: "bg-emerald-200/80",
+  heritage_type: "bg-amber-200/80",
+};
+
+// Neutral highlight for fully-pending entities
+const PENDING_BG = "bg-stone-300/50";
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+interface EntityInfo {
+  entityType: string;
+  value: string;
+  displayLabel: string;
+  matchedText: string;
+}
+
+interface Segment {
+  kind: "text" | "potential" | "active";
+  text: string;
+  entities: EntityInfo[];
+  activeEntities: EntityInfo[];
+}
+
+interface TooltipState {
+  entities: EntityInfo[];
+  x: number;
+  y: number;
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
+
 export function SearchInput() {
   const query = useSearchStore((s) => s.query);
   const setQuery = useSearchStore((s) => s.setQuery);
+  const syncFiltersWithQuery = useSearchStore((s) => s.syncFiltersWithQuery);
   const performSearch = useSearchStore((s) => s.performSearch);
   const fetchSuggestions = useSearchStore((s) => s.fetchSuggestions);
   const suggestions = useSearchStore((s) => s.suggestions);
+  const detectedEntities = useSearchStore((s) => s.detectedEntities);
   const activeFilters = useSearchStore((s) => s.activeFilters);
   const addFilter = useSearchStore((s) => s.addFilter);
   const clearSuggestions = useSearchStore((s) => s.clearSuggestions);
   const loading = useSearchStore((s) => s.loading);
 
   const [showDropdown, setShowDropdown] = useState(false);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tooltipHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+
+  const scheduleHideTooltip = useCallback(() => {
+    tooltipHideRef.current = setTimeout(() => setTooltip(null), 200);
+  }, []);
+
+  const cancelHideTooltip = useCallback(() => {
+    if (tooltipHideRef.current) {
+      clearTimeout(tooltipHideRef.current);
+      tooltipHideRef.current = null;
+    }
+  }, []);
+
+  // Sync scroll between input and backdrop
+  useEffect(() => {
+    const input = inputRef.current;
+    const backdrop = backdropRef.current;
+    if (!input || !backdrop) return;
+    const onScroll = () => {
+      backdrop.scrollLeft = input.scrollLeft;
+    };
+    input.addEventListener("scroll", onScroll);
+    return () => input.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
+        setTooltip(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleChange = (value: string) => {
-    setQuery(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (value.trim().length >= 2) {
-      setShowDropdown(true);
-      debounceRef.current = setTimeout(() => {
-        fetchSuggestions(value);
-      }, 300);
-    } else {
-      setShowDropdown(false);
-      clearSuggestions();
-    }
-  };
+  const handleChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      syncFiltersWithQuery(value);
+      setTooltip(null);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (value.trim().length >= 2) {
+        setShowDropdown(true);
+        debounceRef.current = setTimeout(() => {
+          fetchSuggestions(value);
+        }, 300);
+      } else {
+        setShowDropdown(false);
+        clearSuggestions();
+      }
+    },
+    [setQuery, syncFiltersWithQuery, fetchSuggestions, clearSuggestions],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     setShowDropdown(false);
+    setTooltip(null);
     clearSuggestions();
     performSearch();
   };
@@ -75,18 +152,13 @@ export function SearchInput() {
     performSearch();
   };
 
-  const handleEntityClick = (entity: {
-    entity_type: string;
-    value: string;
-    display_label: string;
-    matched_text: string;
-  }) => {
-    const typeMap: Record<string, "province" | "municipality" | "heritage_type"> = {
+  const handleEntitySelect = (entity: EntityInfo) => {
+    const typeMap: Record<string, ActiveFilter["type"]> = {
       province: "province",
       municipality: "municipality",
       heritage_type: "heritage_type",
     };
-    const filterType = typeMap[entity.entity_type];
+    const filterType = typeMap[entity.entityType];
     if (!filterType) return;
 
     let label = entity.value;
@@ -94,71 +166,122 @@ export function SearchInput() {
       label = HERITAGE_TYPE_LABELS[entity.value] ?? entity.value;
     }
 
-    addFilter({ type: filterType, value: entity.value, label });
-    // Don't remove text from input — keep it for context
-    setShowDropdown(false);
+    addFilter({
+      type: filterType,
+      value: entity.value,
+      label,
+      matchedText: entity.matchedText,
+    });
+    setTooltip((prev) => {
+      if (!prev) return null;
+      const remaining = prev.entities.filter(
+        (e) => !(e.entityType === entity.entityType && e.value === entity.value),
+      );
+      return remaining.length > 0 ? { ...prev, entities: remaining } : null;
+    });
+    inputRef.current?.focus();
   };
 
-  // Check if a detected entity is already an active filter
-  const isAlreadyFiltered = (entityType: string, value: string): boolean => {
-    const typeMap: Record<string, ActiveFilter["type"]> = {
-      province: "province",
-      municipality: "municipality",
-      heritage_type: "heritage_type",
-    };
-    const ft = typeMap[entityType];
-    return activeFilters.some((f) => f.type === ft && f.value === value);
+  const handleEntityHover = (e: React.MouseEvent, entities: EntityInfo[]) => {
+    const pending = entities.filter(
+      (ent) => !activeFilters.some(
+        (f) => f.type === (ent.entityType as ActiveFilter["type"]) && f.value === ent.value,
+      ),
+    );
+    if (pending.length === 0) return;
+
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    if (!containerRect) return;
+    setTooltip({
+      entities: pending,
+      x: rect.left - containerRect.left + rect.width / 2,
+      y: rect.bottom - containerRect.top + 6,
+    });
   };
 
-  const entities = (suggestions?.detected_entities ?? []).filter(
-    (e) => !isAlreadyFiltered(e.entity_type, e.value)
+  const segments = buildSegments(query, detectedEntities, activeFilters);
+  const hasEntities = segments.some((s) => s.kind !== "text");
+
+  const dropdownEntities = (suggestions?.detected_entities ?? []).filter(
+    (e) =>
+      !activeFilters.some(
+        (f) => f.type === (e.entity_type as ActiveFilter["type"]) && f.value === e.value,
+      ),
   );
 
-  // Build highlighted text preview with clickable entity segments
-  const highlightSegments = buildHighlightedText(
-    query,
-    suggestions?.detected_entities ?? [],
-    activeFilters,
-  );
-
-  const showHighlights =
-    query.trim().length >= 2 &&
-    !showDropdown &&
-    highlightSegments.some((s) => s.type !== "text");
+  // Shared text styles — must be identical between input and backdrop
+  const textStyle: React.CSSProperties = {
+    fontFamily: 'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+    fontSize: "0.875rem",
+    lineHeight: "1.25rem",
+    fontWeight: 400,
+    letterSpacing: "normal",
+  };
 
   return (
     <div ref={containerRef} className="relative">
       <form onSubmit={handleSubmit}>
         <div className="relative">
+          {/* Search icon */}
           <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none z-10"
+            fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
           </svg>
+
+          {/* Backdrop overlay — on top, pointer-events-none except on entity spans */}
+          <div
+            ref={backdropRef}
+            aria-hidden="true"
+            className="absolute inset-0 z-[2] pl-12 pr-4 rounded-2xl overflow-hidden whitespace-pre pointer-events-none flex items-center"
+            style={textStyle}
+          >
+            {hasEntities
+              ? segments.map((seg, i) => {
+                  if (seg.kind === "text") {
+                    return <span key={i} className="text-stone-800">{seg.text}</span>;
+                  }
+
+                  const hasPending = seg.activeEntities.length < seg.entities.length;
+                  const highlight = getHighlightStyle(seg);
+
+                  return (
+                    <span
+                      key={i}
+                      className={`rounded py-0.5 px-[2px] -mx-[2px] text-stone-800 ${highlight.className} ${hasPending ? "cursor-pointer pointer-events-auto" : ""}`}
+                      style={highlight.style}
+                      onMouseEnter={hasPending ? (e) => { cancelHideTooltip(); handleEntityHover(e, seg.entities); } : undefined}
+                      onMouseLeave={hasPending ? () => scheduleHideTooltip() : undefined}
+                    >
+                      {seg.text}
+                    </span>
+                  );
+                })
+              : null}
+          </div>
+
+          {/* Actual input — below backdrop, receives keyboard & cursor events */}
           <input
+            ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            onFocus={() => {
-              if (query.trim().length >= 2) setShowDropdown(true);
-            }}
+            onFocus={() => { if (query.trim().length >= 2) setShowDropdown(true); }}
             placeholder="Buscar en el patrimonio historico andaluz..."
-            className="w-full rounded-2xl border border-stone-200 bg-white pl-12 pr-4 py-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none shadow-sm transition-all"
+            className="w-full border border-stone-200 bg-white pl-12 pr-4 py-4 rounded-2xl placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none shadow-sm transition-all relative"
+            style={{
+              ...textStyle,
+              background: hasEntities ? "transparent" : undefined,
+              color: hasEntities ? "transparent" : undefined,
+              caretColor: "black",
+              WebkitTextFillColor: hasEntities ? "transparent" : undefined,
+            }}
           />
+
           {loading && (
-            <svg
-              className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-amber-500"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
+            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-amber-500 z-10" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
@@ -166,42 +289,34 @@ export function SearchInput() {
         </div>
       </form>
 
-      {/* Inline highlight preview — shows detected entities in the text */}
-      {showHighlights && (
-        <div className="mt-2 px-2 flex flex-wrap items-center gap-0.5 text-sm text-stone-600 leading-relaxed">
-          {highlightSegments.map((seg, i) => {
-            if (seg.type === "text") {
-              return <span key={i}>{seg.text}</span>;
-            }
-            const colors = ENTITY_COLORS[seg.entityType!] ?? ENTITY_COLORS.province;
-            const typeLabel = TYPE_LABELS[seg.entityType!] ?? "";
+      {/* Tooltip — shows pending entities for the hovered span */}
+      {tooltip && (
+        <div
+          className="absolute z-50 -translate-x-1/2 bg-white border border-stone-200 rounded-lg shadow-lg p-2 flex flex-col gap-1.5 text-xs whitespace-nowrap"
+          style={{ left: tooltip.x, top: tooltip.y }}
+          onMouseEnter={() => cancelHideTooltip()}
+          onMouseLeave={() => scheduleHideTooltip()}
+        >
+          {tooltip.entities.map((ent, i) => {
+            const colorClass = TOOLTIP_COLORS[ent.entityType] ?? "bg-stone-100 text-stone-800 hover:bg-stone-200";
             return (
               <button
-                key={i}
-                onClick={() =>
-                  handleEntityClick({
-                    entity_type: seg.entityType!,
-                    value: seg.entityValue!,
-                    display_label: seg.displayLabel!,
-                    matched_text: seg.text,
-                  })
-                }
-                className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium cursor-pointer hover:shadow-sm transition-all ${colors.bg} ${colors.text} ${colors.border}`}
-                title={`Filtrar por ${typeLabel}: ${seg.entityValue}`}
+                key={`${ent.entityType}-${ent.value}-${i}`}
+                onClick={() => handleEntitySelect(ent)}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-colors ${colorClass}`}
               >
-                {seg.text}
-                <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
+                <span className="text-stone-500">{TYPE_LABELS[ent.entityType]}:</span>
+                <span className="font-medium">{ent.value}</span>
+                <span className="opacity-50 ml-1">+ Filtrar</span>
               </button>
             );
           })}
         </div>
       )}
 
-      {/* Dropdown suggestions */}
+      {/* Dropdown */}
       {showDropdown && query.trim().length >= 2 && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-stone-200 bg-white shadow-lg overflow-hidden">
+        <div className="absolute top-full z-40 mt-1.5 w-full rounded-xl border border-stone-200 bg-white shadow-lg overflow-hidden">
           <button
             onClick={handleSearchSuggestionClick}
             className="w-full text-left px-4 py-3 text-sm hover:bg-stone-50 transition-colors flex items-center gap-3 border-b border-stone-100"
@@ -215,19 +330,31 @@ export function SearchInput() {
             </span>
           </button>
 
-          {entities.map((entity, i) => {
-            const colors = ENTITY_COLORS[entity.entity_type] ?? ENTITY_COLORS.province;
+          {dropdownEntities.map((entity, i) => {
+            const colors: Record<string, string> = {
+              province: "bg-blue-100 text-blue-700",
+              municipality: "bg-emerald-100 text-emerald-700",
+              heritage_type: "bg-amber-100 text-amber-700",
+            };
+            const color = colors[entity.entity_type] ?? "bg-stone-100 text-stone-700";
             return (
               <button
                 key={`${entity.entity_type}-${entity.value}-${i}`}
-                onClick={() => handleEntityClick(entity)}
+                onClick={() =>
+                  handleEntitySelect({
+                    entityType: entity.entity_type,
+                    value: entity.value,
+                    displayLabel: entity.display_label,
+                    matchedText: entity.matched_text,
+                  })
+                }
                 className="w-full text-left px-4 py-2.5 text-sm hover:bg-stone-50 transition-colors flex items-center gap-3"
               >
                 <svg className="w-4 h-4 text-stone-300 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
                 </svg>
                 <span className="flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colors.bg} ${colors.text}`}>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
                     {entity.display_label}
                   </span>
                   <span className="text-xs text-stone-400">Filtrar</span>
@@ -241,17 +368,51 @@ export function SearchInput() {
   );
 }
 
-// ── Highlight builder ──────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-interface HighlightSegment {
-  type: "text" | "entity";
-  text: string;
-  entityType?: string;
-  entityValue?: string;
-  displayLabel?: string;
+/**
+ * Get highlight style for a segment.
+ *
+ * - No active entities → neutral gray (Tailwind class)
+ * - One active entity type → solid color (Tailwind class)
+ * - Multiple active entity types → diagonal gradient (inline style)
+ * - Mixed (some active, some pending) → color of the active ones
+ */
+function getHighlightStyle(seg: Segment): { className: string; style?: React.CSSProperties } {
+  if (seg.activeEntities.length === 0) {
+    return { className: PENDING_BG };
+  }
+
+  // Collect unique active entity types
+  const uniqueTypes = [...new Set(seg.activeEntities.map((e) => e.entityType))];
+
+  if (uniqueTypes.length === 1) {
+    return { className: ACTIVE_BG[uniqueTypes[0]] ?? ACTIVE_BG.province };
+  }
+
+  // Multiple types → diagonal gradient
+  const colors = uniqueTypes.map((t) => ACTIVE_COLOR[t] ?? ACTIVE_COLOR.province);
+  const stops = colors.map((c, idx) => {
+    const from = (idx / colors.length) * 100;
+    const to = ((idx + 1) / colors.length) * 100;
+    return `${c} ${from}%, ${c} ${to}%`;
+  });
+  return {
+    className: "",
+    style: { background: `linear-gradient(135deg, ${stops.join(", ")})` },
+  };
 }
 
-function buildHighlightedText(
+// ── Segment builder ─────────────────────────────────────────────────────────
+
+interface MatchInfo {
+  start: number;
+  end: number;
+  entity: EntityInfo;
+  isActive: boolean;
+}
+
+function buildSegments(
   query: string,
   detectedEntities: Array<{
     entity_type: string;
@@ -260,81 +421,94 @@ function buildHighlightedText(
     matched_text: string;
   }>,
   activeFilters: ActiveFilter[],
-): HighlightSegment[] {
+): Segment[] {
   if (!query || detectedEntities.length === 0) {
-    return [{ type: "text", text: query }];
-  }
-
-  // Filter out entities that are already active filters
-  const typeMap: Record<string, ActiveFilter["type"]> = {
-    province: "province",
-    municipality: "municipality",
-    heritage_type: "heritage_type",
-  };
-  const available = detectedEntities.filter(
-    (e) =>
-      !activeFilters.some(
-        (f) => f.type === typeMap[e.entity_type] && f.value === e.value
-      )
-  );
-
-  if (available.length === 0) {
-    return [{ type: "text", text: query }];
-  }
-
-  // Find all match positions in the query (case-insensitive)
-  interface MatchInfo {
-    start: number;
-    end: number;
-    entity: (typeof available)[0];
+    return [{ kind: "text", text: query, entities: [], activeEntities: [] }];
   }
 
   const matches: MatchInfo[] = [];
-  for (const entity of available) {
-    if (!entity.matched_text) continue;
-    const escaped = entity.matched_text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  for (const det of detectedEntities) {
+    if (!det.matched_text) continue;
+    const escaped = det.matched_text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(escaped, "gi");
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(query)) !== null) {
-      matches.push({ start: match.index, end: match.index + match[0].length, entity });
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(query)) !== null) {
+      const isActive = activeFilters.some(
+        (f) => f.type === (det.entity_type as ActiveFilter["type"]) && f.value === det.value,
+      );
+      matches.push({
+        start: m.index,
+        end: m.index + m[0].length,
+        entity: {
+          entityType: det.entity_type,
+          value: det.value,
+          displayLabel: det.display_label,
+          matchedText: det.matched_text,
+        },
+        isActive,
+      });
     }
   }
 
   if (matches.length === 0) {
-    return [{ type: "text", text: query }];
+    return [{ kind: "text", text: query, entities: [], activeEntities: [] }];
   }
 
-  // Sort by start position, longest first for overlaps
-  matches.sort((a, b) => a.start - b.start || b.end - a.end);
-
-  // Remove overlapping matches (keep first/longest)
-  const filtered: MatchInfo[] = [];
-  let lastEnd = 0;
+  // Group matches at the same text position — "malaga" can be province + municipality
+  const spanMap = new Map<string, MatchInfo[]>();
   for (const m of matches) {
-    if (m.start >= lastEnd) {
-      filtered.push(m);
-      lastEnd = m.end;
+    const key = `${m.start}-${m.end}`;
+    if (!spanMap.has(key)) spanMap.set(key, []);
+    spanMap.get(key)!.push(m);
+  }
+
+  interface MergedSpan {
+    start: number;
+    end: number;
+    entities: EntityInfo[];
+    activeEntities: EntityInfo[];
+  }
+
+  const spans: MergedSpan[] = [];
+  for (const [, group] of spanMap) {
+    const first = group[0];
+    spans.push({
+      start: first.start,
+      end: first.end,
+      entities: group.map((m) => m.entity),
+      activeEntities: group.filter((m) => m.isActive).map((m) => m.entity),
+    });
+  }
+
+  spans.sort((a, b) => a.start - b.start || b.end - a.end);
+
+  // Remove overlapping spans
+  const filtered: MergedSpan[] = [];
+  let lastEnd = 0;
+  for (const s of spans) {
+    if (s.start >= lastEnd) {
+      filtered.push(s);
+      lastEnd = s.end;
     }
   }
 
-  // Build segments
-  const segments: HighlightSegment[] = [];
+  const segments: Segment[] = [];
   let pos = 0;
-  for (const m of filtered) {
-    if (m.start > pos) {
-      segments.push({ type: "text", text: query.slice(pos, m.start) });
+  for (const s of filtered) {
+    if (s.start > pos) {
+      segments.push({ kind: "text", text: query.slice(pos, s.start), entities: [], activeEntities: [] });
     }
+    const allActive = s.entities.length > 0 && s.activeEntities.length === s.entities.length;
     segments.push({
-      type: "entity",
-      text: query.slice(m.start, m.end),
-      entityType: m.entity.entity_type,
-      entityValue: m.entity.value,
-      displayLabel: m.entity.display_label,
+      kind: allActive ? "active" : "potential",
+      text: query.slice(s.start, s.end),
+      entities: s.entities,
+      activeEntities: s.activeEntities,
     });
-    pos = m.end;
+    pos = s.end;
   }
   if (pos < query.length) {
-    segments.push({ type: "text", text: query.slice(pos) });
+    segments.push({ kind: "text", text: query.slice(pos), entities: [], activeEntities: [] });
   }
 
   return segments;

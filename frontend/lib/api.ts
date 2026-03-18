@@ -300,22 +300,36 @@ export const heritage = {
 };
 
 // ── Search ───────────────────────────────────────────────────────────────────
-export interface SearchResult {
+export interface ChunkHit {
   chunk_id: string;
+  content: string;
+  score: number;
+}
+
+export interface SearchResult {
   document_id: string;
   title: string;
   heritage_type: string;
   province: string;
   municipality: string | null;
   url: string;
-  content: string;
-  score: number;
+  best_score: number;
+  chunks: ChunkHit[];
+  denomination: string | null;
+  description: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  image_url: string | null;
+  protection: string | null;
 }
 
 export interface SimilaritySearchResponse {
   results: SearchResult[];
   query: string;
   total_results: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
 }
 
 export interface DetectedEntity {
@@ -340,7 +354,8 @@ export interface FilterValues {
 export const search = {
   similarity: (params: {
     query: string;
-    top_k?: number;
+    page?: number;
+    page_size?: number;
     heritage_type_filter?: string[] | null;
     province_filter?: string[] | null;
     municipality_filter?: string[] | null;
@@ -355,9 +370,13 @@ export const search = {
       `/search/suggestions?query=${encodeURIComponent(query)}`
     ),
 
-  filters: (province?: string) => {
-    const qs = province ? `?province=${encodeURIComponent(province)}` : "";
-    return apiFetch<FilterValues>(`/search/filters${qs}`);
+  filters: (provinces?: string[]) => {
+    const params = new URLSearchParams();
+    if (provinces?.length) {
+      for (const p of provinces) params.append("province", p);
+    }
+    const qs = params.toString();
+    return apiFetch<FilterValues>(`/search/filters${qs ? `?${qs}` : ""}`);
   },
 };
 
