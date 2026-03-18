@@ -164,7 +164,7 @@ function RelatedAssetsList({ assets }: { assets: RelatedAsset[] }) {
   );
 }
 
-function InmuebleContent({ d }: { d: InmuebleDetails }) {
+function InmuebleContent({ d, mapSlot }: { d: InmuebleDetails; mapSlot: React.ReactNode }) {
   const hasGeneral = hasValue(d.code) || hasValue(d.other_denominations) ||
     hasValue(d.characterisation) || hasValue(d.postal_address);
   const hasDesc = hasValue(d.description) || hasValue(d.historical_data);
@@ -179,6 +179,7 @@ function InmuebleContent({ d }: { d: InmuebleDetails }) {
           <Field label="Direccion postal" value={d.postal_address} />
         </Section>
       )}
+      {mapSlot}
       {hasDesc && (
         <Section title="Descripcion">
           <LongField label="Descripcion" value={d.description} />
@@ -194,7 +195,7 @@ function InmuebleContent({ d }: { d: InmuebleDetails }) {
   );
 }
 
-function MuebleContent({ d }: { d: MuebleDetails }) {
+function MuebleContent({ d, mapSlot }: { d: MuebleDetails; mapSlot: React.ReactNode }) {
   const hasGeneral = hasValue(d.code) || hasValue(d.other_denominations) ||
     hasValue(d.characterisation) || hasValue(d.measurements) || hasValue(d.chronology);
 
@@ -209,6 +210,7 @@ function MuebleContent({ d }: { d: MuebleDetails }) {
           <Field label="Cronologia" value={d.chronology} />
         </Section>
       )}
+      {mapSlot}
       {hasValue(d.description) && (
         <Section title="Descripcion">
           <LongField label="Descripcion" value={d.description} />
@@ -218,7 +220,7 @@ function MuebleContent({ d }: { d: MuebleDetails }) {
   );
 }
 
-function InmaterialContent({ d }: { d: InmaterialDetails }) {
+function InmaterialContent({ d, mapSlot }: { d: InmaterialDetails; mapSlot: React.ReactNode }) {
   const hasGeneral = hasValue(d.code) || hasValue(d.other_denominations) ||
     hasValue(d.scope) || hasValue(d.framework_activities) ||
     hasValue(d.activity_dates) || hasValue(d.periodicity) ||
@@ -245,6 +247,7 @@ function InmaterialContent({ d }: { d: InmaterialDetails }) {
           <Field label="Entidad local" value={d.local_entity} />
         </Section>
       )}
+      {mapSlot}
       {hasDesc && (
         <Section title="Descripcion">
           <LongField label="Descripcion" value={d.description} />
@@ -272,9 +275,10 @@ function InmaterialContent({ d }: { d: InmaterialDetails }) {
   );
 }
 
-function PaisajeContent({ d }: { d: PaisajeDetails }) {
+function PaisajeContent({ d, mapSlot }: { d: PaisajeDetails; mapSlot: React.ReactNode }) {
   return (
     <>
+      {mapSlot}
       {hasValue(d.pdf_url) && (
         <Section title="Documento">
           <a
@@ -299,16 +303,16 @@ function PaisajeContent({ d }: { d: PaisajeDetails }) {
   );
 }
 
-function DetailContent({ details }: { details: HeritageDetails }) {
+function DetailContent({ details, mapSlot }: { details: HeritageDetails; mapSlot: React.ReactNode }) {
   switch (details.type) {
     case "inmueble":
-      return <InmuebleContent d={details} />;
+      return <InmuebleContent d={details} mapSlot={mapSlot} />;
     case "mueble":
-      return <MuebleContent d={details} />;
+      return <MuebleContent d={details} mapSlot={mapSlot} />;
     case "inmaterial":
-      return <InmaterialContent d={details} />;
+      return <InmaterialContent d={details} mapSlot={mapSlot} />;
     case "paisaje":
-      return <PaisajeContent d={details} />;
+      return <PaisajeContent d={details} mapSlot={mapSlot} />;
   }
 }
 
@@ -329,7 +333,7 @@ export function AssetDetailPanel() {
   const closeDetail = useSearchStore((s) => s.closeDetail);
 
   return (
-    <aside className="absolute right-0 top-0 bottom-0 w-[480px] z-10 border-l border-stone-200/60 bg-white flex flex-col">
+    <aside className="h-full border-l border-stone-200/60 bg-white flex flex-col">
       {/* Header */}
       <div className="shrink-0 flex items-start gap-3 p-4 border-b border-stone-100">
         <button
@@ -381,18 +385,24 @@ export function AssetDetailPanel() {
 
       {!loading && asset && (
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {/* Map */}
-          {asset.latitude != null && asset.longitude != null && (
-            <AssetLocationMap latitude={asset.latitude} longitude={asset.longitude} />
-          )}
-
           {/* Image gallery */}
           {asset.details && asset.details.type !== "paisaje" && asset.details.images.length > 0 && (
             <AssetImageGallery images={asset.details.images} assetId={asset.id} />
           )}
 
-          {/* Type-specific content */}
-          {asset.details && <DetailContent details={asset.details} />}
+          {/* Type-specific content (map inserted after general info) */}
+          {asset.details && (
+            <DetailContent
+              details={asset.details}
+              mapSlot={
+                <AssetLocationMap
+                  latitude={asset.latitude}
+                  longitude={asset.longitude}
+                  province={asset.province}
+                />
+              }
+            />
+          )}
 
           {/* Shared sections (typologies, bibliography, related assets) */}
           {asset.details && <SharedSections details={asset.details} />}

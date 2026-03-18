@@ -13,26 +13,56 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
+const PROVINCE_COORDS: Record<string, [number, number]> = {
+  "Almería": [36.834, -2.4637],
+  "Cádiz": [36.527, -6.2886],
+  "Córdoba": [37.888, -4.7794],
+  "Granada": [37.177, -3.5986],
+  "Huelva": [37.261, -6.9447],
+  "Jaén": [37.780, -3.7849],
+  "Málaga": [36.721, -4.4214],
+  "Sevilla": [37.389, -5.9845],
+};
+
+const ANDALUSIA_CENTER: [number, number] = [37.4, -4.5];
+
+function RecenterMap({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) {
   const map = useMap();
   useEffect(() => {
-    map.setView([lat, lng], 15);
-  }, [map, lat, lng]);
+    map.setView([lat, lng], zoom);
+  }, [map, lat, lng, zoom]);
   return null;
 }
 
 export default function AssetLocationMap({
   latitude,
   longitude,
+  province,
 }: {
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  province?: string | null;
 }) {
+  const hasExact = latitude != null && longitude != null;
+  let center: [number, number];
+  let zoom: number;
+
+  if (hasExact) {
+    center = [latitude, longitude];
+    zoom = 15;
+  } else if (province && PROVINCE_COORDS[province]) {
+    center = PROVINCE_COORDS[province];
+    zoom = 10;
+  } else {
+    center = ANDALUSIA_CENTER;
+    zoom = 7;
+  }
+
   return (
     <div className="w-full h-48 rounded-xl overflow-hidden border border-stone-200">
       <MapContainer
-        center={[latitude, longitude]}
-        zoom={15}
+        center={center}
+        zoom={zoom}
         scrollWheelZoom={false}
         doubleClickZoom={false}
         dragging={false}
@@ -46,8 +76,8 @@ export default function AssetLocationMap({
           attribution='&copy; <a href="https://www.esri.com">Esri</a>'
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         />
-        <Marker position={[latitude, longitude]} />
-        <RecenterMap lat={latitude} lng={longitude} />
+        {hasExact && <Marker position={[latitude, longitude]} />}
+        <RecenterMap lat={center[0]} lng={center[1]} zoom={zoom} />
       </MapContainer>
     </div>
   );
