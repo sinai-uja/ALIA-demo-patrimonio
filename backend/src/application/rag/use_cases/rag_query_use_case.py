@@ -63,12 +63,14 @@ class RAGQueryUseCase:
             top_k=self._retrieval_k,
             heritage_type=dto.heritage_type_filter,
             province=dto.province_filter,
+            municipality=dto.municipality_filter,
         )
         text_chunks = await self._text_search_port.search(
             query=dto.query,
             top_k=self._retrieval_k,
             heritage_type=dto.heritage_type_filter,
             province=dto.province_filter,
+            municipality=dto.municipality_filter,
         )
 
         # 3. Fuse results via Reciprocal Rank Fusion

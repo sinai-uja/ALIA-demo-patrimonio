@@ -9,6 +9,7 @@ class RAGQueryDTO:
     top_k: int = 5
     heritage_type_filter: str | None = None
     province_filter: str | None = None
+    municipality_filter: str | None = None
 
 
 @dataclass(frozen=True)

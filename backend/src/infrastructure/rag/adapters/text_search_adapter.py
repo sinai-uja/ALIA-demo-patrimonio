@@ -22,6 +22,34 @@ _STOPWORDS = {
 }
 
 
+def _build_filter_conditions(
+    heritage_type: str | list[str] | None,
+    province: str | list[str] | None,
+    municipality: str | list[str] | None,
+) -> tuple[list[str], dict]:
+    """Build dynamic WHERE conditions supporting single values or lists (OR)."""
+    conditions: list[str] = []
+    params: dict = {}
+    for col, value, key in [
+        ("heritage_type", heritage_type, "heritage_type"),
+        ("province", province, "province"),
+        ("municipality", municipality, "municipality"),
+    ]:
+        if value is None:
+            continue
+        if isinstance(value, list):
+            if not value:
+                continue
+            placeholders = ", ".join(f":{key}_{i}" for i in range(len(value)))
+            conditions.append(f"{col} IN ({placeholders})")
+            for i, v in enumerate(value):
+                params[f"{key}_{i}"] = v
+        else:
+            conditions.append(f"{col} = :{key}")
+            params[key] = value
+    return conditions, params
+
+
 class PgTextSearchAdapter(TextSearchPort):
     """Full-text search using PostgreSQL tsvector."""
 
@@ -34,8 +62,9 @@ class PgTextSearchAdapter(TextSearchPort):
         self,
         query: str,
         top_k: int,
-        heritage_type: str | None = None,
-        province: str | None = None,
+        heritage_type: str | list[str] | None = None,
+        province: str | list[str] | None = None,
+        municipality: str | list[str] | None = None,
     ) -> list[RetrievedChunk]:
         clean_query = self._clean_query(query)
         if not clean_query:
@@ -43,6 +72,11 @@ class PgTextSearchAdapter(TextSearchPort):
             return []
 
         metadata_col = ", metadata" if self._has_metadata else ""
+        conditions, params = _build_filter_conditions(
+            heritage_type, province, municipality,
+        )
+        where_extra = (" AND " + " AND ".join(conditions)) if conditions else ""
+
         sql = text(f"""
             SELECT
                 id,
@@ -60,27 +94,15 @@ class PgTextSearchAdapter(TextSearchPort):
                 {metadata_col}
             FROM {self._table}
             WHERE search_vector @@ plainto_tsquery('spanish', :query)
-              AND (
-                CAST(:heritage_type AS VARCHAR) IS NULL
-                OR heritage_type = :heritage_type
-              )
-              AND (
-                CAST(:province AS VARCHAR) IS NULL
-                OR province = :province
-              )
+              {where_extra}
             ORDER BY score DESC
             LIMIT :top_k
         """)
 
-        result = await self._db.execute(
-            sql,
-            {
-                "query": clean_query,
-                "heritage_type": heritage_type,
-                "province": province,
-                "top_k": top_k,
-            },
-        )
+        params["query"] = clean_query
+        params["top_k"] = top_k
+
+        result = await self._db.execute(sql, params)
 
         rows = result.fetchall()
         logger.info(

@@ -11,7 +11,8 @@ class VectorSearchPort(ABC):
         self,
         query_embedding: list[float],
         top_k: int,
-        heritage_type: str | None = None,
-        province: str | None = None,
+        heritage_type: str | list[str] | None = None,
+        province: str | list[str] | None = None,
+        municipality: str | list[str] | None = None,
     ) -> list[RetrievedChunk]:
         ...
