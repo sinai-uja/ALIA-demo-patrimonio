@@ -39,6 +39,6 @@ class SearchApplicationService:
         return await self._suggestion_use_case.execute(query)
 
     async def get_filter_values(
-        self, province: str | None = None,
+        self, provinces: list[str] | None = None,
     ) -> FilterValuesDTO:
-        return await self._filter_values_use_case.execute(province)
+        return await self._filter_values_use_case.execute(provinces)

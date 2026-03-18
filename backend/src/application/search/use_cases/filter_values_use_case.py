@@ -15,31 +15,31 @@ class FilterValuesUseCase:
         self._filter_metadata_port = filter_metadata_port
 
     async def execute(
-        self, province: str | None = None,
+        self, provinces: list[str] | None = None,
     ) -> FilterValuesDTO:
         heritage_types = (
             await self._filter_metadata_port.get_distinct_heritage_types()
         )
-        provinces = (
+        all_provinces = (
             await self._filter_metadata_port.get_distinct_provinces()
         )
         municipalities = (
             await self._filter_metadata_port.get_distinct_municipalities(
-                province=province,
+                provinces=provinces,
             )
         )
 
         logger.info(
             "Filter values: %d types, %d provinces, %d municipalities"
-            " (province=%s)",
+            " (provinces=%s)",
             len(heritage_types),
-            len(provinces),
+            len(all_provinces),
             len(municipalities),
-            province,
+            provinces,
         )
 
         return FilterValuesDTO(
             heritage_types=heritage_types,
-            provinces=provinces,
+            provinces=all_provinces,
             municipalities=municipalities,
         )

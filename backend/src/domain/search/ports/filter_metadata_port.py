@@ -9,7 +9,7 @@ class FilterMetadataPort(ABC):
 
     @abstractmethod
     async def get_distinct_municipalities(
-        self, province: str | None = None,
+        self, provinces: list[str] | None = None,
     ) -> list[str]: ...
 
     @abstractmethod

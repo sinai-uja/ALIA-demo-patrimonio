@@ -10,16 +10,17 @@ logger = logging.getLogger("iaph.search")
 
 
 class PgFilterMetadataAdapter(FilterMetadataPort):
-    """Retrieves distinct filter values from the chunks table."""
+    """Retrieves distinct filter values from heritage_assets for
+    provinces/municipalities and from chunks for heritage types."""
 
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
         self._table = settings.chunks_table_name
 
     async def get_distinct_provinces(self) -> list[str]:
-        query = text(f"""
+        query = text("""
             SELECT DISTINCT province
-            FROM {self._table}
+            FROM heritage_assets
             WHERE province IS NOT NULL
             ORDER BY province ASC
         """)
@@ -29,25 +30,31 @@ class PgFilterMetadataAdapter(FilterMetadataPort):
         return [row[0] for row in rows]
 
     async def get_distinct_municipalities(
-        self, province: str | None = None,
+        self, provinces: list[str] | None = None,
     ) -> list[str]:
+        params: dict = {}
+        if provinces:
+            placeholders = ", ".join(
+                f":province_{i}" for i in range(len(provinces))
+            )
+            province_filter = f"AND province IN ({placeholders})"
+            for i, v in enumerate(provinces):
+                params[f"province_{i}"] = v
+        else:
+            province_filter = ""
+
         query = text(f"""
             SELECT DISTINCT municipality
-            FROM {self._table}
+            FROM heritage_assets
             WHERE municipality IS NOT NULL
-              AND (
-                  CAST(:province AS VARCHAR) IS NULL
-                  OR province = :province
-              )
+              {province_filter}
             ORDER BY municipality ASC
         """)
-        result = await self._db.execute(
-            query, {"province": province},
-        )
+        result = await self._db.execute(query, params)
         rows = result.fetchall()
         logger.info(
-            "Distinct municipalities (province=%s): %d",
-            province,
+            "Distinct municipalities (provinces=%s): %d",
+            provinces,
             len(rows),
         )
         return [row[0] for row in rows]
