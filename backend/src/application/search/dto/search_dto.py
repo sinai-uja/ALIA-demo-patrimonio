@@ -6,25 +6,41 @@ class SimilaritySearchDTO:
     """Input DTO for similarity search."""
 
     query: str
-    top_k: int = 10
+    page: int = 1
+    page_size: int = 10
     heritage_type_filter: list[str] | None = None
     province_filter: list[str] | None = None
     municipality_filter: list[str] | None = None
 
 
 @dataclass(frozen=True)
-class SearchResultDTO:
-    """A single search result."""
+class ChunkHitDTO:
+    """A single chunk match within a search result."""
 
     chunk_id: str
+    content: str
+    score: float
+
+
+@dataclass(frozen=True)
+class SearchResultDTO:
+    """A search result grouped by document (heritage asset)."""
+
     document_id: str
     title: str
     heritage_type: str
     province: str
     municipality: str | None
     url: str
-    content: str
-    score: float
+    best_score: float
+    chunks: list[ChunkHitDTO] = field(default_factory=list)
+    # Heritage asset enrichment fields
+    denomination: str | None = None
+    description: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    image_url: str | None = None
+    protection: str | None = None
 
 
 @dataclass(frozen=True)
@@ -34,6 +50,9 @@ class SimilaritySearchResponseDTO:
     results: list[SearchResultDTO]
     query: str
     total_results: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 @dataclass(frozen=True)

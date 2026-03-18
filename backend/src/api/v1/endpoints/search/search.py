@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.api.v1.endpoints.search.deps import get_search_service
 from src.api.v1.endpoints.search.schemas import (
+    ChunkHitSchema,
     DetectedEntitySchema,
     FilterValuesResponse,
     SearchResultSchema,
@@ -28,14 +29,16 @@ async def similarity_search(
 ) -> SimilaritySearchResponse:
     """Execute a similarity search: embed, search, fuse, filter, rerank."""
     logger.info(
-        "POST /search/similarity query=%r, top_k=%d",
+        "POST /search/similarity query=%r, page=%d, page_size=%d",
         request.query[:80],
-        request.top_k,
+        request.page,
+        request.page_size,
     )
 
     dto = SimilaritySearchDTO(
         query=request.query,
-        top_k=request.top_k,
+        page=request.page,
+        page_size=request.page_size,
         heritage_type_filter=request.heritage_type_filter,
         province_filter=request.province_filter,
         municipality_filter=request.municipality_filter,
@@ -52,20 +55,35 @@ async def similarity_search(
     return SimilaritySearchResponse(
         results=[
             SearchResultSchema(
-                chunk_id=r.chunk_id,
                 document_id=r.document_id,
                 title=r.title,
                 heritage_type=r.heritage_type,
                 province=r.province,
                 municipality=r.municipality,
                 url=r.url,
-                content=r.content,
-                score=r.score,
+                best_score=r.best_score,
+                chunks=[
+                    ChunkHitSchema(
+                        chunk_id=c.chunk_id,
+                        content=c.content,
+                        score=c.score,
+                    )
+                    for c in r.chunks
+                ],
+                denomination=r.denomination,
+                description=r.description,
+                latitude=r.latitude,
+                longitude=r.longitude,
+                image_url=r.image_url,
+                protection=r.protection,
             )
             for r in result.results
         ],
         query=result.query,
         total_results=result.total_results,
+        page=result.page,
+        page_size=result.page_size,
+        total_pages=result.total_pages,
     )
 
 
@@ -95,6 +113,7 @@ async def get_suggestions(
                 entity_type=e.entity_type,
                 value=e.value,
                 display_label=e.display_label,
+                matched_text=e.matched_text,
             )
             for e in result.detected_entities
         ],
@@ -103,9 +122,9 @@ async def get_suggestions(
 
 @router.get("/filters", response_model=FilterValuesResponse)
 async def get_filters(
-    province: str | None = Query(
+    province: list[str] | None = Query(
         default=None,
-        description="Filter municipalities by province",
+        description="Filter municipalities by province(s)",
     ),
     service: SearchApplicationService = Depends(get_search_service),
 ) -> FilterValuesResponse:

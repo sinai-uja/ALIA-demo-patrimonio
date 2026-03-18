@@ -33,6 +33,9 @@ from src.infrastructure.rag.adapters.vector_search_adapter import (
 from src.infrastructure.search.adapters.filter_metadata_adapter import (
     PgFilterMetadataAdapter,
 )
+from src.infrastructure.search.adapters.heritage_asset_lookup_adapter import (
+    PgHeritageAssetLookupAdapter,
+)
 
 
 def build_search_application_service(
@@ -53,6 +56,7 @@ def build_search_application_service(
 
     # Search-specific adapters and services
     filter_metadata_adapter = PgFilterMetadataAdapter(db)
+    heritage_asset_lookup_adapter = PgHeritageAssetLookupAdapter(db)
     entity_detection_service = EntityDetectionService()
 
     # Wire use cases
@@ -63,6 +67,7 @@ def build_search_application_service(
         hybrid_search_service=hybrid_search_service,
         relevance_filter_service=relevance_filter_service,
         reranking_service=reranking_service,
+        heritage_asset_lookup_port=heritage_asset_lookup_adapter,
         retrieval_k=settings.rag_retrieval_k,
     )
 

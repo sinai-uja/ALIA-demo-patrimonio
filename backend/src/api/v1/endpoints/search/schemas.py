@@ -5,11 +5,11 @@ class SimilaritySearchRequest(BaseModel):
     query: str = Field(
         ..., min_length=1, description="Search query text",
     )
-    top_k: int = Field(
-        default=10,
-        ge=1,
-        le=50,
-        description="Number of results to return",
+    page: int = Field(
+        default=1, ge=1, description="Page number (1-based)",
+    )
+    page_size: int = Field(
+        default=10, ge=1, le=50, description="Results per page",
     )
     heritage_type_filter: list[str] | None = Field(
         default=None,
@@ -25,22 +25,36 @@ class SimilaritySearchRequest(BaseModel):
     )
 
 
-class SearchResultSchema(BaseModel):
+class ChunkHitSchema(BaseModel):
     chunk_id: str
+    content: str
+    score: float
+
+
+class SearchResultSchema(BaseModel):
     document_id: str
     title: str
     heritage_type: str
     province: str
     municipality: str | None = None
     url: str
-    content: str
-    score: float
+    best_score: float
+    chunks: list[ChunkHitSchema]
+    denomination: str | None = None
+    description: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    image_url: str | None = None
+    protection: str | None = None
 
 
 class SimilaritySearchResponse(BaseModel):
     results: list[SearchResultSchema]
     query: str
     total_results: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 class DetectedEntitySchema(BaseModel):
