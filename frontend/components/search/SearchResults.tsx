@@ -27,7 +27,7 @@ function Pagination() {
   }
 
   return (
-    <nav className="flex items-center justify-center gap-1 pt-4" aria-label="Paginacion">
+    <nav className="flex items-center justify-center gap-1 pt-2 pb-2" aria-label="Paginacion">
       <button
         onClick={() => goToPage(page - 1)}
         disabled={page <= 1 || loading}

@@ -17,19 +17,19 @@ export default function SearchPage() {
   }, [loadFilterValues]);
 
   return (
-    <div className="relative h-[calc(100vh-3.5rem)]">
+    <div className="relative h-[calc(100vh-3.625rem)] overflow-hidden">
       {/* Sidebar */}
       <aside className="absolute left-0 top-0 bottom-0 w-72 z-10 border-r border-stone-200/60 bg-white overflow-y-auto">
         <FilterSidebar />
       </aside>
 
-      {/* Main content — padded to avoid sidebar and detail panel */}
+      {/* Main content — scrolls independently */}
       <div
-        className={`h-full overflow-y-auto pl-80 transition-all duration-300 ${
-          hasDetail ? "pr-[500px]" : ""
+        className={`absolute top-0 bottom-0 left-80 overflow-y-auto transition-all duration-300 ${
+          hasDetail ? "right-[480px]" : "right-0"
         }`}
       >
-        <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+        <div className="max-w-4xl mx-auto px-6 pt-6 pb-3 space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-stone-900">Busqueda por Similaridad</h1>
             <p className="text-stone-500 mt-1">
@@ -44,7 +44,11 @@ export default function SearchPage() {
       </div>
 
       {/* Detail panel */}
-      {hasDetail && <AssetDetailPanel />}
+      {hasDetail && (
+        <aside className="absolute right-0 top-0 bottom-0 w-[480px] z-10">
+          <AssetDetailPanel />
+        </aside>
+      )}
     </div>
   );
 }
