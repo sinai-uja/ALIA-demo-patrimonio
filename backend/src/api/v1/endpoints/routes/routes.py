@@ -1,14 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.api.v1.endpoints.routes.deps import get_routes_service
 from src.api.v1.endpoints.routes.schemas import (
+    DetectedEntitySchema,
     GenerateRouteRequest,
     GuideQueryRequest,
     GuideResponseSchema,
+    RouteFilterValuesResponse,
     RouteStopSchema,
+    RouteSuggestionResponse,
     VirtualRouteSchema,
 )
-from src.application.routes.dto.routes_dto import GenerateRouteDTO, GuideQueryDTO
+from src.application.routes.dto.routes_dto import (
+    GenerateRouteDTO,
+    GuideQueryDTO,
+)
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
@@ -16,17 +22,58 @@ from src.application.routes.services.routes_application_service import (
 router = APIRouter()
 
 
+@router.get(
+    "/suggestions", response_model=RouteSuggestionResponse,
+)
+async def get_route_suggestions(
+    query: str,
+    service: RoutesApplicationService = Depends(get_routes_service),
+) -> RouteSuggestionResponse:
+    """Get entity-detection suggestions for a route planning query."""
+    result = await service.get_suggestions(query)
+    return RouteSuggestionResponse(
+        query=result.query,
+        search_label=result.search_label,
+        detected_entities=[
+            DetectedEntitySchema(
+                entity_type=e.entity_type,
+                value=e.value,
+                display_label=e.display_label,
+                matched_text=e.matched_text,
+            )
+            for e in result.detected_entities
+        ],
+    )
+
+
+@router.get(
+    "/filters", response_model=RouteFilterValuesResponse,
+)
+async def get_route_filters(
+    province: list[str] | None = Query(default=None),
+    service: RoutesApplicationService = Depends(get_routes_service),
+) -> RouteFilterValuesResponse:
+    """Get available filter values for route planning."""
+    result = await service.get_filter_values(province)
+    return RouteFilterValuesResponse(
+        heritage_types=result.heritage_types,
+        provinces=result.provinces,
+        municipalities=result.municipalities,
+    )
+
+
 @router.post("/generate", response_model=VirtualRouteSchema)
 async def generate_route(
     request: GenerateRouteRequest,
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
-    """Generate a personalized virtual heritage route based on user preferences."""
+    """Generate a personalized virtual heritage route."""
     dto = GenerateRouteDTO(
-        province=request.province,
+        query=request.query,
         num_stops=request.num_stops,
-        heritage_types=request.heritage_types,
-        user_interests=request.user_interests,
+        heritage_type_filter=request.heritage_type_filter,
+        province_filter=request.province_filter,
+        municipality_filter=request.municipality_filter,
     )
 
     try:
@@ -102,7 +149,9 @@ async def get_route(
     try:
         result = await service.get_route(route_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=404, detail=str(exc),
+        ) from exc
 
     return VirtualRouteSchema(
         id=result.id,
@@ -127,7 +176,9 @@ async def get_route(
     )
 
 
-@router.post("/{route_id}/guide", response_model=GuideResponseSchema)
+@router.post(
+    "/{route_id}/guide", response_model=GuideResponseSchema,
+)
 async def guide_query(
     route_id: str,
     request: GuideQueryRequest,
@@ -142,7 +193,9 @@ async def guide_query(
     try:
         result = await service.guide_query(dto)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=404, detail=str(exc),
+        ) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=502,

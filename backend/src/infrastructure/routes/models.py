@@ -16,6 +16,8 @@ class VirtualRouteModel(Base):
     )
     title: Mapped[str] = mapped_column(String, nullable=False)
     province: Mapped[str] = mapped_column(String, nullable=False)
+    query_text: Mapped[str | None] = mapped_column(String, nullable=True)
+    municipality: Mapped[str | None] = mapped_column(String, nullable=True)
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
     total_duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     stops: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
@@ -25,4 +27,5 @@ class VirtualRouteModel(Base):
 
     __table_args__ = (
         Index("ix_virtual_routes_province", "province"),
+        Index("ix_virtual_routes_municipality", "municipality"),
     )

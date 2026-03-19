@@ -1,13 +1,15 @@
 from src.application.rag.dto.rag_dto import RAGQueryDTO
-from src.application.rag.services.rag_application_service import RAGApplicationService
+from src.application.rag.services.rag_application_service import (
+    RAGApplicationService,
+)
 from src.domain.routes.ports.rag_port import RAGPort
 
 
 class InProcessRAGAdapter(RAGPort):
     """Adapts the RAG application service to the routes RAGPort interface.
 
-    Uses in-process delegation rather than HTTP to avoid unnecessary network
-    overhead when both contexts live in the same process.
+    Uses in-process delegation rather than HTTP to avoid unnecessary
+    network overhead when both contexts live in the same process.
     """
 
     def __init__(self, rag_service: RAGApplicationService) -> None:
@@ -17,14 +19,31 @@ class InProcessRAGAdapter(RAGPort):
         self,
         question: str,
         top_k: int,
-        heritage_type_filter: str | None = None,
-        province_filter: str | None = None,
+        heritage_type_filter: list[str] | None = None,
+        province_filter: list[str] | None = None,
+        municipality_filter: list[str] | None = None,
     ) -> tuple[str, list[dict]]:
+        h_filter = (
+            heritage_type_filter[0]
+            if heritage_type_filter and len(heritage_type_filter) == 1
+            else None
+        )
+        p_filter = (
+            province_filter[0]
+            if province_filter and len(province_filter) == 1
+            else None
+        )
+        m_filter = (
+            municipality_filter[0]
+            if municipality_filter and len(municipality_filter) == 1
+            else None
+        )
         dto = RAGQueryDTO(
             query=question,
             top_k=top_k,
-            heritage_type_filter=heritage_type_filter,
-            province_filter=province_filter,
+            heritage_type_filter=h_filter,
+            province_filter=p_filter,
+            municipality_filter=m_filter,
         )
 
         result = await self._rag_service.query(dto)

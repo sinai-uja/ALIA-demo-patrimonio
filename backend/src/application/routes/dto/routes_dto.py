@@ -5,10 +5,11 @@ from dataclasses import dataclass, field
 class GenerateRouteDTO:
     """Input DTO for generating a virtual route."""
 
-    province: str
+    query: str
     num_stops: int = 5
-    heritage_types: list[str] = field(default_factory=lambda: ["ALL"])
-    user_interests: str = ""
+    heritage_type_filter: list[str] | None = None
+    province_filter: list[str] | None = None
+    municipality_filter: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -52,3 +53,31 @@ class GuideResponseDTO:
 
     answer: str
     sources: list[dict] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class DetectedEntityDTO:
+    """DTO for a detected entity in a route planning query."""
+
+    entity_type: str
+    value: str
+    display_label: str
+    matched_text: str = ""
+
+
+@dataclass(frozen=True)
+class RouteSuggestionResponseDTO:
+    """Response DTO for route suggestions."""
+
+    query: str
+    search_label: str
+    detected_entities: list[DetectedEntityDTO]
+
+
+@dataclass(frozen=True)
+class RouteFilterValuesDTO:
+    """Response DTO for available route filter values."""
+
+    heritage_types: list[str]
+    provinces: list[str]
+    municipalities: list[str]

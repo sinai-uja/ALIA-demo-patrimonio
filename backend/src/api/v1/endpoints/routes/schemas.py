@@ -2,29 +2,17 @@ from pydantic import BaseModel, Field
 
 
 class GenerateRouteRequest(BaseModel):
-    province: str = Field(
+    query: str = Field(
         ...,
         min_length=1,
-        description="Andalusian province for the route",
-        examples=["Jaen", "Sevilla", "Granada"],
-    )
-    num_stops: int = Field(
-        default=5,
-        ge=1,
-        le=15,
-        description="Number of stops in the route",
-    )
-    heritage_types: list[str] = Field(
-        default=["ALL"],
         description=(
-            "Heritage types to include: paisaje_cultural, patrimonio_inmaterial, "
-            "patrimonio_inmueble, patrimonio_mueble, or ALL"
+            "Natural language description of the desired route"
         ),
     )
-    user_interests: str = Field(
-        default="",
-        description="Optional free-text description of user interests",
-    )
+    num_stops: int = Field(default=5, ge=2, le=15)
+    heritage_type_filter: list[str] | None = None
+    province_filter: list[str] | None = None
+    municipality_filter: list[str] | None = None
 
 
 class RouteStopSchema(BaseModel):
@@ -52,10 +40,31 @@ class GuideQueryRequest(BaseModel):
     question: str = Field(
         ...,
         min_length=1,
-        description="Question about the route or its heritage sites",
+        description=(
+            "Question about the route or its heritage sites"
+        ),
     )
 
 
 class GuideResponseSchema(BaseModel):
     answer: str
     sources: list[dict]
+
+
+class DetectedEntitySchema(BaseModel):
+    entity_type: str
+    value: str
+    display_label: str
+    matched_text: str
+
+
+class RouteSuggestionResponse(BaseModel):
+    query: str
+    search_label: str
+    detected_entities: list[DetectedEntitySchema]
+
+
+class RouteFilterValuesResponse(BaseModel):
+    heritage_types: list[str]
+    provinces: list[str]
+    municipalities: list[str]

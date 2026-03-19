@@ -39,7 +39,7 @@ class GuideQueryUseCase:
         _, chunks = await self._rag_port.query(
             question=dto.question,
             top_k=5,
-            province_filter=route.province,
+            province_filter=[route.province] if route.province else None,
         )
 
         # 4. Assemble RAG context

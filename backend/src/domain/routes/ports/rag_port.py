@@ -9,8 +9,9 @@ class RAGPort(ABC):
         self,
         question: str,
         top_k: int,
-        heritage_type_filter: str | None = None,
-        province_filter: str | None = None,
+        heritage_type_filter: list[str] | None = None,
+        province_filter: list[str] | None = None,
+        municipality_filter: list[str] | None = None,
     ) -> tuple[str, list[dict]]:
         """Execute a RAG query and return (answer, list of source chunk dicts).
 

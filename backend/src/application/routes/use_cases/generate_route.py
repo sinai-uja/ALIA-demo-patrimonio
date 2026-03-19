@@ -6,9 +6,18 @@ from src.application.routes.dto.routes_dto import (
 from src.domain.routes.ports.llm_port import LLMPort
 from src.domain.routes.ports.rag_port import RAGPort
 from src.domain.routes.ports.route_repository import RouteRepository
-from src.domain.routes.prompts import ROUTE_SYSTEM_PROMPT, build_route_prompt
-from src.domain.routes.services.route_builder_service import RouteBuilderService
-from src.domain.routes.value_objects.heritage_type_filter import HeritageTypeFilter
+from src.domain.routes.prompts import (
+    QUERY_EXTRACTION_SYSTEM_PROMPT,
+    ROUTE_SYSTEM_PROMPT,
+    build_query_extraction_prompt,
+    build_route_prompt,
+)
+from src.domain.routes.services.query_extraction_service import (
+    QueryExtractionService,
+)
+from src.domain.routes.services.route_builder_service import (
+    RouteBuilderService,
+)
 
 
 class GenerateRouteUseCase:
@@ -20,99 +29,104 @@ class GenerateRouteUseCase:
         llm_port: LLMPort,
         route_repository: RouteRepository,
         route_builder_service: RouteBuilderService,
+        query_extraction_service: QueryExtractionService,
     ) -> None:
         self._rag_port = rag_port
         self._llm_port = llm_port
         self._route_repository = route_repository
         self._route_builder_service = route_builder_service
+        self._query_extraction_service = query_extraction_service
 
     async def execute(self, dto: GenerateRouteDTO) -> VirtualRouteDTO:
-        # 1. Build base RAG query
-        base_query = f"patrimonio historico {dto.province}"
-        if dto.user_interests:
-            base_query = f"{base_query} {dto.user_interests}"
+        # 1. Clean user text (remove geographic filter terms)
+        cleaned_text = self._query_extraction_service.clean_query_text(
+            user_text=dto.query,
+            province_filters=dto.province_filter,
+            municipality_filters=dto.municipality_filter,
+        )
 
-        # 2. Resolve heritage types to filter values
-        heritage_types = self._resolve_heritage_types(dto.heritage_types)
+        # 2. Extract concise RAG query via LLM
+        extraction_prompt = build_query_extraction_prompt(
+            cleaned_text=cleaned_text,
+            province_filter=dto.province_filter,
+            municipality_filter=dto.municipality_filter,
+        )
+        extracted_query = await self._llm_port.generate_structured(
+            system_prompt=QUERY_EXTRACTION_SYSTEM_PROMPT,
+            user_prompt=extraction_prompt,
+        )
+        extracted_query = (
+            extracted_query.strip().strip('"').strip("'")
+        )
 
-        # 3. For each heritage type, query RAG with filter and collect chunks
-        all_chunks: list[dict] = []
-        for h_type in heritage_types:
-            type_filter = None if h_type == HeritageTypeFilter.ALL else h_type
-            _, chunks = await self._rag_port.query(
-                question=base_query,
-                top_k=3,
-                heritage_type_filter=type_filter,
-                province_filter=dto.province,
-            )
-            all_chunks.extend(chunks)
+        # 3. Single RAG call with extracted query + filters
+        _, chunks = await self._rag_port.query(
+            question=extracted_query,
+            top_k=dto.num_stops * 3,
+            heritage_type_filter=dto.heritage_type_filter,
+            province_filter=dto.province_filter,
+            municipality_filter=dto.municipality_filter,
+        )
 
-        # 4. Build context string from all collected chunks
+        # 4. Build context string
         context_parts: list[str] = []
-        for idx, chunk in enumerate(all_chunks, start=1):
+        for idx, chunk in enumerate(chunks, start=1):
             part = (
                 f"[{idx}] {chunk.get('title', '')} "
-                f"({chunk.get('heritage_type', '')}, {chunk.get('province', '')})\n"
+                f"({chunk.get('heritage_type', '')}, "
+                f"{chunk.get('province', '')})\n"
                 f"{chunk.get('content', '')}\n"
                 f"Fuente: {chunk.get('url', '')}"
             )
             context_parts.append(part)
         context = "\n---\n".join(context_parts)
 
-        # 5. Generate route narrative with LLM
-        type_labels = [h.value if hasattr(h, "value") else str(h) for h in heritage_types]
-        user_prompt = build_route_prompt(
-            province=dto.province,
+        # 5. Generate rich route narrative via LLM
+        route_prompt = build_route_prompt(
+            query=extracted_query,
             num_stops=dto.num_stops,
-            heritage_types=type_labels,
             context=context,
+            province=dto.province_filter,
+            municipality=dto.municipality_filter,
         )
         narrative = await self._llm_port.generate_structured(
             system_prompt=ROUTE_SYSTEM_PROMPT,
-            user_prompt=user_prompt,
+            user_prompt=route_prompt,
         )
 
-        # 6. Extract a title from the narrative (first line) or use a default
-        title = self._extract_title(narrative, dto.province)
+        # 6. Extract title
+        province_label = (
+            dto.province_filter[0]
+            if dto.province_filter
+            else chunks[0].get("province", "Andalucia")
+            if chunks
+            else "Andalucia"
+        )
+        title = self._extract_title(narrative, province_label)
 
-        # 7. Build VirtualRoute entity via domain service
+        # 7. Build route via domain service
         route = self._route_builder_service.build(
-            chunks=all_chunks,
-            province=dto.province,
+            chunks=chunks,
+            province=province_label,
             num_stops=dto.num_stops,
             narrative=narrative,
             title=title,
         )
 
-        # 8. Save route
+        # 8. Save and return
         saved_route = await self._route_repository.save_route(route)
-
-        # 9. Map to output DTO
         return self._to_dto(saved_route)
 
-    def _resolve_heritage_types(self, types: list[str]) -> list[str]:
-        """Resolve heritage type strings to HeritageTypeFilter values."""
-        if not types or "ALL" in types:
-            return [
-                HeritageTypeFilter.PAISAJE_CULTURAL,
-                HeritageTypeFilter.PATRIMONIO_INMATERIAL,
-                HeritageTypeFilter.PATRIMONIO_INMUEBLE,
-                HeritageTypeFilter.PATRIMONIO_MUEBLE,
-            ]
-        resolved = []
-        for t in types:
-            try:
-                resolved.append(HeritageTypeFilter(t))
-            except ValueError:
-                resolved.append(t)
-        return resolved
-
     def _extract_title(self, narrative: str, province: str) -> str:
-        """Extract a title from the first line of the narrative."""
         if narrative:
             first_line = narrative.strip().split("\n")[0].strip()
-            # Remove markdown-style headers
-            clean = first_line.lstrip("#").strip().strip('"').strip("*").strip()
+            clean = (
+                first_line.lstrip("#")
+                .strip()
+                .strip('"')
+                .strip("*")
+                .strip()
+            )
             if clean and len(clean) < 200:
                 return clean
         return f"Ruta cultural por {province}"
