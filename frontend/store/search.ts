@@ -61,11 +61,15 @@ function extractAssetId(documentId: string): string {
   return documentId.replace(/^ficha-\w+-/, "");
 }
 
-/** Remove active filter matched texts from the query before sending to API. */
+/** Remove active filter matched texts from the query before sending to API.
+ *  Heritage type matches are kept in the query — they carry semantic value
+ *  for embedding search (e.g. "pintura" helps find paintings).
+ *  Geographic filters (province, municipality) are removed since the
+ *  backend filter already constrains the result set spatially. */
 function buildCleanQuery(query: string, filters: ActiveFilter[]): string {
   let clean = query;
   for (const f of filters) {
-    if (f.matchedText) {
+    if (f.matchedText && f.type !== "heritage_type") {
       clean = clean.replace(new RegExp(escapeRegex(f.matchedText), "gi"), "");
     }
   }
