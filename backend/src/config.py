@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     # RAG
     rag_top_k: int = 5
     rag_retrieval_k: int = 20
+    search_retrieval_k: int = 200
+    search_score_threshold: float = 0.55
     rag_score_threshold: float = 0.35
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64

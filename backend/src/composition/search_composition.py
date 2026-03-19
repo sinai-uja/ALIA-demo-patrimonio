@@ -50,9 +50,14 @@ def build_search_application_service(
     # Reuse RAG domain services
     hybrid_search_service = HybridSearchService()
     relevance_filter_service = RelevanceFilterService(
-        score_threshold=settings.rag_score_threshold,
+        score_threshold=settings.search_score_threshold,
     )
-    reranking_service = RerankingService()
+    reranking_service = RerankingService(
+        weight_base=0.6,
+        weight_title=0.2,
+        weight_coverage=0.15,
+        weight_position=0.05,
+    )
 
     # Search-specific adapters and services
     filter_metadata_adapter = PgFilterMetadataAdapter(db)
@@ -68,7 +73,7 @@ def build_search_application_service(
         relevance_filter_service=relevance_filter_service,
         reranking_service=reranking_service,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
-        retrieval_k=settings.rag_retrieval_k,
+        retrieval_k=settings.search_retrieval_k,
     )
 
     suggestion_use_case = SuggestionUseCase(

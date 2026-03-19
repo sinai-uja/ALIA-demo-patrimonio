@@ -62,7 +62,6 @@ class SimilaritySearchUseCase:
         max_docs = dto.page * dto.page_size
         chunk_multiplier = 3
         retrieval_k = max(self._retrieval_k, max_docs) * chunk_multiplier
-        rerank_k = max_docs * chunk_multiplier
 
         # 2. Vector search with filters
         vector_chunks = await self._vector_search_port.search(
@@ -102,11 +101,11 @@ class SimilaritySearchUseCase:
             len(filtered_chunks),
         )
 
-        # 6. Rerank — keep extra chunks to compensate for grouping
+        # 6. Rerank all filtered chunks (pagination happens after grouping)
         final_chunks = self._reranking_service.rerank(
             query=dto.query,
             chunks=filtered_chunks,
-            top_k=rerank_k,
+            top_k=len(filtered_chunks),
         )
 
         # 7. Enrich with heritage asset data
