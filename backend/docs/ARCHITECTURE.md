@@ -20,7 +20,7 @@ El backend sigue estrictamente **arquitectura hexagonal (Ports & Adapters)** con
 | `documents` | Ingesta de parquets, chunking, embedding, persistencia | `DocumentLoader`, `EmbeddingPort`, `DocumentRepository` |
 | `rag` | Pipeline de recuperación: embed → search → rerank → LLM | `EmbeddingPort`, `VectorSearchPort`, `TextSearchPort`, `LLMPort` |
 | `chat` | Sesiones de conversación con historial | `ChatRepository`, `RAGPort`, `ConversationalLLMPort` |
-| `routes` | Rutas virtuales y guía turística | `RAGPort`, `RouteRepository`, `LLMPort` |
+| `routes` | Rutas virtuales con extracción de query por LLM, generación basada en filtros y guía interactiva | `RAGPort`, `RouteRepository`, `LLMPort`, `EntityDetectionPort`, `FilterMetadataPort` |
 | `accessibility` | Simplificación Lectura Fácil | `LLMPort` |
 | `heritage` | Assets enriquecidos de la API IAPH | `HeritageRepository` |
 
@@ -105,6 +105,8 @@ class HeritageRepository(ABC):
 | `RouteRepository` | `SqlAlchemyRouteRepository` | SQLAlchemy async |
 | `HeritageRepository` | `SqlAlchemyHeritageRepository` | SQLAlchemy async + `parse_raw_data()` |
 | `RAGPort` (Chat/Routes) | `InProcessRAGAdapter` | Invoca `RAGApplicationService` en proceso |
+| `EntityDetectionPort` (Routes) | `InProcessEntityDetectionAdapter` | Invoca `SearchApplicationService` en proceso |
+| `FilterMetadataPort` (Routes/Search) | `PgFilterMetadataAdapter` | SQLAlchemy async — distinct values de heritage_assets |
 
 ## Composición (inyección de dependencias)
 
@@ -131,11 +133,12 @@ async def get_{context}_service(db = Depends(get_db)):
 ### Dependencias entre contextos
 
 ```
-chat ──→ rag (via InProcessRAGAdapter)
-routes ─→ rag (via InProcessRAGAdapter)
+chat ──→ rag    (via InProcessRAGAdapter)
+routes ─→ rag    (via InProcessRAGAdapter)
+routes ─→ search (via InProcessEntityDetectionAdapter + PgFilterMetadataAdapter)
 ```
 
-Chat y Routes reutilizan el pipeline RAG completo sin HTTP, a través de `InProcessRAGAdapter` que envuelve `RAGApplicationService`.
+Chat y Routes reutilizan el pipeline RAG completo sin HTTP, a través de `InProcessRAGAdapter` que envuelve `RAGApplicationService`. Routes también depende de Search para la detección de entidades (`InProcessEntityDetectionAdapter` envuelve `SearchApplicationService`) y para obtener valores de filtros (`PgFilterMetadataAdapter`).
 
 ## Base de datos
 

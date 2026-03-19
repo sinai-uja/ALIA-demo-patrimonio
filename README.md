@@ -7,7 +7,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 ```
 /
 ├── backend/          # FastAPI API — hexagonal architecture, Python 3.11, uv
-│   ├── src/          # 6 bounded contexts: documents, rag, chat, routes, accessibility, heritage
+│   ├── src/          # 7 bounded contexts: documents, rag, chat, routes, heritage, search, accessibility
 │   ├── docker/       # docker-compose.yml + service Dockerfiles
 │   └── alembic/      # DB migrations
 ├── frontend/         # Next.js 15 web application
@@ -19,7 +19,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 | Use case | Description |
 |----------|-------------|
 | **Chatbot patrimonial** | Multi-turn RAG conversation over the full IAPH corpus (134,000+ heritage records) |
-| **Rutas virtuales** | Generate personalized routes by province and heritage type; interactive per-route guide |
+| **Rutas virtuales** | Generate personalized routes via smart search with entity detection, LLM query extraction, and multi-filter RAG; interactive per-route guide |
 | **Lectura Fácil** | Simplify heritage texts for cognitive accessibility (ILSMH guidelines) |
 
 ## AI models

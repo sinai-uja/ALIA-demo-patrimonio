@@ -30,7 +30,7 @@ src/
 │   ├── documents/      # HeritageType, Document, Chunk; ChunkingService; EmbeddingPort, DocumentRepository
 │   ├── rag/            # RAGQuery, RetrievedChunk, RAGResponse; ContextAssemblyService; VectorSearchPort, LLMPort
 │   ├── chat/           # ChatSession, Message, MessageRole; ChatRepository, RAGPort
-│   ├── routes/         # VirtualRoute, RouteStop, HeritageTypeFilter; RouteBuilderService
+│   ├── routes/         # VirtualRoute, RouteStop; RouteBuilderService, QueryExtractionService; EntityDetectionPort, FilterMetadataPort
 │   ├── accessibility/  # SimplifiedText, SimplificationLevel; LLMPort
 │   └── heritage/       # HeritageAsset, typed raw_data value objects; HeritageRepository
 ├── application/        # Use cases and DTOs (no framework dependencies)
@@ -43,7 +43,7 @@ src/
 └── tests/              # pytest tests
 ```
 
-Six bounded contexts: **documents**, **rag**, **chat**, **routes**, **accessibility**, and **heritage**. Each context has its own domain, application, infrastructure, composition, and API layers.
+Seven bounded contexts: **documents**, **rag**, **chat**, **routes**, **heritage**, **search**, and **accessibility**. Each context has its own domain, application, infrastructure, composition, and API layers.
 
 ---
 
@@ -172,7 +172,9 @@ curl -X POST http://localhost:8080/api/v1/rag/query \
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/routes/generate` | Generate a personalized virtual heritage route |
+| `GET` | `/routes/suggestions` | Detect entities (provinces, municipalities, heritage types) in a route query |
+| `GET` | `/routes/filters` | Get available filter values (heritage types, provinces, municipalities) |
+| `POST` | `/routes/generate` | Generate a personalized virtual heritage route via LLM query extraction + RAG |
 | `GET` | `/routes` | List generated routes (optional `?province=` filter) |
 | `GET` | `/routes/{id}` | Get a specific route |
 | `POST` | `/routes/{id}/guide` | Ask the interactive guide a question about a route |

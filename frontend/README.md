@@ -16,8 +16,9 @@ Web application for the IAPH Heritage RAG assistant. Communicates with the FastA
 |-------|-------------|
 | `/` | Landing — 3 feature cards (Chatbot, Routes, Accessibility) |
 | `/chat` | Conversational chatbot with session sidebar, message history, and source citations |
-| `/routes` | Route generator form + grid of saved routes |
+| `/routes` | Route generator with smart search input, entity detection, filter sidebar, and saved routes grid |
 | `/routes/[id]` | Route detail — stop list + interactive guide chatbot |
+| `/search` | Faceted heritage search with smart input, entity detection, and filter sidebar |
 | `/accessibility` | Lectura Fácil text simplification (basic / intermediate) |
 
 ## Structure
@@ -35,13 +36,20 @@ components/
 ├── chat/
 │   ├── ChatInput.tsx       # Textarea + send button
 │   └── MessageBubble.tsx   # Message with source cards
-└── routes/
-    └── RouteCard.tsx       # Route summary card
+├── routes/
+│   ├── RouteCard.tsx       # Route summary card
+│   ├── RouteResult.tsx     # Generated route result display
+│   └── RouteSmartInput.tsx # Smart input wrapper for routes
+└── shared/
+    ├── SmartInput.tsx      # Reusable search input with entity detection highlighting
+    ├── FilterSidebar.tsx   # Reusable filter sidebar (heritage type, province, municipality)
+    └── FilterChips.tsx     # Reusable active filter chip display
 lib/
 └── api.ts                  # Typed fetch wrapper for all backend endpoints
 store/
 ├── chat.ts                 # Sessions, messages, sending state
-└── routes.ts               # Routes, active route, generating state
+├── routes.ts               # Routes, filters, entity detection, generating state
+└── search.ts               # Search results, filters, pagination
 ```
 
 ## Setup
@@ -68,5 +76,5 @@ All backend calls go through [`lib/api.ts`](lib/api.ts), which exports typed asy
 
 - `rag.query(...)` — single-turn RAG query
 - `chat.createSession()` / `chat.sendMessage(...)` — session management
-- `routes.generate(...)` / `routes.list()` / `routes.guide(...)` — virtual routes
+- `routes.generate(...)` / `routes.list()` / `routes.guide(...)` / `routes.suggestions(...)` / `routes.filters(...)` — virtual routes
 - `accessibility.simplify(...)` — Lectura Fácil

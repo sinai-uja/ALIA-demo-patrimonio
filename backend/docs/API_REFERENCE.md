@@ -154,21 +154,55 @@ Detalle completo de un asset con `details` tipado según `heritage_type`.
 
 ### Routes
 
+#### `GET /routes/suggestions`
+
+Detecta entidades (provincias, municipios, tipos de patrimonio) en un texto de búsqueda de rutas. Reutiliza la detección de entidades del contexto de búsqueda.
+
+**Query params:** `?query=castillos en Jaén y Córdoba`
+
+**Response:**
+```json
+{
+  "query": "castillos en Jaén y Córdoba",
+  "search_label": "castillos",
+  "detected_entities": [
+    { "entity_type": "province", "value": "Jaén", "display_label": "Jaén", "matched_text": "Jaén" },
+    { "entity_type": "province", "value": "Córdoba", "display_label": "Córdoba", "matched_text": "Córdoba" }
+  ]
+}
+```
+
+#### `GET /routes/filters`
+
+Devuelve los valores disponibles para los filtros de generación de rutas.
+
+**Query params opcionales:** `?provinces=Jaén` (filtra municipios por provincia).
+
+**Response:**
+```json
+{
+  "heritage_types": ["PATRIMONIO_INMUEBLE", "PATRIMONIO_MUEBLE", ...],
+  "provinces": ["Almería", "Cádiz", ...],
+  "municipalities": ["Jaén", "Úbeda", ...]
+}
+```
+
 #### `POST /routes/generate`
 
-Genera una ruta virtual personalizada.
+Genera una ruta virtual personalizada. Pipeline: limpiar texto → extraer query vía LLM → RAG con filtros → generar narrativa vía LLM.
 
 **Request:**
 ```json
 {
-  "province": "Jaén",
+  "query": "arte renacentista en la provincia de Jaén",
   "num_stops": 5,
-  "heritage_types": ["patrimonio_inmueble", "patrimonio_mueble"],
-  "user_interests": "arte renacentista"
+  "heritage_type_filter": ["PATRIMONIO_INMUEBLE"],
+  "province_filter": ["Jaén"],
+  "municipality_filter": null
 }
 ```
 
-**Response:** Objeto `VirtualRoute` con `id`, `title`, `stops[]`, `narrative`, `total_duration_minutes`.
+**Response:** Objeto `VirtualRoute` con `id`, `title`, `province`, `stops[]`, `narrative`, `total_duration_minutes`, `created_at`.
 
 #### `GET /routes`
 
