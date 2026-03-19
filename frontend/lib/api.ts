@@ -118,15 +118,30 @@ export interface VirtualRoute {
 
 export const routes = {
   generate: (params: {
-    province: string;
+    query: string;
     num_stops?: number;
-    heritage_types?: string[];
-    user_interests?: string;
+    heritage_type_filter?: string[] | null;
+    province_filter?: string[] | null;
+    municipality_filter?: string[] | null;
   }) =>
     apiFetch<VirtualRoute>("/routes/generate", {
       method: "POST",
       body: JSON.stringify(params),
     }),
+
+  suggestions: (query: string) =>
+    apiFetch<SuggestionResponse>(
+      `/routes/suggestions?query=${encodeURIComponent(query)}`,
+    ),
+
+  filters: (provinces?: string[]) => {
+    const params = new URLSearchParams();
+    if (provinces?.length) {
+      for (const p of provinces) params.append("province", p);
+    }
+    const qs = params.toString();
+    return apiFetch<FilterValues>(`/routes/filters${qs ? `?${qs}` : ""}`);
+  },
 
   list: (province?: string) =>
     apiFetch<VirtualRoute[]>(`/routes${province ? `?province=${province}` : ""}`),
