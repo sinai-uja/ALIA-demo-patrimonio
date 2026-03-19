@@ -96,6 +96,8 @@ export interface SmartInputProps {
   icon?: React.ReactNode;
   /** Extra text after the query in the dropdown submit row */
   submitSuffix?: React.ReactNode;
+  /** Content rendered inside the input on the right (e.g. stop counter) */
+  rightContent?: React.ReactNode;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -265,6 +267,7 @@ export function SmartInput({
   submitLabel = "Buscar",
   icon,
   submitSuffix,
+  rightContent,
 }: SmartInputProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -405,7 +408,7 @@ export function SmartInput({
           <div
             ref={backdropRef}
             aria-hidden="true"
-            className="absolute inset-0 z-[2] pl-12 pr-4 rounded-2xl overflow-hidden whitespace-pre pointer-events-none flex items-center"
+            className={`absolute inset-0 z-[2] pl-12 ${rightContent ? "pr-36" : "pr-4"} rounded-2xl overflow-hidden whitespace-pre pointer-events-none flex items-center`}
             style={textStyle}
           >
             {hasEntities
@@ -440,7 +443,7 @@ export function SmartInput({
             onChange={(e) => handleChange(e.target.value)}
             onFocus={() => { if (query.trim().length >= 2) setShowDropdown(true); }}
             placeholder={placeholder}
-            className="w-full border border-stone-200 bg-white pl-12 pr-4 py-4 rounded-2xl placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none shadow-sm transition-all relative"
+            className={`w-full border border-stone-200 bg-white pl-12 ${rightContent ? "pr-36" : "pr-4"} py-4 rounded-2xl placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none shadow-sm transition-all relative`}
             style={{
               ...textStyle,
               background: hasEntities ? "transparent" : undefined,
@@ -450,7 +453,14 @@ export function SmartInput({
             }}
           />
 
-          {loading && (
+          {/* Right content (e.g. stop counter) — inside the input visually */}
+          {rightContent && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
+              {rightContent}
+            </div>
+          )}
+
+          {loading && !rightContent && (
             <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-amber-500 z-10" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />

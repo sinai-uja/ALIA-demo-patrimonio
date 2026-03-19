@@ -8,28 +8,39 @@ import { RouteCard } from "@/components/routes/RouteCard";
 import { FilterChipsBase } from "@/components/shared/FilterChips";
 import { FilterSidebarBase } from "@/components/shared/FilterSidebar";
 
-function NumStopsSlider() {
+function NumStopsSelector() {
   const numStops = useRoutesStore((s) => s.numStops);
   const setNumStops = useRoutesStore((s) => s.setNumStops);
 
   return (
-    <div className="border-t border-stone-100 pt-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-medium text-stone-700 text-sm">Numero de paradas</span>
-        <span className="text-sm font-semibold text-amber-600 tabular-nums">{numStops}</span>
-      </div>
-      <input
-        type="range"
-        min={2}
-        max={15}
-        value={numStops}
-        onChange={(e) => setNumStops(Number(e.target.value))}
-        className="w-full h-1.5 bg-stone-200 rounded-full appearance-none cursor-pointer accent-amber-500"
-      />
-      <div className="flex justify-between text-xs text-stone-400 mt-1">
-        <span>2</span>
-        <span>15</span>
-      </div>
+    <div className="flex items-center gap-1 border-l border-stone-200 pl-3 ml-1 shrink-0">
+      <svg className="w-4 h-4 text-stone-400 shrink-0 mr-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+      </svg>
+      <button
+        type="button"
+        onClick={() => setNumStops(Math.max(2, numStops - 1))}
+        disabled={numStops <= 2}
+        className="w-6 h-6 rounded-md text-stone-400 flex items-center justify-center hover:text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
+        </svg>
+      </button>
+      <span className="w-5 text-center text-sm font-semibold text-amber-600 tabular-nums select-none">
+        {numStops}
+      </span>
+      <button
+        type="button"
+        onClick={() => setNumStops(Math.min(15, numStops + 1))}
+        disabled={numStops >= 15}
+        className="w-6 h-6 rounded-md text-stone-400 flex items-center justify-center hover:text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -48,7 +59,7 @@ function RoutesFilterSidebar() {
       onAddFilter={addFilter}
       onRemoveFilter={removeFilter}
       onClearAll={clearFilters}
-      extraContent={<NumStopsSlider />}
+      extraContent={undefined}
     />
   );
 }
@@ -97,7 +108,7 @@ export default function RoutesPage() {
             </p>
           </div>
 
-          <RouteSmartInput />
+          <RouteSmartInput numStopsSelector={<NumStopsSelector />} />
           <RoutesFilterChips />
 
           {/* Generation spinner */}

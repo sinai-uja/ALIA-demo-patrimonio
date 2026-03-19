@@ -18,7 +18,7 @@ const RouteIcon = (
   </svg>
 );
 
-export function RouteSmartInput() {
+export function RouteSmartInput({ numStopsSelector }: { numStopsSelector?: React.ReactNode }) {
   const query = useRoutesStore((s) => s.query);
   const setQuery = useRoutesStore((s) => s.setQuery);
   const syncFiltersWithQuery = useRoutesStore((s) => s.syncFiltersWithQuery);
@@ -40,8 +40,8 @@ export function RouteSmartInput() {
   );
 
   const handleSubmit = useCallback(() => {
-    generateRoute().catch(() => {
-      // Error handled in store
+    generateRoute().catch((err) => {
+      console.error("Route generation failed:", err);
     });
   }, [generateRoute]);
 
@@ -85,6 +85,7 @@ export function RouteSmartInput() {
       placeholder="Describe la ruta que quieres explorar..."
       submitLabel="Generar ruta"
       icon={RouteIcon}
+      rightContent={numStopsSelector}
     />
   );
 }

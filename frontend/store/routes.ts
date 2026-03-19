@@ -179,14 +179,13 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   generateRoute: async () => {
     const { query, activeFilters, numStops } = get();
-    const cleanQuery = buildCleanQuery(query, activeFilters);
-    if (!cleanQuery) throw new Error("La consulta no puede estar vacia");
+    if (!query.trim()) throw new Error("La consulta no puede estar vacia");
 
     set({ generating: true });
     try {
       const filters = collectFilters(activeFilters);
       const route = await routesApi.generate({
-        query: cleanQuery,
+        query: query.trim(),
         num_stops: numStops,
         ...filters,
       });
