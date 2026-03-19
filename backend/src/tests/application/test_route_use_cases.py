@@ -1,9 +1,7 @@
 """Unit tests for routes application use cases."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
-
-import pytest
 
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
@@ -17,7 +15,6 @@ from src.domain.routes.services.route_builder_service import RouteBuilderService
 from src.domain.routes.value_objects.detected_entity import DetectedEntityResult
 from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
-
 
 # ---------------------------------------------------------------------------
 # RouteSuggestionsUseCase
