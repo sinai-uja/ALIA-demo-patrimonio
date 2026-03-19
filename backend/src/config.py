@@ -14,10 +14,15 @@ class Settings(BaseSettings):
     embedding_dim: int = 768
 
     # LLM service
+    llm_provider: str = "gemini"  # "vllm" or "gemini"
     llm_service_url: str = "http://localhost:8000/v1"
     llm_model_name: str = "BSC-LT/salamandra-7b-instruct"
     llm_max_tokens: int = 512
     llm_temperature: float = 0.3
+
+    # Gemini
+    gemini_api_key: str = ""
+    gemini_model_name: str = "gemini-2.5-flash-lite-preview"
 
     # RAG
     rag_top_k: int = 5

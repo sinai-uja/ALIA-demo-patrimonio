@@ -8,6 +8,7 @@ from src.domain.rag.services.hybrid_search_service import HybridSearchService
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
 from src.infrastructure.rag.adapters.embedding_adapter import HttpEmbeddingAdapter
+from src.infrastructure.rag.adapters.gemini_llm_adapter import GeminiRAGAdapter
 from src.infrastructure.rag.adapters.llm_adapter import VLLMAdapter
 from src.infrastructure.rag.adapters.text_search_adapter import PgTextSearchAdapter
 from src.infrastructure.rag.adapters.vector_search_adapter import PgVectorSearchAdapter
@@ -18,7 +19,10 @@ def build_rag_application_service(db: AsyncSession) -> RAGApplicationService:
     embedding_adapter = HttpEmbeddingAdapter()
     vector_search_adapter = PgVectorSearchAdapter(db)
     text_search_adapter = PgTextSearchAdapter(db)
-    llm_adapter = VLLMAdapter()
+    llm_adapter = (
+        GeminiRAGAdapter() if settings.llm_provider == "gemini"
+        else VLLMAdapter()
+    )
     context_assembly_service = ContextAssemblyService()
     relevance_filter_service = RelevanceFilterService(
         score_threshold=settings.rag_score_threshold,

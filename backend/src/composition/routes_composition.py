@@ -21,6 +21,7 @@ from src.composition.rag_composition import (
 from src.composition.search_composition import (
     build_search_application_service,
 )
+from src.config import settings
 from src.domain.routes.services.query_extraction_service import (
     QueryExtractionService,
 )
@@ -29,6 +30,9 @@ from src.domain.routes.services.route_builder_service import (
 )
 from src.infrastructure.routes.adapters.entity_detection_adapter import (
     InProcessEntityDetectionAdapter,
+)
+from src.infrastructure.routes.adapters.gemini_llm_adapter import (
+    GeminiRoutesAdapter,
 )
 from src.infrastructure.routes.adapters.llm_adapter import (
     VLLMRoutesAdapter,
@@ -51,7 +55,10 @@ def build_routes_application_service(
     # Infrastructure adapters
     rag_service = build_rag_application_service(db)
     rag_adapter = InProcessRAGAdapter(rag_service)
-    llm_adapter = VLLMRoutesAdapter()
+    llm_adapter = (
+        GeminiRoutesAdapter() if settings.llm_provider == "gemini"
+        else VLLMRoutesAdapter()
+    )
     route_repository = SqlAlchemyRouteRepository(db)
 
     # Cross-context adapters
