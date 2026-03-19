@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -34,22 +34,61 @@ function RecenterMap({ lat, lng, zoom }: { lat: number; lng: number; zoom: numbe
   return null;
 }
 
+/** Geocode a municipality via Nominatim (OSM). Returns [lat, lng] or null. */
+async function geocodeMunicipality(
+  municipality: string,
+  province?: string | null,
+): Promise<[number, number] | null> {
+  const q = province ? `${municipality}, ${province}, España` : `${municipality}, Andalucía, España`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
+  try {
+    const res = await fetch(url, {
+      headers: { "Accept-Language": "es" },
+    });
+    const data = await res.json();
+    if (data.length > 0) {
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    }
+  } catch {
+    // Fallback silently
+  }
+  return null;
+}
+
 export default function AssetLocationMap({
   latitude,
   longitude,
   province,
+  municipality,
 }: {
   latitude?: number | null;
   longitude?: number | null;
   province?: string | null;
+  municipality?: string | null;
 }) {
   const hasExact = latitude != null && longitude != null;
+
+  // Geocoded municipality coords (resolved async)
+  const [geoCoords, setGeoCoords] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (hasExact || !municipality) return;
+    let cancelled = false;
+    geocodeMunicipality(municipality, province).then((coords) => {
+      if (!cancelled && coords) setGeoCoords(coords);
+    });
+    return () => { cancelled = true; };
+  }, [hasExact, municipality, province]);
+
   let center: [number, number];
   let zoom: number;
 
   if (hasExact) {
     center = [latitude, longitude];
     zoom = 15;
+  } else if (geoCoords) {
+    center = geoCoords;
+    zoom = 13;
   } else if (province && PROVINCE_COORDS[province]) {
     center = PROVINCE_COORDS[province];
     zoom = 10;
@@ -75,6 +114,10 @@ export default function AssetLocationMap({
         <TileLayer
           attribution='&copy; <a href="https://www.esri.com">Esri</a>'
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        />
+        <TileLayer
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+          attribution=""
         />
         {hasExact && <Marker position={[latitude, longitude]} />}
         <RecenterMap lat={center[0]} lng={center[1]} zoom={zoom} />
