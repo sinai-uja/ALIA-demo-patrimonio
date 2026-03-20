@@ -5,6 +5,7 @@ import { useRoutesStore } from "@/store/routes";
 import { RouteSmartInput } from "@/components/routes/RouteSmartInput";
 import { RouteResult } from "@/components/routes/RouteResult";
 import { RouteCard } from "@/components/routes/RouteCard";
+import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
 import { FilterChipsBase } from "@/components/shared/FilterChips";
 import { FilterSidebarBase } from "@/components/shared/FilterSidebar";
 
@@ -85,6 +86,7 @@ export default function RoutesPage() {
   const generatedRoute = useRoutesStore((s) => s.generatedRoute);
   const generating = useRoutesStore((s) => s.generating);
   const loading = useRoutesStore((s) => s.loading);
+  const hasDetail = useRoutesStore((s) => s.selectedStopAssetId !== null);
 
   useEffect(() => {
     loadRoutes();
@@ -99,7 +101,9 @@ export default function RoutesPage() {
       </aside>
 
       {/* Main content */}
-      <div className="absolute top-0 bottom-0 left-80 right-0 overflow-y-auto">
+      <div className={`absolute top-0 bottom-0 left-80 overflow-y-auto transition-all duration-300 ${
+        hasDetail ? "right-[480px]" : "right-0"
+      }`}>
         <div className="max-w-4xl mx-auto px-6 pt-6 pb-8 space-y-6">
           <div>
             <h1 className="text-3xl font-bold text-stone-900">Rutas Virtuales</h1>
@@ -166,6 +170,13 @@ export default function RoutesPage() {
           )}
         </div>
       </div>
+
+      {/* Detail panel — slides in from right */}
+      {hasDetail && (
+        <aside className="absolute right-0 top-0 bottom-0 w-[480px] z-10 max-md:w-full">
+          <RouteDetailPanel />
+        </aside>
+      )}
     </div>
   );
 }
