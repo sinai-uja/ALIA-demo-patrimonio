@@ -102,7 +102,11 @@ class RouteBuilderService:
                     title=chunk.get("title", ""),
                     heritage_type=heritage_type,
                     province=chunk.get("province", province),
-                    municipality=chunk.get("municipality"),
+                    municipality=(
+                        preview.municipality
+                        if preview and preview.municipality
+                        else chunk.get("municipality")
+                    ),
                     url=chunk.get("url", ""),
                     description=description,
                     visit_duration_minutes=duration,

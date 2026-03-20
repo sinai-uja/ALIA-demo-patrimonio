@@ -50,7 +50,8 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
                        NULLIF(TRIM(raw_data->>'identifica.dat_historico_s'), ''),
                        NULLIF(TRIM(raw_data->>'identifica.tipologias_s'), ''),
                        NULLIF(TRIM(raw_data->>'identifica.caracterizacion_s'), '')
-                   ) AS description
+                   ) AS description,
+                   municipality
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
@@ -67,6 +68,7 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             asset_id = row[0]
             first_image_id = row[4]
             description = row[5]
+            municipality = row[6]
             image_url = (
                 f"https://guiadigital.iaph.es/imagenes-cache/"
                 f"{asset_id}/{first_image_id}--fic.jpg"
@@ -79,6 +81,7 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
                 latitude=row[1],
                 longitude=row[2],
                 description=description,
+                municipality=municipality,
             )
 
         return previews

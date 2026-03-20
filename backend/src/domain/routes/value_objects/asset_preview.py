@@ -10,3 +10,4 @@ class AssetPreview:
     latitude: float | None = None
     longitude: float | None = None
     description: str | None = None
+    municipality: str | None = None
