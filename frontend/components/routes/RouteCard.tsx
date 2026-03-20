@@ -28,7 +28,7 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
   return (
     <Link
       href={`/routes/${route.id}`}
-      className="group relative block rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+      className="group relative flex flex-col h-full rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
     >
       <button
         onClick={handleDelete}
@@ -55,7 +55,7 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
         </h3>
       </div>
       <p className="text-xs text-stone-400 line-clamp-3 leading-relaxed">{route.narrative}</p>
-      <div className="mt-4 pt-4 border-t border-stone-100 flex items-center gap-4 text-xs text-stone-500">
+      <div className="mt-auto pt-4 border-t border-stone-100 flex items-center gap-4 text-xs text-stone-500">
         <span className="flex items-center gap-1">
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
