@@ -75,6 +75,18 @@ class SqlAlchemyRouteRepository(RouteRepository):
 
         return [self._to_entity(model) for model in models]
 
+    async def delete_route(self, route_id: UUID) -> bool:
+        stmt = select(VirtualRouteModel).where(VirtualRouteModel.id == route_id)
+        result = await self._db.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            return False
+
+        await self._db.delete(model)
+        await self._db.commit()
+        return True
+
     def _to_entity(self, model: VirtualRouteModel) -> VirtualRoute:
         stops = [
             RouteStop(

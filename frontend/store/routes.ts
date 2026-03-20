@@ -86,6 +86,7 @@ interface RoutesState {
   generateRoute: () => Promise<VirtualRoute>;
   loadRoutes: () => Promise<void>;
   selectRoute: (id: string) => Promise<void>;
+  deleteRoute: (id: string) => Promise<void>;
   openStopDetail: (heritageAssetId: string) => Promise<void>;
   closeStopDetail: () => void;
 }
@@ -232,6 +233,15 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  deleteRoute: async (id) => {
+    await routesApi.delete(id);
+    set((s) => ({
+      routes: s.routes.filter((r) => r.id !== id),
+      generatedRoute: s.generatedRoute?.id === id ? null : s.generatedRoute,
+      activeRoute: s.activeRoute?.id === id ? null : s.activeRoute,
+    }));
   },
 
   openStopDetail: async (heritageAssetId) => {

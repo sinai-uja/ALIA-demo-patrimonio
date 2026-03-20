@@ -6,6 +6,9 @@ from src.application.routes.dto.routes_dto import (
     RouteSuggestionResponseDTO,
     VirtualRouteDTO,
 )
+from src.application.routes.use_cases.delete_route import (
+    DeleteRouteUseCase,
+)
 from src.application.routes.use_cases.generate_route import (
     GenerateRouteUseCase,
 )
@@ -29,6 +32,7 @@ class RoutesApplicationService:
         guide_query_use_case: GuideQueryUseCase,
         list_routes_use_case: ListRoutesUseCase,
         get_route_use_case: GetRouteUseCase,
+        delete_route_use_case: DeleteRouteUseCase,
         route_suggestions_use_case: RouteSuggestionsUseCase,
         route_filter_values_use_case: RouteFilterValuesUseCase,
     ) -> None:
@@ -36,6 +40,7 @@ class RoutesApplicationService:
         self._guide_query = guide_query_use_case
         self._list_routes = list_routes_use_case
         self._get_route = get_route_use_case
+        self._delete_route = delete_route_use_case
         self._route_suggestions = route_suggestions_use_case
         self._route_filter_values = route_filter_values_use_case
 
@@ -56,6 +61,9 @@ class RoutesApplicationService:
 
     async def get_route(self, route_id: str) -> VirtualRouteDTO:
         return await self._get_route.execute(route_id)
+
+    async def delete_route(self, route_id: str) -> None:
+        return await self._delete_route.execute(route_id)
 
     async def get_suggestions(
         self, query: str,

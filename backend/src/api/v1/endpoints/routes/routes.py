@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from src.api.v1.endpoints.routes.deps import get_routes_service
 from src.api.v1.endpoints.routes.schemas import (
@@ -127,6 +127,22 @@ async def list_routes(
     """List virtual routes, optionally filtered by province."""
     results = await service.list_routes(province)
     return [_dto_to_schema(r) for r in results]
+
+
+@router.delete("/{route_id}", status_code=204)
+async def delete_route(
+    route_id: str,
+    service: RoutesApplicationService = Depends(get_routes_service),
+) -> Response:
+    """Delete a virtual route by ID."""
+    try:
+        await service.delete_route(route_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=404, detail=str(exc),
+        ) from exc
+
+    return Response(status_code=204)
 
 
 @router.get("/{route_id}", response_model=VirtualRouteSchema)

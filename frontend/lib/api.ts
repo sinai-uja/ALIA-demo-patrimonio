@@ -155,6 +155,17 @@ export const routes = {
 
   get: (id: string) => apiFetch<VirtualRoute>(`/routes/${id}`),
 
+  delete: async (id: string) => {
+    const res = await fetch(`${API_BASE}/routes/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || res.statusText);
+    }
+  },
+
   guide: (routeId: string, question: string) =>
     apiFetch<{ answer: string; sources: RagSource[] }>(
       `/routes/${routeId}/guide`,

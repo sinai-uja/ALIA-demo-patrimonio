@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
+from src.application.routes.use_cases.delete_route import (
+    DeleteRouteUseCase,
+)
 from src.application.routes.use_cases.generate_route import (
     GenerateRouteUseCase,
 )
@@ -96,6 +99,9 @@ def build_routes_application_service(
     get_route_use_case = GetRouteUseCase(
         route_repository=route_repository,
     )
+    delete_route_use_case = DeleteRouteUseCase(
+        route_repository=route_repository,
+    )
     route_suggestions_use_case = RouteSuggestionsUseCase(
         entity_detection_port=entity_detection_adapter,
     )
@@ -108,6 +114,7 @@ def build_routes_application_service(
         guide_query_use_case=guide_query_use_case,
         list_routes_use_case=list_routes_use_case,
         get_route_use_case=get_route_use_case,
+        delete_route_use_case=delete_route_use_case,
         route_suggestions_use_case=route_suggestions_use_case,
         route_filter_values_use_case=route_filter_values_use_case,
     )

@@ -18,3 +18,8 @@ class RouteRepository(ABC):
     @abstractmethod
     async def list_routes(self, province: str | None = None) -> list[VirtualRoute]:
         ...
+
+    @abstractmethod
+    async def delete_route(self, route_id: UUID) -> bool:
+        """Delete a route by ID. Returns True if it existed."""
+        ...
