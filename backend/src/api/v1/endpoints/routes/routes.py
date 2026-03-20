@@ -14,12 +14,44 @@ from src.api.v1.endpoints.routes.schemas import (
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
     GuideQueryDTO,
+    VirtualRouteDTO,
 )
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
 
 router = APIRouter()
+
+
+def _dto_to_schema(result: VirtualRouteDTO) -> VirtualRouteSchema:
+    return VirtualRouteSchema(
+        id=result.id,
+        title=result.title,
+        province=result.province,
+        stops=[
+            RouteStopSchema(
+                order=s.order,
+                title=s.title,
+                heritage_type=s.heritage_type,
+                province=s.province,
+                municipality=s.municipality,
+                url=s.url,
+                description=s.description,
+                visit_duration_minutes=s.visit_duration_minutes,
+                heritage_asset_id=s.heritage_asset_id,
+                narrative_segment=s.narrative_segment,
+                image_url=s.image_url,
+                latitude=s.latitude,
+                longitude=s.longitude,
+            )
+            for s in result.stops
+        ],
+        total_duration_minutes=result.total_duration_minutes,
+        narrative=result.narrative,
+        introduction=result.introduction or None,
+        conclusion=result.conclusion or None,
+        created_at=result.created_at,
+    )
 
 
 @router.get(
@@ -84,27 +116,7 @@ async def generate_route(
             detail=f"Route generation error: {exc}",
         ) from exc
 
-    return VirtualRouteSchema(
-        id=result.id,
-        title=result.title,
-        province=result.province,
-        stops=[
-            RouteStopSchema(
-                order=s.order,
-                title=s.title,
-                heritage_type=s.heritage_type,
-                province=s.province,
-                municipality=s.municipality,
-                url=s.url,
-                description=s.description,
-                visit_duration_minutes=s.visit_duration_minutes,
-            )
-            for s in result.stops
-        ],
-        total_duration_minutes=result.total_duration_minutes,
-        narrative=result.narrative,
-        created_at=result.created_at,
-    )
+    return _dto_to_schema(result)
 
 
 @router.get("", response_model=list[VirtualRouteSchema])
@@ -114,30 +126,7 @@ async def list_routes(
 ) -> list[VirtualRouteSchema]:
     """List virtual routes, optionally filtered by province."""
     results = await service.list_routes(province)
-    return [
-        VirtualRouteSchema(
-            id=r.id,
-            title=r.title,
-            province=r.province,
-            stops=[
-                RouteStopSchema(
-                    order=s.order,
-                    title=s.title,
-                    heritage_type=s.heritage_type,
-                    province=s.province,
-                    municipality=s.municipality,
-                    url=s.url,
-                    description=s.description,
-                    visit_duration_minutes=s.visit_duration_minutes,
-                )
-                for s in r.stops
-            ],
-            total_duration_minutes=r.total_duration_minutes,
-            narrative=r.narrative,
-            created_at=r.created_at,
-        )
-        for r in results
-    ]
+    return [_dto_to_schema(r) for r in results]
 
 
 @router.get("/{route_id}", response_model=VirtualRouteSchema)
@@ -153,27 +142,7 @@ async def get_route(
             status_code=404, detail=str(exc),
         ) from exc
 
-    return VirtualRouteSchema(
-        id=result.id,
-        title=result.title,
-        province=result.province,
-        stops=[
-            RouteStopSchema(
-                order=s.order,
-                title=s.title,
-                heritage_type=s.heritage_type,
-                province=s.province,
-                municipality=s.municipality,
-                url=s.url,
-                description=s.description,
-                visit_duration_minutes=s.visit_duration_minutes,
-            )
-            for s in result.stops
-        ],
-        total_duration_minutes=result.total_duration_minutes,
-        narrative=result.narrative,
-        created_at=result.created_at,
-    )
+    return _dto_to_schema(result)
 
 
 @router.post(

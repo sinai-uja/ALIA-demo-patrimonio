@@ -15,4 +15,6 @@ class VirtualRoute:
     stops: list[RouteStop]
     total_duration_minutes: int
     narrative: str
+    introduction: str = ""
+    conclusion: str = ""
     created_at: datetime = field(default_factory=datetime.utcnow)

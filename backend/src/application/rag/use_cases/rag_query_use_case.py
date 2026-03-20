@@ -142,6 +142,8 @@ class RAGQueryUseCase:
                 heritage_type=chunk.heritage_type,
                 province=chunk.province,
                 municipality=chunk.municipality,
+                document_id=chunk.document_id,
+                content=chunk.content,
                 metadata=chunk.metadata,
             )
             for chunk in final_chunks

@@ -26,6 +26,12 @@ class SqlAlchemyRouteRepository(RouteRepository):
                 "url": stop.url,
                 "description": stop.description,
                 "visit_duration_minutes": stop.visit_duration_minutes,
+                "heritage_asset_id": stop.heritage_asset_id,
+                "document_id": stop.document_id,
+                "narrative_segment": stop.narrative_segment,
+                "image_url": stop.image_url,
+                "latitude": stop.latitude,
+                "longitude": stop.longitude,
             }
             for stop in route.stops
         ]
@@ -35,6 +41,8 @@ class SqlAlchemyRouteRepository(RouteRepository):
             title=route.title,
             province=route.province,
             narrative=route.narrative,
+            introduction=route.introduction,
+            conclusion=route.conclusion,
             total_duration_minutes=route.total_duration_minutes,
             stops=stops_json,
             created_at=route.created_at,
@@ -75,9 +83,15 @@ class SqlAlchemyRouteRepository(RouteRepository):
                 heritage_type=s["heritage_type"],
                 province=s["province"],
                 municipality=s.get("municipality"),
-                url=s["url"],
-                description=s["description"],
+                url=s.get("url", ""),
+                description=s.get("description", ""),
                 visit_duration_minutes=s["visit_duration_minutes"],
+                heritage_asset_id=s.get("heritage_asset_id"),
+                document_id=s.get("document_id"),
+                narrative_segment=s.get("narrative_segment", ""),
+                image_url=s.get("image_url"),
+                latitude=s.get("latitude"),
+                longitude=s.get("longitude"),
             )
             for s in (model.stops or [])
         ]
@@ -89,5 +103,7 @@ class SqlAlchemyRouteRepository(RouteRepository):
             stops=stops,
             total_duration_minutes=model.total_duration_minutes,
             narrative=model.narrative,
+            introduction=getattr(model, "introduction", None) or "",
+            conclusion=getattr(model, "conclusion", None) or "",
             created_at=model.created_at,
         )

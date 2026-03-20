@@ -34,6 +34,9 @@ from src.infrastructure.routes.adapters.entity_detection_adapter import (
 from src.infrastructure.routes.adapters.gemini_llm_adapter import (
     GeminiRoutesAdapter,
 )
+from src.infrastructure.routes.adapters.heritage_asset_lookup_adapter import (
+    PgHeritageAssetLookupAdapter,
+)
 from src.infrastructure.routes.adapters.llm_adapter import (
     VLLMRoutesAdapter,
 )
@@ -60,6 +63,7 @@ def build_routes_application_service(
         else VLLMRoutesAdapter()
     )
     route_repository = SqlAlchemyRouteRepository(db)
+    heritage_asset_lookup_adapter = PgHeritageAssetLookupAdapter(db)
 
     # Cross-context adapters
     search_service = build_search_application_service(db)
@@ -79,6 +83,7 @@ def build_routes_application_service(
         route_repository=route_repository,
         route_builder_service=route_builder_service,
         query_extraction_service=query_extraction_service,
+        heritage_asset_lookup_port=heritage_asset_lookup_adapter,
     )
     guide_query_use_case = GuideQueryUseCase(
         rag_port=rag_adapter,

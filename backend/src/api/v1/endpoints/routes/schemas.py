@@ -24,6 +24,11 @@ class RouteStopSchema(BaseModel):
     url: str
     description: str
     visit_duration_minutes: int
+    heritage_asset_id: str | None = None
+    narrative_segment: str = ""
+    image_url: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class VirtualRouteSchema(BaseModel):
@@ -33,6 +38,8 @@ class VirtualRouteSchema(BaseModel):
     stops: list[RouteStopSchema]
     total_duration_minutes: int
     narrative: str
+    introduction: str | None = None
+    conclusion: str | None = None
     created_at: str
 
 

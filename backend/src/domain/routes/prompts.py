@@ -44,22 +44,31 @@ def build_query_extraction_prompt(
 ROUTE_SYSTEM_PROMPT = (
     "Eres un experto guia turistico del patrimonio historico andaluz del "
     "IAPH. Genera narrativas de rutas culturales en espanol, detalladas "
-    "y atractivas. Estructura tu respuesta asi:\n"
-    "1. Un titulo atractivo en la primera linea (sin formato markdown, "
-    "sin comillas)\n"
-    "2. Un parrafo introductorio (3-4 frases) presentando el tema de la "
-    "ruta\n"
-    "3. Para cada parada, un breve parrafo narrativo que cuente su "
-    "historia y conecte con la siguiente parada\n"
-    "Usa SOLO la informacion proporcionada en el contexto. "
-    "No inventes datos ni lugares que no aparezcan en el contexto."
+    "y atractivas.\n\n"
+    "Responde UNICAMENTE con un objeto JSON valido (sin bloques de codigo "
+    "ni markdown) con esta estructura exacta:\n"
+    "{\n"
+    '  "title": "Titulo atractivo de la ruta (sin comillas extras ni markdown)",\n'
+    '  "introduction": "Parrafo introductorio (3-4 frases) presentando el tema",\n'
+    '  "stops": [\n'
+    '    {"order": 1, "narrative": "Parrafo narrativo sobre esta parada, '
+    "su historia y conexion con la siguiente\"},\n"
+    '    {"order": 2, "narrative": "..."}\n'
+    "  ],\n"
+    '  "conclusion": "Parrafo de cierre que resuma el recorrido"\n'
+    "}\n\n"
+    "Reglas:\n"
+    "- Genera EXACTAMENTE un elemento en stops por cada parada listada\n"
+    "- Cada narrative debe describir el bien patrimonial concreto de esa "
+    "parada y crear una transicion natural hacia la siguiente\n"
+    "- Usa SOLO la informacion proporcionada en el contexto\n"
+    "- No inventes datos ni lugares que no aparezcan en el contexto"
 )
 
 
 def build_route_prompt(
     query: str,
-    num_stops: int,
-    context: str,
+    stops_context: str,
     province: list[str] | None = None,
     municipality: list[str] | None = None,
 ) -> str:
@@ -78,13 +87,13 @@ def build_route_prompt(
         else ""
     )
     return (
-        f"Genera una ruta cultural con {num_stops} paradas.\n"
+        f"Genera una narrativa para una ruta cultural con las "
+        f"siguientes paradas.\n"
         f"{location_line}"
         f"Tema de busqueda del visitante: {query}\n\n"
-        f"Patrimonio disponible:\n{context}\n\n"
-        f"Escribe un titulo, una introduccion y una narrativa que "
-        f"conecte las paradas contando la historia del patrimonio "
-        f"visitado."
+        f"Paradas de la ruta (en orden):\n{stops_context}\n\n"
+        f"Genera el JSON con title, introduction, un narrative por "
+        f"cada parada y conclusion."
     )
 
 

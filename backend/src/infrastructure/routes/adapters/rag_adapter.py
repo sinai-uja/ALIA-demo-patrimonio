@@ -55,6 +55,9 @@ class InProcessRAGAdapter(RAGPort):
                 "score": source.score,
                 "heritage_type": source.heritage_type,
                 "province": source.province,
+                "municipality": source.municipality,
+                "document_id": source.document_id,
+                "content": source.content,
             }
             for source in result.sources
         ]

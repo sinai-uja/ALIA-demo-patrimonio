@@ -24,6 +24,11 @@ class RouteStopDTO:
     url: str
     description: str
     visit_duration_minutes: int
+    heritage_asset_id: str | None = None
+    narrative_segment: str = ""
+    image_url: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 @dataclass(frozen=True)
@@ -36,7 +41,9 @@ class VirtualRouteDTO:
     stops: list[RouteStopDTO]
     total_duration_minutes: int
     narrative: str
-    created_at: str
+    introduction: str = ""
+    conclusion: str = ""
+    created_at: str = ""
 
 
 @dataclass(frozen=True)

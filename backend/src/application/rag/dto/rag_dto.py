@@ -22,6 +22,8 @@ class SourceDTO:
     heritage_type: str
     province: str
     municipality: str | None = None
+    document_id: str = ""
+    content: str = ""
     metadata: dict | None = None
 
 

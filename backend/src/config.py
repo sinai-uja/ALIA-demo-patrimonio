@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # Gemini
     gemini_api_key: str = ""
-    gemini_model_name: str = "gemini-2.5-flash-lite-preview"
+    gemini_model_name: str = "gemini-3.1-flash-lite-preview"
 
     # RAG
     rag_top_k: int = 5

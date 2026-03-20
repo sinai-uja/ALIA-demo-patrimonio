@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from src.domain.routes.value_objects.asset_preview import AssetPreview
 from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
 
@@ -21,46 +22,7 @@ class RouteBuilderService:
     estimated visit durations, and assembles the route entity.
     """
 
-    def build(
-        self,
-        chunks: list[dict],
-        province: str,
-        num_stops: int,
-        narrative: str,
-        title: str,
-    ) -> VirtualRoute:
-        selected = self._select_diverse_stops(chunks, num_stops)
-
-        stops: list[RouteStop] = []
-        for idx, chunk in enumerate(selected, start=1):
-            heritage_type = chunk.get("heritage_type", "")
-            duration = _DURATION_MAP.get(heritage_type.lower(), _DEFAULT_DURATION)
-
-            stops.append(
-                RouteStop(
-                    order=idx,
-                    title=chunk.get("title", ""),
-                    heritage_type=heritage_type,
-                    province=chunk.get("province", province),
-                    municipality=chunk.get("municipality"),
-                    url=chunk.get("url", ""),
-                    description=chunk.get("content", "")[:500],
-                    visit_duration_minutes=duration,
-                )
-            )
-
-        total_duration = sum(stop.visit_duration_minutes for stop in stops)
-
-        return VirtualRoute(
-            id=uuid4(),
-            title=title,
-            province=province,
-            stops=stops,
-            total_duration_minutes=total_duration,
-            narrative=narrative,
-        )
-
-    def _select_diverse_stops(
+    def select_diverse_stops(
         self,
         chunks: list[dict],
         num_stops: int,
@@ -73,7 +35,6 @@ class RouteBuilderService:
         if not chunks:
             return []
 
-        # Group chunks by heritage type, preserving order within each group
         by_type: dict[str, list[dict]] = {}
         seen_titles: set[str] = set()
 
@@ -86,7 +47,6 @@ class RouteBuilderService:
             h_type = chunk.get("heritage_type", "unknown")
             by_type.setdefault(h_type, []).append(chunk)
 
-        # Round-robin selection across heritage types
         selected: list[dict] = []
         type_keys = list(by_type.keys())
         type_indices = {k: 0 for k in type_keys}
@@ -105,3 +65,65 @@ class RouteBuilderService:
                 break
 
         return selected
+
+    def build(
+        self,
+        selected_chunks: list[dict],
+        province: str,
+        title: str,
+        narrative: str,
+        introduction: str = "",
+        conclusion: str = "",
+        narrative_segments: dict[int, str] | None = None,
+        asset_previews: dict[str, AssetPreview] | None = None,
+    ) -> VirtualRoute:
+        narrative_segments = narrative_segments or {}
+        asset_previews = asset_previews or {}
+
+        stops: list[RouteStop] = []
+        for idx, chunk in enumerate(selected_chunks, start=1):
+            heritage_type = chunk.get("heritage_type", "")
+            duration = _DURATION_MAP.get(heritage_type.lower(), _DEFAULT_DURATION)
+            document_id = chunk.get("document_id", "")
+            heritage_asset_id = self._extract_asset_id(document_id) if document_id else None
+
+            preview = asset_previews.get(heritage_asset_id, None) if heritage_asset_id else None
+
+            stops.append(
+                RouteStop(
+                    order=idx,
+                    title=chunk.get("title", ""),
+                    heritage_type=heritage_type,
+                    province=chunk.get("province", province),
+                    municipality=chunk.get("municipality"),
+                    url=chunk.get("url", ""),
+                    description=chunk.get("content", "")[:500],
+                    visit_duration_minutes=duration,
+                    heritage_asset_id=heritage_asset_id,
+                    document_id=document_id or None,
+                    narrative_segment=narrative_segments.get(idx, ""),
+                    image_url=preview.image_url if preview else None,
+                    latitude=preview.latitude if preview else None,
+                    longitude=preview.longitude if preview else None,
+                )
+            )
+
+        total_duration = sum(stop.visit_duration_minutes for stop in stops)
+
+        return VirtualRoute(
+            id=uuid4(),
+            title=title,
+            province=province,
+            stops=stops,
+            total_duration_minutes=total_duration,
+            narrative=narrative,
+            introduction=introduction,
+            conclusion=conclusion,
+        )
+
+    @staticmethod
+    def _extract_asset_id(document_id: str) -> str | None:
+        """Extract numeric asset ID from 'ficha-{type}-{number}' format."""
+        import re
+        match = re.sub(r"^ficha-\w+-", "", document_id)
+        return match if match != document_id else None

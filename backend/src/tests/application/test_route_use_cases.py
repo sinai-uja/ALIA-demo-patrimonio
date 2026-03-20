@@ -1,5 +1,6 @@
 """Unit tests for routes application use cases."""
 
+import json
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -187,6 +188,8 @@ def _make_virtual_route(
     title: str = "Ruta por Granada",
     province: str = "Granada",
     narrative: str = "Una ruta fascinante...",
+    introduction: str = "Introduccion de la ruta.",
+    conclusion: str = "Conclusion de la ruta.",
     num_stops: int = 2,
 ) -> VirtualRoute:
     stops = [
@@ -209,7 +212,28 @@ def _make_virtual_route(
         stops=stops,
         total_duration_minutes=60 * num_stops,
         narrative=narrative,
+        introduction=introduction,
+        conclusion=conclusion,
     )
+
+
+def _make_narrative_json(
+    title: str = "Ruta por Granada",
+    introduction: str = "Introduccion de la ruta.",
+    conclusion: str = "Conclusion de la ruta.",
+    num_stops: int = 2,
+) -> str:
+    """Build a JSON string matching the structured narrative format."""
+    stops = [
+        {"order": i, "narrative": f"Narrativa parada {i}"}
+        for i in range(1, num_stops + 1)
+    ]
+    return json.dumps({
+        "title": title,
+        "introduction": introduction,
+        "stops": stops,
+        "conclusion": conclusion,
+    })
 
 
 class TestGenerateRouteUseCase:
@@ -219,6 +243,7 @@ class TestGenerateRouteUseCase:
         self.route_repository = AsyncMock()
         self.route_builder_service = MagicMock(spec=RouteBuilderService)
         self.query_extraction_service = MagicMock(spec=QueryExtractionService)
+        self.heritage_asset_lookup_port = AsyncMock()
 
         self.use_case = GenerateRouteUseCase(
             rag_port=self.rag_port,
@@ -226,9 +251,10 @@ class TestGenerateRouteUseCase:
             route_repository=self.route_repository,
             route_builder_service=self.route_builder_service,
             query_extraction_service=self.query_extraction_service,
+            heritage_asset_lookup_port=self.heritage_asset_lookup_port,
         )
 
-    def _setup_defaults(self, chunks=None, route=None):
+    def _setup_defaults(self, chunks=None, route=None, num_stops=2):
         """Configure mocks with sensible defaults."""
         if chunks is None:
             chunks = [_make_chunk(), _make_chunk(title="Generalife")]
@@ -238,11 +264,13 @@ class TestGenerateRouteUseCase:
         self.query_extraction_service.clean_query_text.return_value = "alhambra"
         self.llm_port.generate_structured.side_effect = [
             "alhambra patrimonio",  # extraction call
-            "# Ruta por Granada\nUna ruta fascinante...",  # narrative call
+            _make_narrative_json(num_stops=num_stops),  # structured narrative JSON
         ]
         self.rag_port.query.return_value = ("answer text", chunks)
+        self.route_builder_service.select_diverse_stops.return_value = chunks
         self.route_builder_service.build.return_value = route
         self.route_repository.save_route.return_value = route
+        self.heritage_asset_lookup_port.get_asset_previews.return_value = {}
 
     async def test_calls_clean_query_text_with_filters(self):
         self._setup_defaults()
@@ -262,7 +290,7 @@ class TestGenerateRouteUseCase:
         )
 
     async def test_calls_llm_for_extraction_then_narrative(self):
-        self._setup_defaults()
+        self._setup_defaults(num_stops=3)
         dto = GenerateRouteDTO(query="alhambra", num_stops=3)
 
         await self.use_case.execute(dto)
@@ -270,7 +298,7 @@ class TestGenerateRouteUseCase:
         assert self.llm_port.generate_structured.await_count == 2
 
     async def test_calls_rag_with_extracted_query_and_filters(self):
-        self._setup_defaults()
+        self._setup_defaults(num_stops=5)
         dto = GenerateRouteDTO(
             query="alhambra de granada",
             num_stops=5,
@@ -290,7 +318,7 @@ class TestGenerateRouteUseCase:
         )
 
     async def test_top_k_equals_num_stops_times_three(self):
-        self._setup_defaults()
+        self._setup_defaults(num_stops=4)
         dto = GenerateRouteDTO(query="castillos", num_stops=4)
 
         await self.use_case.execute(dto)
@@ -344,13 +372,13 @@ class TestGenerateRouteUseCase:
         build_kwargs = self.route_builder_service.build.call_args.kwargs
         assert build_kwargs["province"] == "Sevilla"
 
-    async def test_extracts_title_from_narrative_first_line(self):
+    async def test_extracts_title_from_structured_json(self):
         route = _make_virtual_route()
         self._setup_defaults(route=route)
-        # The second LLM call returns narrative with a markdown title
+        # The second LLM call returns structured JSON with a title
         self.llm_port.generate_structured.side_effect = [
             "query extraida",
-            "# Descubriendo Granada\nContenido de la ruta...",
+            _make_narrative_json(title="Descubriendo Granada"),
         ]
         dto = GenerateRouteDTO(query="alhambra", num_stops=2)
 
@@ -364,7 +392,7 @@ class TestGenerateRouteUseCase:
         self._setup_defaults(route=route)
         self.llm_port.generate_structured.side_effect = [
             "query extraida",
-            "",  # empty narrative
+            "",  # empty narrative (not valid JSON -> fallback)
         ]
         dto = GenerateRouteDTO(
             query="ruta",

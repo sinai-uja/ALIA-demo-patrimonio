@@ -19,6 +19,8 @@ class VirtualRouteModel(Base):
     query_text: Mapped[str | None] = mapped_column(String, nullable=True)
     municipality: Mapped[str | None] = mapped_column(String, nullable=True)
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
+    introduction: Mapped[str | None] = mapped_column(Text, nullable=True)
+    conclusion: Mapped[str | None] = mapped_column(Text, nullable=True)
     total_duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     stops: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
