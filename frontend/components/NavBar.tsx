@@ -4,10 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/chat", label: "Chat" },
   { href: "/search", label: "Busqueda" },
   { href: "/routes", label: "Rutas" },
-  { href: "/accessibility", label: "Accesibilidad" },
 ];
 
 export function NavBar() {
