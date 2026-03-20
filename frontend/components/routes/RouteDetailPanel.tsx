@@ -12,7 +12,7 @@ export function RouteDetailPanel() {
 
   return (
     <AssetDetailContent
-      asset={selectedAsset!}
+      asset={selectedAsset}
       onClose={closeStopDetail}
       loading={detailLoading}
     />

@@ -423,7 +423,7 @@ function SharedSections({ details }: { details: HeritageDetails }) {
 }
 
 interface AssetDetailContentProps {
-  asset: HeritageAsset;
+  asset: HeritageAsset | null;
   onClose: () => void;
   loading: boolean;
 }
@@ -457,28 +457,34 @@ export function AssetDetailContent({
           </svg>
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span
-              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                HERITAGE_COLORS[asset.heritage_type] ??
-                "bg-stone-100 text-stone-700"
-              }`}
-            >
-              {HERITAGE_LABELS[asset.heritage_type] ?? asset.heritage_type}
-            </span>
-            {asset.protection && asset.protection.toUpperCase() !== "NO" && (
-              <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-rose-50 text-rose-700">
-                Protegido
-              </span>
-            )}
-          </div>
-          <h3 className="font-semibold text-stone-900 text-sm leading-snug">
-            {asset.denomination ?? asset.id}
-          </h3>
-          {(asset.province || asset.municipality) && (
-            <p className="text-xs text-stone-400 mt-0.5">
-              {[asset.municipality, asset.province].filter(Boolean).join(", ")}
-            </p>
+          {asset ? (
+            <>
+              <div className="flex items-center gap-2 mb-1">
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                    HERITAGE_COLORS[asset.heritage_type] ??
+                    "bg-stone-100 text-stone-700"
+                  }`}
+                >
+                  {HERITAGE_LABELS[asset.heritage_type] ?? asset.heritage_type}
+                </span>
+                {asset.protection && asset.protection.toUpperCase() !== "NO" && (
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-rose-50 text-rose-700">
+                    Protegido
+                  </span>
+                )}
+              </div>
+              <h3 className="font-semibold text-stone-900 text-sm leading-snug">
+                {asset.denomination ?? asset.id}
+              </h3>
+              {(asset.province || asset.municipality) && (
+                <p className="text-xs text-stone-400 mt-0.5">
+                  {[asset.municipality, asset.province].filter(Boolean).join(", ")}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-stone-400">Cargando detalle...</p>
           )}
         </div>
       </div>
@@ -508,7 +514,7 @@ export function AssetDetailContent({
         </div>
       )}
 
-      {!loading && (
+      {!loading && asset && (
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
           {/* Image gallery */}
           {asset.details &&
