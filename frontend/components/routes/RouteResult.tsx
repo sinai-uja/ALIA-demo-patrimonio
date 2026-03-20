@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { VirtualRoute } from "@/lib/api";
+import { RouteStopCard } from "./RouteStopCard";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
   patrimonio_inmueble: "bg-amber-100 text-amber-700",
@@ -29,39 +30,20 @@ interface RouteResultProps {
   route: VirtualRoute;
 }
 
-export function RouteResult({ route }: RouteResultProps) {
-  // Split narrative into paragraphs
+/** Fallback layout for old routes without introduction/conclusion */
+function LegacyLayout({ route }: { route: VirtualRoute }) {
   const paragraphs = route.narrative
     .split(/\n\n+/)
     .filter((p) => p.trim().length > 0);
 
   return (
-    <div className="rounded-2xl border border-stone-200/60 bg-white p-6 sm:p-8 shadow-sm space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-stone-900">{route.title}</h2>
-        <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
-          <span className="inline-flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-            </svg>
-            {route.province}
-          </span>
-          <span>{route.stops.length} paradas</span>
-          <span className="inline-flex items-center gap-1">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-            {formatDuration(route.total_duration_minutes)}
-          </span>
-        </div>
-      </div>
-
+    <>
       {/* Narrative */}
       <div className="space-y-3">
         {paragraphs.map((p, i) => (
-          <p key={i} className="text-stone-600 leading-relaxed text-sm">{p}</p>
+          <p key={i} className="text-stone-600 leading-relaxed text-sm">
+            {p}
+          </p>
         ))}
       </div>
 
@@ -70,11 +52,15 @@ export function RouteResult({ route }: RouteResultProps) {
         <h3 className="text-lg font-semibold text-stone-800 mb-4">Paradas</h3>
         <div className="relative">
           {route.stops.map((stop, i) => {
-            const typeColor = HERITAGE_TYPE_COLORS[stop.heritage_type] ?? "bg-stone-100 text-stone-700";
-            const typeLabel = HERITAGE_TYPE_LABELS[stop.heritage_type] ?? stop.heritage_type;
-            const description = stop.description.length > 500
-              ? stop.description.slice(0, 500) + "..."
-              : stop.description;
+            const typeColor =
+              HERITAGE_TYPE_COLORS[stop.heritage_type] ??
+              "bg-stone-100 text-stone-700";
+            const typeLabel =
+              HERITAGE_TYPE_LABELS[stop.heritage_type] ?? stop.heritage_type;
+            const description =
+              stop.description.length > 500
+                ? stop.description.slice(0, 500) + "..."
+                : stop.description;
 
             return (
               <div key={stop.order} className="flex gap-4">
@@ -90,7 +76,6 @@ export function RouteResult({ route }: RouteResultProps) {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 pb-6">
-                  {/* Title */}
                   <div className="flex items-start gap-2">
                     {stop.url ? (
                       <a
@@ -102,27 +87,38 @@ export function RouteResult({ route }: RouteResultProps) {
                         {stop.title}
                       </a>
                     ) : (
-                      <span className="font-semibold text-stone-900">{stop.title}</span>
+                      <span className="font-semibold text-stone-900">
+                        {stop.title}
+                      </span>
                     )}
                   </div>
-
-                  {/* Metadata row */}
                   <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}
+                    >
                       {typeLabel}
                     </span>
                     <span className="text-xs text-stone-400">
-                      {stop.municipality ? `${stop.municipality}, ` : ""}{stop.province}
+                      {stop.municipality ? `${stop.municipality}, ` : ""}
+                      {stop.province}
                     </span>
                     <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                        />
                       </svg>
                       {formatDuration(stop.visit_duration_minutes)}
                     </span>
                   </div>
-
-                  {/* Description */}
                   <p className="text-sm text-stone-600 mt-2 leading-relaxed">
                     {description}
                   </p>
@@ -132,6 +128,94 @@ export function RouteResult({ route }: RouteResultProps) {
           })}
         </div>
       </div>
+    </>
+  );
+}
+
+/** New layout with introduction, interleaved stop cards, and conclusion */
+function InterleavedLayout({ route }: { route: VirtualRoute }) {
+  return (
+    <>
+      {/* Introduction */}
+      {route.introduction && (
+        <p className="text-stone-600 leading-relaxed text-sm">
+          {route.introduction}
+        </p>
+      )}
+
+      {/* Stop cards */}
+      <div className="space-y-3">
+        {route.stops.map((stop) => (
+          <RouteStopCard key={stop.order} stop={stop} />
+        ))}
+      </div>
+
+      {/* Conclusion */}
+      {route.conclusion && (
+        <p className="text-stone-600 leading-relaxed text-sm italic">
+          {route.conclusion}
+        </p>
+      )}
+    </>
+  );
+}
+
+export function RouteResult({ route }: RouteResultProps) {
+  const hasNewFormat = !!route.introduction;
+
+  return (
+    <div className="rounded-2xl border border-stone-200/60 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold text-stone-900">{route.title}</h2>
+        <div className="flex flex-wrap items-center gap-3 text-sm text-stone-500">
+          <span className="inline-flex items-center gap-1">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+              />
+            </svg>
+            {route.province}
+          </span>
+          <span>{route.stops.length} paradas</span>
+          <span className="inline-flex items-center gap-1">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
+            </svg>
+            {formatDuration(route.total_duration_minutes)}
+          </span>
+        </div>
+      </div>
+
+      {/* Content: new or legacy layout */}
+      {hasNewFormat ? (
+        <InterleavedLayout route={route} />
+      ) : (
+        <LegacyLayout route={route} />
+      )}
 
       {/* Link to detail */}
       <div className="pt-2 border-t border-stone-100">
@@ -140,8 +224,18 @@ export function RouteResult({ route }: RouteResultProps) {
           className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors"
         >
           Ver detalle
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25"
+            />
           </svg>
         </Link>
       </div>

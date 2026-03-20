@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import {
   routes as routesApi,
+  heritage as heritageApi,
   type VirtualRoute,
+  type HeritageAsset,
   type SuggestionResponse,
   type FilterValues,
   type DetectedEntity,
@@ -66,6 +68,11 @@ interface RoutesState {
   activeRoute: VirtualRoute | null;
   loading: boolean;
 
+  // Stop detail panel
+  selectedStopAssetId: string | null;
+  selectedAsset: HeritageAsset | null;
+  detailLoading: boolean;
+
   // Actions
   setQuery: (q: string) => void;
   setNumStops: (n: number) => void;
@@ -79,6 +86,8 @@ interface RoutesState {
   generateRoute: () => Promise<VirtualRoute>;
   loadRoutes: () => Promise<void>;
   selectRoute: (id: string) => Promise<void>;
+  openStopDetail: (heritageAssetId: string) => Promise<void>;
+  closeStopDetail: () => void;
 }
 
 export const useRoutesStore = create<RoutesState>((set, get) => ({
@@ -99,6 +108,11 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   routes: [],
   activeRoute: null,
   loading: false,
+
+  // Stop detail panel
+  selectedStopAssetId: null,
+  selectedAsset: null,
+  detailLoading: false,
 
   setQuery: (q) => set({ query: q }),
 
@@ -218,5 +232,19 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  openStopDetail: async (heritageAssetId) => {
+    set({ selectedStopAssetId: heritageAssetId, detailLoading: true, selectedAsset: null });
+    try {
+      const asset = await heritageApi.get(heritageAssetId);
+      set({ selectedAsset: asset, detailLoading: false });
+    } catch {
+      set({ selectedStopAssetId: null, detailLoading: false });
+    }
+  },
+
+  closeStopDetail: () => {
+    set({ selectedStopAssetId: null, selectedAsset: null, detailLoading: false });
   },
 }));

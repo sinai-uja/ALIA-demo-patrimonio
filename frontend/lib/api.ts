@@ -104,6 +104,11 @@ export interface RouteStop {
   url: string;
   description: string;
   visit_duration_minutes: number;
+  heritage_asset_id?: string | null;
+  narrative_segment?: string;
+  image_url?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface VirtualRoute {
@@ -113,6 +118,8 @@ export interface VirtualRoute {
   stops: RouteStop[];
   total_duration_minutes: number;
   narrative: string;
+  introduction?: string | null;
+  conclusion?: string | null;
   created_at: string;
 }
 
