@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Avances &mdash; IAPH RAG Monorepo &mdash; 2026-03-20</title>
+<style>
+  :root {
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-400: #fbbf24; --amber-500: #f59e0b; --amber-600: #d97706;
+    --orange-400: #fb923c; --orange-500: #f97316; --orange-600: #ea580c;
+    --rose-400: #fb7185; --rose-500: #f43f5e; --rose-600: #e11d48;
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --green-100: #dcfce7; --green-500: #22c55e; --green-700: #15803d;
+    --red-100: #fee2e2; --red-500: #ef4444; --red-700: #b91c1c;
+    --blue-100: #dbeafe; --blue-500: #3b82f6; --blue-700: #1d4ed8;
+    --purple-100: #f3e8ff; --purple-500: #a855f7; --purple-700: #7e22ce;
+    --yellow-100: #fef9c3; --yellow-500: #eab308; --yellow-700: #a16207;
+    --teal-100: #ccfbf1; --teal-500: #14b8a6; --teal-700: #0f766e;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-800);
+    line-height: 1.6; font-size: 15px;
+  }
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500), var(--rose-500));
+    padding: 0 2rem; box-shadow: var(--shadow-md);
+  }
+  nav .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  nav .nav-inner::-webkit-scrollbar { display: none; }
+  nav .brand {
+    font-weight: 800; font-size: 1.1rem; color: #fff;
+    padding: .85rem 0; text-decoration: none; flex-shrink: 0;
+  }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    font-size: .82rem; font-weight: 500; padding: .85rem .25rem;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    flex-shrink: 0;
+  }
+  nav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,.6); }
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+    color: #fff; padding: 3rem 2rem 2.5rem; text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--amber-400), var(--orange-400), var(--rose-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--slate-400); margin-top: .5rem; font-size: .95rem; }
+  .hero .meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.2rem; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: var(--slate-300);
+  }
+  .hero .meta code {
+    background: rgba(255,255,255,.1); padding: .15rem .5rem;
+    border-radius: 6px; font-size: .78rem;
+  }
+  /* CONTAINER */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  /* SECTION */
+  section { margin-bottom: 3rem; }
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+    margin-bottom: 1.2rem; padding-bottom: .5rem;
+    border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--amber-500), var(--orange-500), var(--rose-500)) 1;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  /* CARDS */
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--slate-200);
+    padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; color: var(--slate-900); }
+  .card h4 { font-size: .9rem; font-weight: 600; margin: .8rem 0 .3rem; color: var(--slate-700); }
+  /* BADGES */
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; line-height: 1.4;
+  }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-orange { background: #fff7ed; color: var(--orange-600); }
+  .badge-rose { background: #fff1f2; color: var(--rose-600); }
+  .badge-green { background: var(--green-100); color: var(--green-700); }
+  .badge-blue { background: var(--blue-100); color: var(--blue-700); }
+  .badge-purple { background: var(--purple-100); color: var(--purple-700); }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-red { background: var(--red-100); color: var(--red-700); }
+  .badge-yellow { background: var(--yellow-100); color: var(--yellow-700); }
+  .badge-slate { background: var(--slate-100); color: var(--slate-600); }
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    text-align: left; padding: .65rem .8rem;
+    background: var(--slate-800); color: #fff;
+    font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: .6rem .8rem; border-bottom: 1px solid var(--slate-100); }
+  tr:nth-child(even) td { background: var(--slate-50); }
+  tr:hover td { background: var(--amber-50); }
+  /* PROGRESS BAR */
+  .pbar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .pbar {
+    flex: 1; height: 8px; background: var(--slate-200);
+    border-radius: 999px; overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+  }
+  .pbar-label { font-size: .78rem; color: var(--slate-500); min-width: 3.5rem; text-align: right; }
+  /* CODE */
+  pre {
+    background: var(--slate-900); color: #e2e8f0;
+    padding: 1.2rem 1.4rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: .82rem; line-height: 1.55;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    margin: .8rem 0;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .85em;
+  }
+  :not(pre) > code {
+    background: var(--slate-100); padding: .15rem .4rem;
+    border-radius: 4px; color: var(--orange-600); font-size: .83em;
+  }
+  .kw { color: #c084fc; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm { color: #64748b; font-style: italic; }
+  .fn { color: #67e8f9; }
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid; text-align: center;
+  }
+  .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+  .stat-card .stat-label { font-size: .78rem; color: var(--slate-500); margin-top: .2rem; }
+  /* FLOW DIAGRAM */
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .flow-step {
+    background: #fff; border: 2px solid var(--slate-200); border-radius: var(--radius);
+    padding: 1rem 1.5rem; width: 100%; max-width: 600px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .flow-step .step-num {
+    position: absolute; top: -.7rem; left: 1rem;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .flow-step h4 { font-size: .9rem; font-weight: 700; color: var(--slate-800); margin-bottom: .25rem; }
+  .flow-step p { font-size: .8rem; color: var(--slate-500); }
+  .flow-arrow {
+    width: 2px; height: 24px;
+    background: linear-gradient(180deg, var(--amber-400), var(--orange-400));
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--orange-400);
+  }
+  .flow-parallel {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    width: 100%; max-width: 600px;
+  }
+  .flow-parallel .flow-step { max-width: none; }
+  /* GAP CARDS */
+  .gap-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid;
+    margin-bottom: .8rem;
+  }
+  .gap-card.high { border-left-color: var(--red-500); }
+  .gap-card.medium { border-left-color: var(--yellow-500); }
+  .gap-card.resolved { border-left-color: var(--green-500); }
+  .gap-card .gap-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .gap-card p { font-size: .85rem; color: var(--slate-600); margin-top: .3rem; }
+  /* ENDPOINT BLOCK */
+  .endpoint {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .45rem 0; font-size: .85rem;
+    border-bottom: 1px dashed var(--slate-200);
+  }
+  .method {
+    display: inline-block; padding: .15rem .5rem; border-radius: 4px;
+    font-size: .7rem; font-weight: 700; min-width: 52px; text-align: center; color: #fff;
+  }
+  .method-get { background: var(--green-500); }
+  .method-post { background: var(--blue-500); }
+  .method-patch { background: var(--purple-500); }
+  .method-delete { background: var(--red-500); }
+  .endpoint code { font-size: .82rem; }
+  .endpoint .ep-desc { color: var(--slate-500); font-size: .78rem; margin-left: auto; }
+  /* KV LIST */
+  .kv { display: grid; grid-template-columns: 180px 1fr; gap: .3rem .8rem; font-size: .88rem; }
+  .kv dt { color: var(--slate-500); font-weight: 500; }
+  .kv dd { color: var(--slate-800); }
+  /* SPLIT */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  /* TODO CHECK */
+  .todo-done { color: var(--green-700); }
+  .todo-done::before { content: '\2713 '; font-weight: 700; }
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    .flow-parallel { grid-template-columns: 1fr; }
+    nav .nav-inner { gap: .8rem; }
+    .container { padding: 1rem; }
+    .kv { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav { position: static; }
+    .hero { padding: 1.5rem; }
+    .card, .flow-step, .gap-card, .stat-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">IAPH RAG</a>
+    <a href="#resumen">Resumen</a>
+    <a href="#todos">TODOs</a>
+    <a href="#heritage">API IAPH</a>
+    <a href="#eda">EDA</a>
+    <a href="#search">B&uacute;squeda</a>
+    <a href="#routes">Rutas</a>
+    <a href="#gemini">Gemini</a>
+    <a href="#multiturn">Multi-turno</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#migrations">Migraciones</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Informe de Avances</h1>
+  <p>Agente conversacional RAG &mdash; Instituto Andaluz de Patrimonio Hist&oacute;rico (IAPH)</p>
+  <p style="color: var(--slate-500); font-size: .82rem; margin-top: .3rem;">Comisionado por la Universidad de Ja&eacute;n</p>
+  <div class="meta">
+    <span>&#128197; <code>2026-03-20</code></span>
+    <span>&#127795; Rama: <code>task/14303</code></span>
+    <span>&#128640; Commit: <code>e98ceb5</code></span>
+    <span>&#128203; Baseline: <code>1d9081d</code> (13-mar)</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 1. RESUMEN ===================== -->
+<section id="resumen">
+  <h2 class="section-title"><span class="icon">&#128200;</span> Resumen Ejecutivo</h2>
+
+  <p style="margin-bottom: 1.2rem; font-size: .92rem; color: var(--slate-600);">
+    Desde el &uacute;ltimo punto de control (2026-03-13, commit <code>1d9081d</code>) se han realizado
+    <strong>65+ commits</strong> con avances en 6 &aacute;reas principales: integraci&oacute;n API del IAPH,
+    b&uacute;squeda facetada, reestructuraci&oacute;n de rutas, soporte multi-proveedor LLM, coherencia
+    conversacional y redise&ntilde;o del frontend.
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">7</div>
+      <div class="stat-label">Bounded Contexts (+3)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--orange-500);">
+      <div class="stat-value" style="color: var(--orange-600);">22</div>
+      <div class="stat-label">Endpoints API (+8)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--rose-500);">
+      <div class="stat-value" style="color: var(--rose-600);">139K</div>
+      <div class="stat-label">Heritage Assets</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">2</div>
+      <div class="stat-label">Proveedores LLM</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple-500);">
+      <div class="stat-value" style="color: var(--purple-700);">7</div>
+      <div class="stat-label">Migraciones Alembic (+3)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--teal-500);">
+      <div class="stat-value" style="color: var(--teal-700);">65+</div>
+      <div class="stat-label">Commits</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>M&eacute;tricas comparativas</h3>
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>13-mar</th><th>20-mar</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Bounded contexts</td><td>4</td><td><strong>7</strong></td><td><span class="badge badge-green">+3</span></td></tr>
+        <tr><td>Endpoints API</td><td>14</td><td><strong>22</strong></td><td><span class="badge badge-green">+8</span></td></tr>
+        <tr><td>Heritage assets</td><td>0</td><td><strong>139.343</strong></td><td><span class="badge badge-green">+139K</span></td></tr>
+        <tr><td>Proveedores LLM</td><td>1 (vLLM)</td><td><strong>2</strong> (vLLM + Gemini)</td><td><span class="badge badge-green">+1</span></td></tr>
+        <tr><td>Migraciones Alembic</td><td>4</td><td><strong>7</strong></td><td><span class="badge badge-green">+3</span></td></tr>
+        <tr><td>P&aacute;ginas frontend activas</td><td>5</td><td><strong>3</strong></td><td><span class="badge badge-blue">Simplificado</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 2. TODOs ===================== -->
+<section id="todos">
+  <h2 class="section-title"><span class="icon">&#9989;</span> Punto de Control Anterior &mdash; Estado de TODOs</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>TODO</th><th>Estado</th><th>Fecha</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Samuel facilita a Juan Isern acceso a la API del IAPH para descarga de JSON-LD</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-16</td>
+        </tr>
+        <tr>
+          <td>Informar al IAPH de la descarga masiva de datos para evitar bloqueos</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-16</td>
+        </tr>
+        <tr>
+          <td>Juan Isern env&iacute;a la presentaci&oacute;n HTML a Arturo para compartir con el resto del proyecto</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-16</td>
+        </tr>
+        <tr>
+          <td>Enriquecer datos con la API &rarr; <code>heritage_assets</code></td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-16</td>
+        </tr>
+        <tr>
+          <td>&emsp;&#8627; EDA de los datos de la API del IAPH</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-16</td>
+        </tr>
+        <tr>
+          <td>&emsp;&#8627; Integrar informaci&oacute;n georeferenciada en los artefactos de respuesta</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-16</td>
+        </tr>
+        <tr>
+          <td>Probar con encoder alternativo temporal hasta nuevo modelo UJA &rarr; Se usa Gemini</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-20</td>
+        </tr>
+        <tr>
+          <td>Mejorar coherencia conversacional multi-turno con Salamandra</td>
+          <td><span class="badge badge-green">Completado</span></td>
+          <td>2026-03-20</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top: .8rem; font-size: .88rem; color: var(--green-700); font-weight: 600;">
+      &#9989; Todos los TODOs del punto de control anterior han sido completados.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 3. HERITAGE ===================== -->
+<section id="heritage">
+  <h2 class="section-title"><span class="icon">&#127963;&#65039;</span> Avance 1 &mdash; Integraci&oacute;n API del IAPH</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Nuevo bounded context <strong>Heritage</strong> para gestionar los 139.343 registros obtenidos de la
+    API p&uacute;blica del IAPH (<code>guiadigital.iaph.es/api/1.0/</code>).
+  </p>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>&#128230; Bounded Context: Heritage</h3>
+      <dl class="kv" style="margin-top: .6rem;">
+        <dt>Domain</dt><dd><code>HeritageAsset</code> entity, <code>HeritageRepository</code> port, value objects tipados</dd>
+        <dt>Application</dt><dd><code>GetAssetUseCase</code>, <code>ListAssetsUseCase</code></dd>
+        <dt>Infrastructure</dt><dd><code>HeritageAssetModel</code> (SQLAlchemy), <code>SqlAlchemyHeritageRepository</code></dd>
+        <dt>API</dt><dd>2 endpoints (listado paginado + detalle tipado)</dd>
+        <dt>Scripts</dt><dd><code>make fetch-assets</code>, <code>make load-assets</code></dd>
+      </dl>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--orange-500);">
+      <h3>&#128451;&#65039; Tabla <code>heritage_assets</code></h3>
+      <table style="font-size: .82rem; margin-top: .5rem;">
+        <tr><td><code>id</code></td><td>PK &mdash; ID del bien en la API IAPH</td></tr>
+        <tr><td><code>heritage_type</code></td><td>inmueble / mueble / inmaterial / paisaje</td></tr>
+        <tr><td><code>denomination</code></td><td>Nombre del bien</td></tr>
+        <tr><td><code>province / municipality</code></td><td>Ubicaci&oacute;n</td></tr>
+        <tr><td><code>latitude / longitude</code></td><td>Coordenadas (solo 3,4% cubierto)</td></tr>
+        <tr><td><code>image_url / image_ids</code></td><td>Im&aacute;genes (62% cobertura)</td></tr>
+        <tr><td><code>protection</code></td><td>Estado de protecci&oacute;n legal</td></tr>
+        <tr><td><code>raw_data</code></td><td>JSONB completo de la API (60&ndash;110 claves)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Endpoints Heritage</h3>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/heritage</code><span class="ep-desc">Listado paginado con filtros (type, province, municipality)</span></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/heritage/{id}</code><span class="ep-desc">Detalle completo con typed details (discriminated union)</span></div>
+  </div>
+</section>
+
+<!-- ===================== 3b. EDA ===================== -->
+<section id="eda">
+  <h2 class="section-title"><span class="icon">&#128202;</span> EDA &mdash; Datos de la API del IAPH</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    An&aacute;lisis exploratorio sobre los <strong>139.343 registros</strong> cargados desde la API del IAPH.
+    Documento completo: <code>backend/docs/EDA_IAPH_DATA.md</code>.
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>Distribuci&oacute;n por tipo de patrimonio</h3>
+    <table>
+      <thead><tr><th>Tipo</th><th>Registros</th><th>Distribuci&oacute;n</th><th>Claves JSONB (media)</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-orange">Patrimonio Mueble</span></td>
+          <td><strong>107.732</strong></td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:77.3%"></div></div><div class="pbar-label">77,3%</div></div></td>
+          <td>63</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">Patrimonio Inmueble</span></td>
+          <td><strong>29.569</strong></td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:21.2%"></div></div><div class="pbar-label">21,2%</div></div></td>
+          <td>74</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-rose">Patrimonio Inmaterial</span></td>
+          <td><strong>1.924</strong></td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:1.4%"></div></div><div class="pbar-label">1,4%</div></div></td>
+          <td>106</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-teal">Paisaje Cultural</span></td>
+          <td><strong>118</strong></td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:0.3%"></div></div><div class="pbar-label">0,1%</div></div></td>
+          <td>8</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card">
+      <h3>Completitud de campos</h3>
+      <table style="font-size: .82rem;">
+        <thead><tr><th>Campo</th><th>Mueble</th><th>Inmueble</th><th>Inmaterial</th><th>Paisaje</th></tr></thead>
+        <tbody>
+          <tr><td>Denominaci&oacute;n</td><td>99,9%</td><td>100%</td><td>100%</td><td>100%</td></tr>
+          <tr><td>Provincia/Municipio</td><td>99,9%</td><td>100%</td><td>100%</td><td>Sin mun.</td></tr>
+          <tr><td>Coordenadas</td><td><span class="badge badge-red">0%</span></td><td><span class="badge badge-yellow">16,3%</span></td><td><span class="badge badge-red">0%</span></td><td><span class="badge badge-red">0%</span></td></tr>
+          <tr><td>Im&aacute;genes</td><td>66,1%</td><td>46,3%</td><td>94,1%</td><td>100%</td></tr>
+          <tr><td>Descripci&oacute;n</td><td>86,2%</td><td>95,2%</td><td>100%</td><td>Solo PDF</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Hallazgos clave</h3>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.8;">
+        <li>Solo <strong>4.806 bienes</strong> (3,4%) tienen coordenadas &mdash; todos inmueble</li>
+        <li>Patrimonio inmaterial: <strong>100% completo</strong> en todos los campos narrativos &mdash; ideal para RAG</li>
+        <li>Campo de estilo de inmueble <strong>94% vac&iacute;o</strong></li>
+        <li>14.890 mueble (13,8%) sin texto descriptivo</li>
+        <li>Paisaje cultural: solo enlaces a PDF, sin texto buscable</li>
+        <li>27 registros con valores multi-provincia</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem; overflow-x: auto;">
+    <h3>Distribuci&oacute;n geogr&aacute;fica (todas las tipolog&iacute;as)</h3>
+    <table>
+      <thead><tr><th>Provincia</th><th>Total</th><th>Distribuci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>Sevilla</td><td>35.312</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:100%"></div></div><div class="pbar-label">25,3%</div></div></td></tr>
+        <tr><td>C&oacute;rdoba</td><td>22.049</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:62%"></div></div><div class="pbar-label">15,8%</div></div></td></tr>
+        <tr><td>C&aacute;diz</td><td>19.248</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:54%"></div></div><div class="pbar-label">13,8%</div></div></td></tr>
+        <tr><td>Granada</td><td>19.078</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:54%"></div></div><div class="pbar-label">13,7%</div></div></td></tr>
+        <tr><td>M&aacute;laga</td><td>16.222</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:46%"></div></div><div class="pbar-label">11,6%</div></div></td></tr>
+        <tr><td>Ja&eacute;n</td><td>11.093</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:31%"></div></div><div class="pbar-label">8,0%</div></div></td></tr>
+        <tr><td>Huelva</td><td>8.366</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:24%"></div></div><div class="pbar-label">6,0%</div></div></td></tr>
+        <tr><td>Almer&iacute;a</td><td>7.938</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:22%"></div></div><div class="pbar-label">5,7%</div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 4. SEARCH ===================== -->
+<section id="search">
+  <h2 class="section-title"><span class="icon">&#128269;</span> Avance 2 &mdash; B&uacute;squeda Facetada (Search)</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Nuevo bounded context <strong>Search</strong> con b&uacute;squeda sem&aacute;ntica, entity detection, filtros facetados,
+    paginaci&oacute;n y enriquecimiento con heritage assets.
+  </p>
+
+  <div class="card">
+    <h3>Pipeline de b&uacute;squeda</h3>
+    <div class="flow" style="margin-top: 1rem;">
+      <div class="flow-step" style="border-color: var(--amber-500);">
+        <div class="step-num">1</div>
+        <h4>Entity Detection</h4>
+        <p>Detecta provincias, municipios y tipos de patrimonio en la query via regex accent-insensitive. Mapeo de keywords: &ldquo;iglesia&rdquo; &rarr; <code>patrimonio_inmueble</code>.</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-parallel">
+        <div class="flow-step" style="border-color: var(--blue-500);">
+          <div class="step-num" style="background: var(--blue-500);">2a</div>
+          <h4>B&uacute;squeda Vectorial</h4>
+          <p>pgvector cosine, top <strong>200</strong> candidatos.</p>
+        </div>
+        <div class="flow-step" style="border-color: var(--teal-500);">
+          <div class="step-num" style="background: var(--teal-500);">2b</div>
+          <h4>B&uacute;squeda Full-Text</h4>
+          <p>tsvector espa&ntilde;ol, top <strong>200</strong> candidatos.</p>
+        </div>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--orange-500);">
+        <div class="step-num">3</div>
+        <h4>RRF Fusion + Filtro Relevancia + Reranking</h4>
+        <p>Umbral <strong>0.55</strong>. Pesos: <span class="badge badge-amber">60% base</span> <span class="badge badge-orange">20% t&iacute;tulo</span> <span class="badge badge-rose">15% cobertura</span> <span class="badge badge-slate">5% posici&oacute;n</span></p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--green-500);">
+        <div class="step-num" style="background: var(--green-500);">4</div>
+        <h4>Agrupaci&oacute;n + Asset Enrichment + Paginaci&oacute;n</h4>
+        <p>Agrupa por <code>document_id</code>, enriquece con <code>heritage_assets</code> (denominaci&oacute;n, descripci&oacute;n, coordenadas, imagen, protecci&oacute;n). Im&aacute;genes via cache IAPH.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card" style="border-left: 4px solid var(--blue-500);">
+      <h3>Configuraci&oacute;n Search vs RAG</h3>
+      <table style="font-size: .82rem;">
+        <thead><tr><th>Par&aacute;metro</th><th>RAG</th><th>Search</th></tr></thead>
+        <tbody>
+          <tr><td><code>retrieval_k</code></td><td>20</td><td><strong>200</strong></td></tr>
+          <tr><td><code>score_threshold</code></td><td>0.35</td><td><strong>0.55</strong></td></tr>
+          <tr><td><code>weight_base</code></td><td>0.4</td><td><strong>0.6</strong></td></tr>
+          <tr><td><code>weight_title</code></td><td>0.3</td><td><strong>0.2</strong></td></tr>
+          <tr><td><code>weight_coverage</code></td><td>0.2</td><td><strong>0.15</strong></td></tr>
+          <tr><td><code>weight_position</code></td><td>0.1</td><td><strong>0.05</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--teal-500);">
+      <h3>Endpoints Search</h3>
+      <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/search/similarity</code><span class="ep-desc">B&uacute;squeda sem&aacute;ntica con filtros y paginaci&oacute;n</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/search/suggestions</code><span class="ep-desc">Entity detection para sugerencias de filtros</span></div>
+      <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/search/filters</code><span class="ep-desc">Valores disponibles para filtros facetados</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5. ROUTES ===================== -->
+<section id="routes">
+  <h2 class="section-title"><span class="icon">&#128506;&#65039;</span> Avance 3 &mdash; Reestructuraci&oacute;n Pipeline de Rutas</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Pipeline redise&ntilde;ado con enfoque <strong>stops-first</strong>, generaci&oacute;n JSON estructurada por parada,
+    enriquecimiento con heritage assets y gu&iacute;a interactivo mejorado.
+  </p>
+
+  <div class="card">
+    <h3>Pipeline de 12 pasos</h3>
+    <div class="flow" style="margin-top: 1rem;">
+      <div class="flow-step" style="border-color: var(--amber-500);">
+        <div class="step-num">1</div>
+        <h4>Limpieza + Extracci&oacute;n de query</h4>
+        <p>Limpia texto, LLM extrae query concisa (m&aacute;x 10 palabras).</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--blue-500);">
+        <div class="step-num" style="background: var(--blue-500);">2</div>
+        <h4>RAG + Selecci&oacute;n diversa de paradas</h4>
+        <p>Recupera chunks (<code>num_stops &times; 3</code>). Round-robin por tipo de patrimonio para diversidad.</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--green-500);">
+        <div class="step-num" style="background: var(--green-500);">3</div>
+        <h4>Heritage Asset Enrichment</h4>
+        <p>Enriquece paradas con im&aacute;genes y coordenadas via <code>HeritageAssetLookupPort</code>.</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--purple-500);">
+        <div class="step-num" style="background: var(--purple-500);">4</div>
+        <h4>Generaci&oacute;n JSON Estructurada</h4>
+        <p>LLM genera JSON con <code>title</code>, <code>introduction</code>, <code>stops[].narrative</code>, <code>conclusion</code>.</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--rose-500);">
+        <div class="step-num" style="background: var(--rose-500);">5</div>
+        <h4>Composici&oacute;n + Persistencia</h4>
+        <p>Compone narrativa monol&iacute;tica, construye <code>VirtualRoute</code> con asset_id, image_url, lat/lon. Persiste en BD.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Ejemplo de salida JSON del LLM</h3>
+    <pre>{
+  <span class="str">"title"</span>: <span class="str">"Ruta del patrimonio arqueol&oacute;gico jiennense"</span>,
+  <span class="str">"introduction"</span>: <span class="str">"Un recorrido por los principales yacimientos..."</span>,
+  <span class="str">"stops"</span>: [
+    {<span class="str">"order"</span>: <span class="num">1</span>, <span class="str">"narrative"</span>: <span class="str">"El Castillo de Ba&ntilde;os de la Encina..."</span>},
+    {<span class="str">"order"</span>: <span class="num">2</span>, <span class="str">"narrative"</span>: <span class="str">"En la cima del cerro de Santa Catalina..."</span>}
+  ],
+  <span class="str">"conclusion"</span>: <span class="str">"Esta ruta ofrece una visi&oacute;n completa..."</span>
+}</pre>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card" style="border-left: 4px solid var(--purple-500);">
+      <h3>Cambios clave</h3>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.8;">
+        <li>Paradas seleccionadas <strong>ANTES</strong> de la narrativa (stops-first)</li>
+        <li>JSON estructurado por parada con <code>order</code> y <code>narrative</code></li>
+        <li>Im&aacute;genes y coordenadas desde <code>heritage_assets</code></li>
+        <li>Columnas <code>introduction</code> / <code>conclusion</code> en BD</li>
+        <li>Gu&iacute;a con descripciones completas de assets (no chunks RAG)</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--rose-500);">
+      <h3>Dependencias cross-context</h3>
+      <dl class="kv">
+        <dt>RAG</dt><dd>Recuperaci&oacute;n de chunks para generaci&oacute;n</dd>
+        <dt>Heritage</dt><dd>Enriquecimiento de paradas (im&aacute;genes, coordenadas, descripciones)</dd>
+        <dt>Search</dt><dd>Entity detection para sugerencias y filter metadata</dd>
+        <dt>LLM (Gemini)</dt><dd>Generaci&oacute;n estructurada + gu&iacute;a multi-turno</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Nuevo endpoint</h3>
+    <div class="endpoint"><span class="method method-delete">DELETE</span><code>/api/v1/routes/{id}</code><span class="ep-desc">Eliminar ruta</span></div>
+  </div>
+</section>
+
+<!-- ===================== 6. GEMINI ===================== -->
+<section id="gemini">
+  <h2 class="section-title"><span class="icon">&#129302;</span> Avance 4 &mdash; Proveedor LLM Gemini</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>&#128260; Multi-proveedor LLM</h3>
+      <p style="font-size: .88rem; color: var(--slate-600); margin-bottom: .8rem;">
+        Adaptador Gemini como alternativa a vLLM/Salamandra, seleccionable via <code>LLM_PROVIDER</code>.
+      </p>
+      <dl class="kv">
+        <dt><code>LLM_PROVIDER</code></dt><dd><code>gemini</code> (default) o <code>vllm</code></dd>
+        <dt><code>GEMINI_API_KEY</code></dt><dd>Requerida cuando provider = gemini</dd>
+        <dt><code>GEMINI_MODEL_NAME</code></dt><dd><code>gemini-3.1-flash-lite-preview</code></dd>
+      </dl>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>&#128268; 3 adaptadores por contexto</h3>
+      <table style="font-size: .82rem; margin-top: .5rem;">
+        <thead><tr><th>Contexto</th><th>Adaptador</th><th>Puerto</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-orange">RAG</span></td><td><code>GeminiRAGAdapter</code></td><td><code>LLMPort</code></td></tr>
+          <tr><td><span class="badge badge-purple">Routes</span></td><td><code>GeminiRoutesAdapter</code></td><td><code>LLMPort</code> + historial</td></tr>
+          <tr><td><span class="badge badge-blue">Chat</span></td><td><code>GeminiConversationalAdapter</code></td><td><code>ConversationalLLMPort</code></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size: .82rem; color: var(--slate-500); margin-top: .6rem;">
+        El switch se realiza en <code>composition/{context}_composition.py</code>. Los adaptadores vLLM siguen disponibles.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 7. MULTI-TURNO ===================== -->
+<section id="multiturn">
+  <h2 class="section-title"><span class="icon">&#128172;</span> Avance 5 &mdash; Coherencia Conversacional Multi-turno</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-left: 4px solid var(--purple-500);">
+      <h3>Historial en gu&iacute;a de rutas</h3>
+      <p style="font-size: .88rem; color: var(--slate-600);">
+        El gu&iacute;a interactivo mantiene historial de conversaci&oacute;n. El frontend env&iacute;a mensajes previos
+        con cada petici&oacute;n y el adaptador Gemini los incluye en el contexto de generaci&oacute;n.
+      </p>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--blue-500);">
+      <h3>Intent classification en Chat</h3>
+      <p style="font-size: .88rem; color: var(--slate-600);">
+        Clasificaci&oacute;n de intents via LLM para decidir si un mensaje es conversacional o query RAG.
+        Follow-ups reformulados con los &uacute;ltimos 4 mensajes de historial antes de enviarlos al pipeline RAG.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 8. FRONTEND ===================== -->
+<section id="frontend">
+  <h2 class="section-title"><span class="icon">&#127912;</span> Avance 6 &mdash; Redise&ntilde;o Frontend</h2>
+
+  <div class="card" style="margin-bottom: 1rem;">
+    <h3>Cambios estructurales</h3>
+    <ul style="font-size: .88rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.8;">
+      <li><strong>Homepage simplificada</strong>: solo muestra B&uacute;squeda y Rutas Virtuales</li>
+      <li><strong>Navegaci&oacute;n reducida</strong>: navbar con <code>/search</code> y <code>/routes</code> &uacute;nicamente</li>
+      <li><strong>Patr&oacute;n 3 paneles</strong> consistente: drawer colapsable + contenido principal + detail panel</li>
+    </ul>
+  </div>
+
+  <div class="card" style="margin-bottom: 1rem; overflow-x: auto;">
+    <h3>Layout de 3 paneles (Search &amp; Routes)</h3>
+    <pre style="background: var(--slate-100); color: var(--slate-700); border: 1px solid var(--slate-200); font-size: .82rem;">
+&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474; Drawer (izq)    &#9474; Contenido principal    &#9474; Detail Panel    &#9474;
+&#9474; FilterSidebar   &#9474; SmartInput + Results   &#9474; AssetDetail     &#9474;
+&#9474; Colapsable      &#9474;                        &#9474; (480px, sticky) &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9524;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</pre>
+  </div>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--teal-500);">
+      <h3>&#128270; P&aacute;gina de B&uacute;squeda <code>/search</code></h3>
+      <span class="badge badge-green" style="margin-bottom: .5rem;">NUEVA</span>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.7;">
+        <li>Drawer colapsable con <code>FilterSidebar</code></li>
+        <li><code>SmartInput</code> con entity detection en tiempo real</li>
+        <li><code>FilterChips</code> para filtros activos</li>
+        <li>Resultados paginados con cards enriquecidas</li>
+        <li>Detail Panel con galer&iacute;a de im&aacute;genes y mapa sat&eacute;lite</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>&#128506;&#65039; P&aacute;gina de Rutas <code>/routes</code></h3>
+      <span class="badge badge-blue" style="margin-bottom: .5rem;">REDISE&Ntilde;ADA</span>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.7;">
+        <li><code>RouteSmartInput</code> con selector de paradas (2&ndash;15)</li>
+        <li>Grid de rutas anteriores con <code>RouteCard</code></li>
+        <li>Modal de confirmaci&oacute;n para eliminaci&oacute;n</li>
+        <li>Estado vac&iacute;o con placeholder</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--rose-500);">
+      <h3>&#128209; Detalle de Ruta <code>/routes/[id]</code></h3>
+      <span class="badge badge-blue" style="margin-bottom: .5rem;">REDISE&Ntilde;ADA</span>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.7;">
+        <li>Gu&iacute;a interactivo en drawer izquierdo con historial</li>
+        <li>Layout interleaved: intro + <code>RouteStopCard</code> + conclusion</li>
+        <li>Badge numerado, thumbnail, metadata, narrativa por parada</li>
+        <li>Detail Panel derecho para asset de parada seleccionada</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>&#128296; Componentes compartidos</h3>
+      <span class="badge badge-green" style="margin-bottom: .5rem;">NUEVOS</span>
+      <table style="font-size: .82rem; margin-top: .3rem;">
+        <tr><td><code>SmartInput</code></td><td>Input con entity detection (search + routes)</td></tr>
+        <tr><td><code>FilterSidebar</code></td><td>Sidebar de filtros con checkboxes</td></tr>
+        <tr><td><code>FilterChips</code></td><td>Chips de filtros activos</td></tr>
+        <tr><td><code>AssetDetailContent</code></td><td>Panel de detalle de asset</td></tr>
+        <tr><td><code>CollapsibleDrawer</code></td><td>Drawer con animaci&oacute;n slide</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card">
+      <h3>Zustand Store &mdash; <code>useSearchStore</code></h3>
+      <span class="badge badge-green" style="margin-bottom: .3rem;">NUEVO</span>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Query, resultados, paginaci&oacute;n, filtros activos, entidades detectadas, sugerencias,
+        panel de detalle (selectedAsset, loading).
+      </p>
+    </div>
+    <div class="card">
+      <h3>Zustand Store &mdash; <code>useRoutesStore</code></h3>
+      <span class="badge badge-blue" style="margin-bottom: .3rem;">ACTUALIZADO</span>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Generaci&oacute;n, numStops, sugerencias, filtros, eliminaci&oacute;n de rutas,
+        panel de detalle de parada (selectedStopAssetId).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 9. MIGRATIONS ===================== -->
+<section id="migrations">
+  <h2 class="section-title"><span class="icon">&#128451;&#65039;</span> Nuevas Migraciones Alembic</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Revisi&oacute;n</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>5</td><td><code>b2c3d4e5f6a7</code></td><td>Crea tabla <code>heritage_assets</code> con &iacute;ndices en type, province y GIN en raw_data</td></tr>
+        <tr><td>6</td><td><code>c3d4e5f6a7b8</code></td><td>A&ntilde;ade FK <code>document_chunks_v3.document_id</code> &rarr; <code>heritage_assets.id</code></td></tr>
+        <tr><td>7</td><td><code>9af948ad6c54</code></td><td>A&ntilde;ade columnas <code>introduction</code> y <code>conclusion</code> a <code>virtual_routes</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 10. GAPS ===================== -->
+<section id="gaps">
+  <h2 class="section-title"><span class="icon">&#128680;</span> Gaps Actualizados</h2>
+
+  <h3 style="margin-bottom: .8rem;">Gaps resueltos</h3>
+
+  <div class="gap-card resolved">
+    <div class="gap-title">
+      <span class="badge badge-green">RESUELTO PARCIAL</span>
+      G1 &mdash; Sin georreferenciaci&oacute;n
+    </div>
+    <p>
+      4.806 inmuebles ahora tienen coordenadas via API del IAPH. Geocoding por municipio implementado via Nominatim como fallback.
+      <strong>Pendiente:</strong> 96,6% de assets a&uacute;n sin coordenadas (mueble, inmaterial, paisaje = 0%).
+    </p>
+  </div>
+
+  <div class="gap-card resolved">
+    <div class="gap-title">
+      <span class="badge badge-green">RESUELTO</span>
+      G2 &mdash; Tipolog&iacute;a no filtrable
+    </div>
+    <p>
+      <code>heritage_assets.raw_data</code> (JSONB con &iacute;ndice GIN) contiene todos los campos de tipolog&iacute;a.
+      Entity detection permite filtrado por tipo, provincia y municipio en b&uacute;squeda y rutas.
+    </p>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .8rem;">Gaps que persisten</h3>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G3 &mdash; Datos sucios
+    </div>
+    <p>~270 registros con HTML/metadata mezclado en campos de localizaci&oacute;n. Pendiente pipeline de limpieza.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G4 &mdash; Tests m&iacute;nimos
+    </div>
+    <p>Ligero aumento pero a&uacute;n insuficiente. Sin tests de integraci&oacute;n para Search ni Routes pipelines.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MITIGADO</span>
+      G5 &mdash; LLM sin fine-tuning
+    </div>
+    <p>Gemini como alternativa temporal funcional. Fine-tuning de Salamandra sigue en progreso por UJA.</p>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .8rem;">Nuevos gaps identificados</h3>
+
+  <div class="gap-card high">
+    <div class="gap-title">
+      <span class="badge badge-red">ALTA</span>
+      G6 &mdash; 96,6% de assets sin coordenadas
+    </div>
+    <p>Solo inmueble tiene datos parciales de geolocalizaci&oacute;n (16,3%). Mueble, inmaterial y paisaje tienen cero coordenadas. <strong>Acci&oacute;n:</strong> geocodificaci&oacute;n masiva por municipio+provincia.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G7 &mdash; Paisaje Cultural sin contenido buscable
+    </div>
+    <p>Los 118 registros de paisaje solo contienen enlaces a PDF, sin texto indexable. <strong>Acci&oacute;n:</strong> parsear PDFs enlazados.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G8 &mdash; Chat y Accesibilidad desactivados en UI
+    </div>
+    <p>La funcionalidad backend existe completa pero no se expone en el frontend actual. <strong>Acci&oacute;n:</strong> evaluar reintegraci&oacute;n.</p>
+  </div>
+</section>
+
+<!-- ===================== PROXIMOS PASOS ===================== -->
+<section>
+  <h2 class="section-title"><span class="icon">&#128640;</span> Pr&oacute;ximos Pasos</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Acci&oacute;n</th><th>Prioridad</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Geocodificaci&oacute;n masiva de assets por municipio+provincia (Nominatim)</td><td><span class="badge badge-red">Alta</span></td></tr>
+        <tr><td>2</td><td>Extracci&oacute;n de contenido de PDFs de Paisaje Cultural</td><td><span class="badge badge-yellow">Media</span></td></tr>
+        <tr><td>3</td><td>Ampliaci&oacute;n de test suite (integraci&oacute;n Search + Routes)</td><td><span class="badge badge-yellow">Media</span></td></tr>
+        <tr><td>4</td><td>Fine-tuning Salamandra al dominio IAPH (en progreso UJA)</td><td><span class="badge badge-yellow">Media</span></td></tr>
+        <tr><td>5</td><td>Evaluar reactivaci&oacute;n de Chat y Accesibilidad en frontend</td><td><span class="badge badge-slate">Baja</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer style="background: var(--slate-900); color: var(--slate-400); padding: 2rem; text-align: center; font-size: .82rem;">
+  <p>Informe de avances generado autom&aacute;ticamente &mdash; Periodo: <code style="color: var(--amber-400);">2026-03-13</code> &rarr; <code style="color: var(--amber-400);">2026-03-20</code></p>
+  <p style="margin-top: .3rem;">Rama <code style="color: var(--amber-400);">task/14303</code>, commit <code style="color: var(--amber-400);">e98ceb5</code></p>
+  <p style="margin-top: .3rem;">IAPH RAG Monorepo &bull; Universidad de Ja&eacute;n &bull; 2026-03-20</p>
+</footer>
+
+<!-- Smooth scroll -->
+<script>
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
