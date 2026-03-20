@@ -17,7 +17,7 @@ Web application for the IAPH Heritage RAG assistant. Communicates with the FastA
 | `/` | Landing — 3 feature cards (Chatbot, Routes, Accessibility) |
 | `/chat` | Conversational chatbot with session sidebar, message history, and source citations |
 | `/routes` | Route generator with smart search input, entity detection, filter sidebar, and saved routes grid |
-| `/routes/[id]` | Route detail — stop list + interactive guide chatbot |
+| `/routes/[id]` | Route detail — interleaved narrative+stop cards, detail panel, two-column layout + interactive guide chatbot |
 | `/search` | Faceted heritage search with smart input, entity detection, and filter sidebar |
 | `/accessibility` | Lectura Fácil text simplification (basic / intermediate) |
 
@@ -39,11 +39,14 @@ components/
 ├── routes/
 │   ├── RouteCard.tsx       # Route summary card
 │   ├── RouteResult.tsx     # Generated route result display
-│   └── RouteSmartInput.tsx # Smart input wrapper for routes
+│   ├── RouteSmartInput.tsx # Smart input wrapper for routes
+│   ├── RouteStopCard.tsx   # Stop card with image, metadata, and narrative
+│   └── RouteDetailPanel.tsx # Detail panel for selected stop
 └── shared/
     ├── SmartInput.tsx      # Reusable search input with entity detection highlighting
     ├── FilterSidebar.tsx   # Reusable filter sidebar (heritage type, province, municipality)
-    └── FilterChips.tsx     # Reusable active filter chip display
+    ├── FilterChips.tsx     # Reusable active filter chip display
+    └── AssetDetailContent.tsx # Shared heritage asset detail (images, map, metadata) — reused by search and routes
 lib/
 └── api.ts                  # Typed fetch wrapper for all backend endpoints
 store/

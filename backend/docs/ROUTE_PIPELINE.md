@@ -14,7 +14,7 @@ Flujo de `POST /api/v1/routes/generate` desde la peticion HTTP hasta la ruta gua
 }
 ```
 
-## Pipeline (8 pasos)
+## Pipeline (12 pasos)
 
 ```mermaid
 flowchart TD
@@ -23,14 +23,20 @@ flowchart TD
     C --> D["GenerateRouteUseCase.execute()"]
     D --> S1["Paso 1: Limpiar texto del usuario"]
     S1 --> S2["Paso 2: LLM — extraer query concisa"]
-    S2 --> S3["Paso 3: RAG — recuperar chunks patrimoniales"]
-    S3 --> S4["Paso 4: Construir cadena de contexto"]
-    S4 --> S5["Paso 5: LLM — generar narrativa"]
-    S5 --> S6["Paso 6: Extraer titulo"]
-    S6 --> S7["Paso 7: Construir entidad de ruta"]
-    S7 --> S8["Paso 8: Guardar en BD"]
-    S8 --> R["VirtualRouteDTO"]
+    S2 --> S3["Paso 3: RAG — recuperar chunks"]
+    S3 --> S4["Paso 4: Seleccionar paradas (stops-first)"]
+    S4 --> S5["Paso 5: Resolver provincia"]
+    S5 --> S6["Paso 6: Enriquecer con imagenes/coordenadas"]
+    S6 --> S7["Paso 7: Construir contexto solo de paradas seleccionadas"]
+    S7 --> S8["Paso 8: LLM — generar narrativa JSON por parada"]
+    S8 --> S9["Paso 9: Parsear JSON estructurado"]
+    S9 --> S10["Paso 10: Componer narrativa monolitica"]
+    S10 --> S11["Paso 11: Construir entidad de ruta"]
+    S11 --> S12["Paso 12: Guardar en BD"]
+    S12 --> R["VirtualRouteDTO"]
 ```
+
+**Cambio clave respecto a versiones anteriores:** las paradas se seleccionan **antes** de generar la narrativa (stops-first). El LLM recibe solo las paradas ya elegidas y genera un JSON estructurado con narrativa individual por parada.
 
 ---
 
@@ -91,66 +97,100 @@ Solo se usan los **chunks** (la respuesta RAG se descarta con `_`).
 
 ---
 
-### Paso 4 — Construir cadena de contexto
+### Paso 4 — Seleccionar paradas (stops-first)
 
-Formatea los chunks recuperados en un bloque de texto numerado para el LLM narrativo:
+**Servicio:** `RouteBuilderService.select_diverse_stops()`
+
+Selecciona `num_stops` paradas **antes** de generar la narrativa. Esto garantiza que el LLM narre exactamente las paradas que apareceran en la ruta final.
+
+- Round-robin entre tipos de patrimonio para maximizar variedad
+- Deduplica por titulo
+- Selecciona hasta `num_stops` de los chunks recuperados en exceso
+
+---
+
+### Paso 5 — Resolver provincia
+
+Determina la etiqueta de provincia de la ruta: usa el primer filtro de provincia si existe, o la provincia del primer chunk seleccionado, o "Andalucia" como fallback.
+
+---
+
+### Paso 6 — Enriquecer con imagenes y coordenadas
+
+**Puerto:** `HeritageAssetLookupPort.get_asset_previews()`
+**Adaptador:** `PgHeritageAssetLookupAdapter`
+
+Extrae los `heritage_asset_id` de cada chunk (formato `ficha-{tipo}-{numero}` → parte numerica) y consulta la tabla `heritage_assets` para obtener:
+
+- `image_url` — construida como `https://guiadigital.iaph.es/imagenes-cache/{id}/{image_id}--fic.jpg`
+- `latitude`, `longitude` — coordenadas geograficas
+
+---
+
+### Paso 7 — Construir contexto solo de paradas seleccionadas
+
+Formatea **unicamente** las paradas seleccionadas (no todos los chunks RAG) en un bloque numerado:
 
 ```
-[1] Cueva de la Rocío (patrimonio_inmaterial, Granada)
+[Parada 1] Cueva de la Rocío (patrimonio_inmaterial, Granada)
 Las zambras del Sacromonte son una expresión cultural...
 Fuente: https://www.iaph.es/...
 ---
-[2] Abadía del Sacromonte (patrimonio_inmueble, Granada)
+[Parada 2] Abadía del Sacromonte (patrimonio_inmueble, Granada)
 Conjunto monumental del siglo XVII...
 Fuente: https://www.iaph.es/...
 ```
 
 ---
 
-### Paso 5 — LLM: Generar narrativa de la ruta
+### Paso 8 — LLM: Generar narrativa JSON por parada
 
 **Puerto:** `LLMPort.generate_structured()`
 **Prompt:** `ROUTE_SYSTEM_PROMPT` + `build_route_prompt()`
 
-El LLM recibe los chunks de contexto y produce una narrativa enriquecida:
+El LLM recibe las paradas seleccionadas y produce un **JSON estructurado** (no texto libre):
 
 ```
-System: "Eres un experto guia turistico... Estructura:
-         1. Titulo atractivo (primera linea)
-         2. Parrafo introductorio (3-4 frases)
-         3. Para cada parada, un parrafo narrativo..."
+System: "Eres un experto guia turistico... Responde UNICAMENTE con un objeto JSON:
+         { title, introduction, stops: [{order, narrative}], conclusion }"
 
-User:   "Genera una ruta cultural con 5 paradas.
+User:   "Genera una narrativa para una ruta cultural con las siguientes paradas.
          Ubicacion: Provincia: Granada
          Tema: Zambras y cuevas del Sacromonte
+         Paradas de la ruta (en orden): ..."
 
-         Patrimonio disponible:
-         [1] Cueva de la Rocío...
-         [2] Abadía del Sacromonte...
-         ..."
-
-LLM →   "Ruta por el Sacromonte: Zambras y cuevas de Granada
-
-          El barrio del Sacromonte, situado en las colinas...
-
-          Nuestra primera parada nos lleva a la Cueva de la Rocío..."
+LLM →   {
+           "title": "Ruta por el Sacromonte: Zambras y cuevas de Granada",
+           "introduction": "El barrio del Sacromonte, situado en las colinas...",
+           "stops": [
+             {"order": 1, "narrative": "Nuestra primera parada..."},
+             {"order": 2, "narrative": "Continuamos hacia..."}
+           ],
+           "conclusion": "Este recorrido por el Sacromonte..."
+         }
 ```
 
 ---
 
-### Paso 6 — Extraer titulo
+### Paso 9 — Parsear JSON estructurado
 
-Toma la primera linea de la narrativa, elimina formato markdown (`#`, `"`, `*`) y la usa como titulo de la ruta. Si esta vacia o supera 200 caracteres, usa `"Ruta cultural por {provincia}"` como fallback.
+**Metodo:** `GenerateRouteUseCase._parse_narrative_json()`
+
+Parsea el JSON del LLM extrayendo: `title`, `introduction`, `{order: narrative}` por parada, y `conclusion`. Si el parseo falla (formato invalido), usa el texto completo como narrativa monolitica (fallback).
 
 ---
 
-### Paso 7 — Construir entidad de ruta
+### Paso 10 — Componer narrativa monolitica
+
+Para compatibilidad con el campo `narrative` de la BD, concatena: `introduction` + segmentos narrativos en orden + `conclusion`, separados por doble salto de linea.
+
+---
+
+### Paso 11 — Construir entidad de ruta
 
 **Servicio:** `RouteBuilderService.build()`
 
-1. **Seleccion diversa de paradas** — Round-robin entre tipos de patrimonio para maximizar variedad. Deduplica por titulo. Selecciona hasta `num_stops` de los chunks recuperados en exceso.
-
-2. **Asignar duraciones de visita** por tipo de patrimonio:
+1. **Asignar duraciones de visita** por tipo de patrimonio:
    | Tipo | Minutos |
    |------|---------|
    | patrimonio_inmueble | 60 |
@@ -158,15 +198,17 @@ Toma la primera linea de la narrativa, elimina formato markdown (`#`, `"`, `*`) 
    | paisaje_cultural | 90 |
    | patrimonio_mueble | 30 |
 
-3. **Ensamblar** entidad `VirtualRoute` con UUID, titulo, provincia, paradas, duracion total y narrativa.
+2. **Enriquecer cada parada** con `heritage_asset_id`, `narrative_segment`, `image_url`, `latitude`, `longitude` de los datos obtenidos en pasos 6 y 9.
+
+3. **Ensamblar** entidad `VirtualRoute` con UUID, titulo, provincia, paradas, duracion total, narrativa, introduccion y conclusion.
 
 ---
 
-### Paso 8 — Guardar en BD y devolver
+### Paso 12 — Guardar en BD y devolver
 
 **Puerto:** `RouteRepository.save_route()`
 
-Persiste en la tabla `virtual_routes` (paradas serializadas como array JSON). Devuelve `VirtualRouteDTO` → mapeado a `VirtualRouteSchema` en la capa API → respuesta JSON.
+Persiste en la tabla `virtual_routes` (paradas serializadas como array JSON, campos `introduction` y `conclusion` en columnas separadas). Devuelve `VirtualRouteDTO` → mapeado a `VirtualRouteSchema` en la capa API → respuesta JSON.
 
 ---
 
@@ -195,8 +237,11 @@ Ambos implementan la misma interfaz `LLMPort`. Se conmuta en `composition/routes
 | Dominio | `domain/routes/services/route_builder_service.py` | Seleccion de paradas + duracion |
 | Dominio | `domain/routes/ports/llm_port.py` | Interfaz del puerto LLM |
 | Dominio | `domain/routes/ports/rag_port.py` | Interfaz del puerto RAG |
+| Dominio | `domain/routes/ports/heritage_asset_lookup_port.py` | Interfaz de busqueda de assets |
+| Dominio | `domain/routes/value_objects/asset_preview.py` | Value object con imagen y coordenadas |
 | Infra | `infrastructure/routes/adapters/gemini_llm_adapter.py` | LLM Gemini |
 | Infra | `infrastructure/routes/adapters/llm_adapter.py` | LLM vLLM |
 | Infra | `infrastructure/routes/adapters/rag_adapter.py` | RAG en proceso |
+| Infra | `infrastructure/routes/adapters/heritage_asset_lookup_adapter.py` | Lookup de imagenes/coordenadas en heritage_assets |
 | Infra | `infrastructure/routes/repositories/route_repository.py` | Persistencia BD |
 | Composicion | `composition/routes_composition.py` | Cableado de dependencias |

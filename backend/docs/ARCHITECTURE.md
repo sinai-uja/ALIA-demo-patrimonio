@@ -20,7 +20,7 @@ El backend sigue estrictamente **arquitectura hexagonal (Ports & Adapters)** con
 | `documents` | Ingesta de parquets, chunking, embedding, persistencia | `DocumentLoader`, `EmbeddingPort`, `DocumentRepository` |
 | `rag` | Pipeline de recuperación: embed → search → rerank → LLM | `EmbeddingPort`, `VectorSearchPort`, `TextSearchPort`, `LLMPort` |
 | `chat` | Sesiones de conversación con historial | `ChatRepository`, `RAGPort`, `ConversationalLLMPort` |
-| `routes` | Rutas virtuales con extracción de query por LLM, generación basada en filtros y guía interactiva | `RAGPort`, `RouteRepository`, `LLMPort`, `EntityDetectionPort`, `FilterMetadataPort` |
+| `routes` | Rutas virtuales con extracción de query por LLM, selección de paradas previa, narrativa JSON por parada, enriquecimiento con imágenes/coordenadas, y guía interactiva | `RAGPort`, `RouteRepository`, `LLMPort`, `EntityDetectionPort`, `FilterMetadataPort`, `HeritageAssetLookupPort` |
 | `accessibility` | Simplificación Lectura Fácil | `LLMPort` |
 | `heritage` | Assets enriquecidos de la API IAPH | `HeritageRepository` |
 
@@ -95,9 +95,9 @@ class HeritageRepository(ABC):
 | `EmbeddingPort` | `HttpEmbeddingAdapter` | HTTP → servicio MrBERT (puerto 8001) |
 | `VectorSearchPort` | `PgVectorSearchAdapter` | pgvector `<=>` coseno |
 | `TextSearchPort` | `PgTextSearchAdapter` | PostgreSQL `tsvector` + `plainto_tsquery('spanish')` |
-| `LLMPort` (RAG) | `VLLMAdapter` | vLLM OpenAI-compatible (puerto 8000) |
-| `LLMPort` (Routes) | `VLLMRoutesAdapter` | vLLM con JSON guiado |
-| `ConversationalLLMPort` | `ConversationalLLMAdapter` | vLLM, max_tokens=128 |
+| `LLMPort` (RAG) | `VLLMAdapter` / `GeminiLLMAdapter` | vLLM o Gemini (según `LLM_PROVIDER`) |
+| `LLMPort` (Routes) | `VLLMRoutesAdapter` / `GeminiRoutesAdapter` | vLLM con JSON guiado o Gemini |
+| `ConversationalLLMPort` | `ConversationalLLMAdapter` / `GeminiConversationalAdapter` | vLLM o Gemini, max_tokens=128 |
 | `LLMPort` (Accessibility) | `AccessibilityLLMAdapter` | vLLM, prompts Lectura Fácil |
 | `DocumentLoader` | `ParquetDocumentLoader` | pandas + pyarrow |
 | `DocumentRepository` | `SqlAlchemyDocumentRepository` | SQLAlchemy async |
@@ -106,6 +106,7 @@ class HeritageRepository(ABC):
 | `HeritageRepository` | `SqlAlchemyHeritageRepository` | SQLAlchemy async + `parse_raw_data()` |
 | `RAGPort` (Chat/Routes) | `InProcessRAGAdapter` | Invoca `RAGApplicationService` en proceso |
 | `EntityDetectionPort` (Routes) | `InProcessEntityDetectionAdapter` | Invoca `SearchApplicationService` en proceso |
+| `HeritageAssetLookupPort` (Routes) | `PgHeritageAssetLookupAdapter` | SQLAlchemy async — imágenes y coordenadas de heritage_assets |
 | `FilterMetadataPort` (Routes/Search) | `PgFilterMetadataAdapter` | SQLAlchemy async — distinct values de heritage_assets |
 
 ## Composición (inyección de dependencias)
@@ -141,7 +142,7 @@ flowchart LR
     routes -->|InProcessEntityDetectionAdapter\n+ PgFilterMetadataAdapter| search
 ```
 
-Chat y Routes reutilizan el pipeline RAG completo sin HTTP, a través de `InProcessRAGAdapter` que envuelve `RAGApplicationService`. Routes también depende de Search para la detección de entidades (`InProcessEntityDetectionAdapter` envuelve `SearchApplicationService`) y para obtener valores de filtros (`PgFilterMetadataAdapter`).
+Chat y Routes reutilizan el pipeline RAG completo sin HTTP, a través de `InProcessRAGAdapter` que envuelve `RAGApplicationService`. Routes también depende de Search para la detección de entidades (`InProcessEntityDetectionAdapter` envuelve `SearchApplicationService`) y para obtener valores de filtros (`PgFilterMetadataAdapter`). Routes usa `HeritageAssetLookupPort` (via `PgHeritageAssetLookupAdapter`) para enriquecer las paradas con imágenes y coordenadas de `heritage_assets`.
 
 ## Base de datos
 

@@ -239,7 +239,9 @@ El parser vive en `src/domain/heritage/value_objects/raw_data.py`. Las funciones
 | `id` | UUID | NO | PK |
 | `title` | String | NO | Nombre/tema de la ruta |
 | `province` | String | NO | Provincia principal |
-| `narrative` | Text | NO | Narrativa descriptiva de la ruta |
+| `narrative` | Text | NO | Narrativa descriptiva completa de la ruta (compuesta de introducción + segmentos + conclusión) |
+| `introduction` | Text | SÍ | Párrafo introductorio generado por el LLM |
+| `conclusion` | Text | SÍ | Párrafo de cierre generado por el LLM |
 | `total_duration_minutes` | Integer | NO | Duración estimada total |
 | `stops` | JSON | NO | Array de paradas (ver estructura abajo) |
 | `created_at` | DateTime(tz) | NO | Timestamp |
@@ -255,8 +257,13 @@ El parser vive en `src/domain/heritage/value_objects/raw_data.py`. Las funciones
   "province": "Jaén",
   "municipality": "Úbeda",
   "url": "https://guiadigital.iaph.es/...",
-  "description": "Por qué visitar este lugar...",
-  "visit_duration_minutes": 45
+  "description": "Descripción resumida del bien (máx 500 chars)...",
+  "visit_duration_minutes": 45,
+  "heritage_asset_id": "20831",
+  "narrative_segment": "Párrafo narrativo generado por el LLM para esta parada...",
+  "image_url": "https://guiadigital.iaph.es/imagenes-cache/20831/uuid--fic.jpg",
+  "latitude": 37.765,
+  "longitude": -3.789
 }
 ```
 

@@ -202,7 +202,9 @@ Genera una ruta virtual personalizada. Pipeline: limpiar texto → extraer query
 }
 ```
 
-**Response:** Objeto `VirtualRoute` con `id`, `title`, `province`, `stops[]`, `narrative`, `total_duration_minutes`, `created_at`.
+**Response:** Objeto `VirtualRoute` con `id`, `title`, `province`, `stops[]`, `narrative`, `introduction`, `conclusion`, `total_duration_minutes`, `created_at`.
+
+Cada stop incluye: `order`, `title`, `heritage_type`, `province`, `municipality`, `url`, `description`, `visit_duration_minutes`, `heritage_asset_id`, `narrative_segment`, `image_url`, `latitude`, `longitude`.
 
 #### `GET /routes`
 

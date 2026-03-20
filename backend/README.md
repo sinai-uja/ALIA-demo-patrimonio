@@ -30,7 +30,7 @@ src/
 │   ├── documents/      # HeritageType, Document, Chunk; ChunkingService; EmbeddingPort, DocumentRepository
 │   ├── rag/            # RAGQuery, RetrievedChunk, RAGResponse; ContextAssemblyService; VectorSearchPort, LLMPort
 │   ├── chat/           # ChatSession, Message, MessageRole; ChatRepository, RAGPort
-│   ├── routes/         # VirtualRoute, RouteStop; RouteBuilderService, QueryExtractionService; EntityDetectionPort, FilterMetadataPort
+│   ├── routes/         # VirtualRoute, RouteStop, AssetPreview; RouteBuilderService, QueryExtractionService; HeritageAssetLookupPort, EntityDetectionPort, FilterMetadataPort
 │   ├── accessibility/  # SimplifiedText, SimplificationLevel; LLMPort
 │   └── heritage/       # HeritageAsset, typed raw_data value objects; HeritageRepository
 ├── application/        # Use cases and DTOs (no framework dependencies)
@@ -75,10 +75,13 @@ Configuration is loaded from a `.env` file via `pydantic-settings`. See `.env.ex
 | `DATABASE_URL` | `postgresql+asyncpg://uja:uja@localhost:5432/uja_iaph` | Async PostgreSQL connection URL |
 | `EMBEDDING_SERVICE_URL` | `http://localhost:8001` | MrBERT embedding HTTP service URL |
 | `EMBEDDING_DIM` | `768` | Embedding vector dimension |
+| `LLM_PROVIDER` | `gemini` | LLM backend: `vllm` or `gemini` |
 | `LLM_SERVICE_URL` | `http://localhost:8000/v1` | vLLM OpenAI-compatible endpoint URL |
 | `LLM_MODEL_NAME` | `BSC-LT/salamandra-7b-instruct` | LLM model identifier |
 | `LLM_MAX_TOKENS` | `2048` | Maximum tokens for LLM generation |
 | `LLM_TEMPERATURE` | `0.7` | LLM sampling temperature |
+| `GEMINI_API_KEY` | *(empty)* | Required when `LLM_PROVIDER=gemini` |
+| `GEMINI_MODEL_NAME` | `gemini-3.1-flash-lite-preview` | Gemini model identifier |
 | `RAG_TOP_K` | `5` | Number of chunks retrieved per query |
 | `RAG_CHUNK_SIZE` | `512` | Words per chunk during ingestion |
 | `RAG_CHUNK_OVERLAP` | `64` | Overlap words between consecutive chunks |
