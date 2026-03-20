@@ -8,6 +8,7 @@ import { routes as routesApi, type RagSource } from "@/lib/api";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { RouteStopCard } from "@/components/routes/RouteStopCard";
 import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
+import ReactMarkdown from "react-markdown";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
   patrimonio_inmueble: "bg-amber-100 text-amber-700",
@@ -264,7 +265,21 @@ export default function RouteDetailPage() {
                           : "bg-stone-50 border border-stone-200 text-stone-700 rounded-bl-md"
                       }`}
                     >
-                      {m.content}
+                      {m.role === "assistant" ? (
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 last:mb-0 space-y-1">{children}</ol>,
+                            ul: ({ children }) => <ul className="list-disc pl-4 mb-2 last:mb-0 space-y-1">{children}</ul>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            em: ({ children }) => <em className="italic">{children}</em>,
+                          }}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      ) : (
+                        m.content
+                      )}
                     </span>
                   </div>
                 ))}
