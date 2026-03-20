@@ -6,6 +6,7 @@ from src.application.routes.dto.routes_dto import (
     RouteStopDTO,
     VirtualRouteDTO,
 )
+from src.config import settings
 from src.domain.routes.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
 )
@@ -129,6 +130,7 @@ class GenerateRouteUseCase:
         raw_narrative = await self._llm_port.generate_structured(
             system_prompt=ROUTE_SYSTEM_PROMPT,
             user_prompt=route_prompt,
+            max_tokens=settings.llm_route_narrative_max_tokens,
         )
 
         # 9. Parse structured narrative (with fallback)
@@ -166,8 +168,11 @@ class GenerateRouteUseCase:
         """Parse structured JSON narrative from LLM response.
 
         Returns (title, introduction, {order: narrative}, conclusion).
-        Falls back to treating entire response as monolithic narrative.
+        Falls back to regex extraction for truncated JSON, then to
+        treating the entire response as monolithic narrative.
         """
+        import re
+
         cleaned = raw.strip()
         # Strip markdown code block if present
         if cleaned.startswith("```"):
@@ -177,6 +182,7 @@ class GenerateRouteUseCase:
                 lines = lines[:-1]
             cleaned = "\n".join(lines)
 
+        # Try full JSON parse first
         try:
             data = json.loads(cleaned)
             title = data.get("title", f"Ruta cultural por {province}")
@@ -190,16 +196,73 @@ class GenerateRouteUseCase:
                     segments[int(order)] = narrative_text
             return title, introduction, segments, conclusion
         except (json.JSONDecodeError, AttributeError, TypeError):
+            pass
+
+        # JSON parse failed — try regex extraction for truncated JSON
+        if cleaned.startswith("{"):
             logger.warning(
-                "Failed to parse structured narrative JSON, using fallback"
+                "Full JSON parse failed, attempting regex extraction "
+                "from truncated response (%d chars)", len(cleaned),
             )
-            title = self._extract_title_from_text(cleaned, province)
-            return title, cleaned, {}, ""
+            title = f"Ruta cultural por {province}"
+            introduction = ""
+            conclusion = ""
+            segments = {}
+
+            title_match = re.search(r'"title"\s*:\s*"([^"]+)"', cleaned)
+            if title_match:
+                title = title_match.group(1)
+
+            intro_match = re.search(
+                r'"introduction"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
+            )
+            if intro_match:
+                introduction = intro_match.group(1).replace('\\"', '"')
+
+            conclusion_match = re.search(
+                r'"conclusion"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
+            )
+            if conclusion_match:
+                conclusion = conclusion_match.group(1).replace('\\"', '"')
+
+            # Extract stop narratives
+            for stop_match in re.finditer(
+                r'"order"\s*:\s*(\d+)\s*,\s*"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"',
+                cleaned,
+            ):
+                order = int(stop_match.group(1))
+                narrative_text = stop_match.group(2).replace('\\"', '"')
+                segments[order] = narrative_text
+
+            if introduction or segments:
+                logger.info(
+                    "Regex extraction recovered: title=%s, intro=%d chars, "
+                    "%d stop segments, conclusion=%d chars",
+                    title[:50], len(introduction), len(segments), len(conclusion),
+                )
+                return title, introduction, segments, conclusion
+
+        # Complete fallback — treat as plain text
+        logger.warning("Failed to parse narrative JSON, using plain text fallback")
+        title = self._extract_title_from_text(cleaned, province)
+        return title, cleaned, {}, ""
 
     @staticmethod
     def _extract_title_from_text(narrative: str, province: str) -> str:
         if narrative:
-            first_line = narrative.strip().split("\n")[0].strip()
+            # If the response looks like JSON, try to extract title from it
+            stripped = narrative.strip()
+            if stripped.startswith("{"):
+                try:
+                    # Try partial JSON parse (may be truncated)
+                    import re
+                    title_match = re.search(r'"title"\s*:\s*"([^"]+)"', stripped)
+                    if title_match:
+                        return title_match.group(1)
+                except Exception:
+                    pass
+                return f"Ruta cultural por {province}"
+            first_line = stripped.split("\n")[0].strip()
             clean = (
                 first_line.lstrip("#")
                 .strip()

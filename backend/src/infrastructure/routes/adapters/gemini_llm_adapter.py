@@ -31,10 +31,13 @@ class GeminiRoutesAdapter(LLMPort):
         self,
         system_prompt: str,
         user_prompt: str,
+        max_tokens: int | None = None,
     ) -> str:
+        effective_max_tokens = max_tokens or self._max_tokens
         logger.info(
-            "Gemini routes request: model=%s, prompt=%d chars",
+            "Gemini routes request: model=%s, max_tokens=%d, prompt=%d chars",
             self._model_name,
+            effective_max_tokens,
             len(user_prompt),
         )
 
@@ -42,7 +45,7 @@ class GeminiRoutesAdapter(LLMPort):
             "system_instruction": {"parts": [{"text": system_prompt}]},
             "contents": [{"parts": [{"text": user_prompt}]}],
             "generationConfig": {
-                "maxOutputTokens": self._max_tokens,
+                "maxOutputTokens": effective_max_tokens,
                 "temperature": self._temperature,
             },
         }

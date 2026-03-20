@@ -9,6 +9,11 @@ class LLMPort(ABC):
         self,
         system_prompt: str,
         user_prompt: str,
+        max_tokens: int | None = None,
     ) -> str:
-        """Generate text from a system and user prompt pair."""
+        """Generate text from a system and user prompt pair.
+
+        Args:
+            max_tokens: Override the default max tokens for this call.
+        """
         ...
