@@ -2,15 +2,15 @@ import Link from "next/link";
 
 const features = [
   {
-    href: "/chat",
+    href: "/search",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
       </svg>
     ),
-    title: "Chatbot Patrimonial",
-    description: "Conversa con el asistente sobre patrimonio histórico andaluz. Consulta bienes inmuebles, inmateriales, muebles y paisajes culturales.",
-    cta: "Iniciar conversación",
+    title: "Busqueda",
+    description: "Encuentra bienes patrimoniales mediante busqueda semantica. Filtra por provincia, municipio y tipo de patrimonio.",
+    cta: "Buscar patrimonio",
     gradient: "from-amber-500 to-orange-500",
   },
   {
@@ -21,21 +21,9 @@ const features = [
       </svg>
     ),
     title: "Rutas Virtuales",
-    description: "Genera rutas culturales personalizadas por provincia, tipo de patrimonio e intereses. El sistema selecciona los mejores elementos.",
+    description: "Genera rutas culturales personalizadas por provincia, tipo de patrimonio e intereses. Incluye narrativa y guia interactivo.",
     cta: "Crear mi ruta",
     gradient: "from-emerald-500 to-teal-500",
-  },
-  {
-    href: "/accessibility",
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-      </svg>
-    ),
-    title: "Lectura Fácil",
-    description: "Simplifica textos patrimoniales complejos en versiones accesibles siguiendo directrices de Lectura Fácil.",
-    cta: "Simplificar texto",
-    gradient: "from-violet-500 to-purple-500",
   },
 ];
 
@@ -61,7 +49,7 @@ export default function Home() {
       </div>
 
       {/* Feature cards */}
-      <div className="grid gap-6 md:grid-cols-3 pb-16">
+      <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto pb-16">
         {features.map((f) => (
           <Link
             key={f.href}
