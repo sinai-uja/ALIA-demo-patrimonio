@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Estado T&eacute;cnico &mdash; IAPH RAG Monorepo</title>
+<style>
+  :root {
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-400: #fbbf24; --amber-500: #f59e0b; --amber-600: #d97706;
+    --orange-400: #fb923c; --orange-500: #f97316; --orange-600: #ea580c;
+    --rose-400: #fb7185; --rose-500: #f43f5e; --rose-600: #e11d48;
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --green-100: #dcfce7; --green-500: #22c55e; --green-700: #15803d;
+    --red-100: #fee2e2; --red-500: #ef4444; --red-700: #b91c1c;
+    --blue-100: #dbeafe; --blue-500: #3b82f6; --blue-700: #1d4ed8;
+    --purple-100: #f3e8ff; --purple-500: #a855f7; --purple-700: #7e22ce;
+    --yellow-100: #fef9c3; --yellow-500: #eab308; --yellow-700: #a16207;
+    --teal-100: #ccfbf1; --teal-500: #14b8a6; --teal-700: #0f766e;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-800);
+    line-height: 1.6; font-size: 15px;
+  }
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500), var(--rose-500));
+    padding: 0 2rem; box-shadow: var(--shadow-md);
+  }
+  nav .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  nav .nav-inner::-webkit-scrollbar { display: none; }
+  nav .brand {
+    font-weight: 800; font-size: 1.1rem; color: #fff;
+    padding: .85rem 0; text-decoration: none; flex-shrink: 0;
+  }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    font-size: .82rem; font-weight: 500; padding: .85rem .25rem;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    flex-shrink: 0;
+  }
+  nav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,.6); }
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+    color: #fff; padding: 3rem 2rem 2.5rem; text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--amber-400), var(--orange-400), var(--rose-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--slate-400); margin-top: .5rem; font-size: .95rem; }
+  .hero .meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.2rem; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: var(--slate-300);
+  }
+  .hero .meta code {
+    background: rgba(255,255,255,.1); padding: .15rem .5rem;
+    border-radius: 6px; font-size: .78rem;
+  }
+  /* CONTAINER */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  /* SECTION */
+  section { margin-bottom: 3rem; }
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+    margin-bottom: 1.2rem; padding-bottom: .5rem;
+    border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--amber-500), var(--orange-500), var(--rose-500)) 1;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  /* CARDS */
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--slate-200);
+    padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; color: var(--slate-900); }
+  .card h4 { font-size: .9rem; font-weight: 600; margin: .8rem 0 .3rem; color: var(--slate-700); }
+  /* BADGES */
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; line-height: 1.4;
+  }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-orange { background: #fff7ed; color: var(--orange-600); }
+  .badge-rose { background: #fff1f2; color: var(--rose-600); }
+  .badge-green { background: var(--green-100); color: var(--green-700); }
+  .badge-blue { background: var(--blue-100); color: var(--blue-700); }
+  .badge-purple { background: var(--purple-100); color: var(--purple-700); }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-red { background: var(--red-100); color: var(--red-700); }
+  .badge-yellow { background: var(--yellow-100); color: var(--yellow-700); }
+  .badge-slate { background: var(--slate-100); color: var(--slate-600); }
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    text-align: left; padding: .65rem .8rem;
+    background: var(--slate-800); color: #fff;
+    font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: .6rem .8rem; border-bottom: 1px solid var(--slate-100); }
+  tr:nth-child(even) td { background: var(--slate-50); }
+  tr:hover td { background: var(--amber-50); }
+  /* PROGRESS BAR */
+  .pbar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .pbar {
+    flex: 1; height: 8px; background: var(--slate-200);
+    border-radius: 999px; overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+  }
+  .pbar-label { font-size: .78rem; color: var(--slate-500); min-width: 3.5rem; text-align: right; }
+  /* CODE */
+  pre {
+    background: var(--slate-900); color: #e2e8f0;
+    padding: 1.2rem 1.4rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: .82rem; line-height: 1.55;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    margin: .8rem 0;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .85em;
+  }
+  :not(pre) > code {
+    background: var(--slate-100); padding: .15rem .4rem;
+    border-radius: 4px; color: var(--orange-600); font-size: .83em;
+  }
+  .kw { color: #c084fc; } /* keyword */
+  .str { color: #86efac; } /* string */
+  .num { color: #fbbf24; } /* number */
+  .cm { color: #64748b; font-style: italic; } /* comment */
+  .fn { color: #67e8f9; } /* function */
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid; text-align: center;
+  }
+  .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+  .stat-card .stat-label { font-size: .78rem; color: var(--slate-500); margin-top: .2rem; }
+  /* FLOW DIAGRAM */
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .flow-step {
+    background: #fff; border: 2px solid var(--slate-200); border-radius: var(--radius);
+    padding: 1rem 1.5rem; width: 100%; max-width: 600px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .flow-step .step-num {
+    position: absolute; top: -.7rem; left: 1rem;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .flow-step h4 { font-size: .9rem; font-weight: 700; color: var(--slate-800); margin-bottom: .25rem; }
+  .flow-step p { font-size: .8rem; color: var(--slate-500); }
+  .flow-arrow {
+    width: 2px; height: 24px;
+    background: linear-gradient(180deg, var(--amber-400), var(--orange-400));
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--orange-400);
+  }
+  .flow-parallel {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+    width: 100%; max-width: 600px;
+  }
+  .flow-parallel .flow-step { max-width: none; }
+  /* GAP CARDS */
+  .gap-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid;
+    margin-bottom: .8rem;
+  }
+  .gap-card.high { border-left-color: var(--red-500); }
+  .gap-card.medium { border-left-color: var(--yellow-500); }
+  .gap-card .gap-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .gap-card p { font-size: .85rem; color: var(--slate-600); margin-top: .3rem; }
+  /* ENDPOINT BLOCK */
+  .endpoint {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .45rem 0; font-size: .85rem;
+    border-bottom: 1px dashed var(--slate-200);
+  }
+  .method {
+    display: inline-block; padding: .15rem .5rem; border-radius: 4px;
+    font-size: .7rem; font-weight: 700; min-width: 52px; text-align: center; color: #fff;
+  }
+  .method-get { background: var(--green-500); }
+  .method-post { background: var(--blue-500); }
+  .method-patch { background: var(--purple-500); }
+  .method-delete { background: var(--red-500); }
+  .endpoint code { font-size: .82rem; }
+  .endpoint .ep-desc { color: var(--slate-500); font-size: .78rem; margin-left: auto; }
+  /* TREE */
+  .tree { font-family: monospace; font-size: .82rem; line-height: 1.7; color: var(--slate-700); }
+  .tree .dir { color: var(--blue-700); font-weight: 600; }
+  .tree .file { color: var(--slate-600); }
+  .tree .note { color: var(--slate-400); font-style: italic; }
+  /* KV LIST */
+  .kv { display: grid; grid-template-columns: 180px 1fr; gap: .3rem .8rem; font-size: .88rem; }
+  .kv dt { color: var(--slate-500); font-weight: 500; }
+  .kv dd { color: var(--slate-800); }
+  /* SPLIT */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  /* TABS */
+  .tab-headers { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .tab-btn {
+    padding: .4rem 1rem; border-radius: 999px; border: 1.5px solid var(--slate-200);
+    background: #fff; cursor: pointer; font-size: .82rem; font-weight: 600;
+    color: var(--slate-600); transition: all .2s;
+  }
+  .tab-btn.active, .tab-btn:hover {
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; border-color: transparent;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    .flow-parallel { grid-template-columns: 1fr; }
+    nav .nav-inner { gap: .8rem; }
+    .container { padding: 1rem; }
+    .kv { grid-template-columns: 1fr; }
+  }
+  /* PRINT */
+  @media print {
+    nav { position: static; }
+    .hero { padding: 1.5rem; }
+    .card, .flow-step, .gap-card, .stat-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">IAPH RAG</a>
+    <a href="#vision">Visi&oacute;n General</a>
+    <a href="#modelos">Modelos IA</a>
+    <a href="#corpus">Corpus</a>
+    <a href="#pipeline">Pipeline RAG</a>
+    <a href="#ingestion">Ingesti&oacute;n</a>
+    <a href="#heuristicas">Heur&iacute;sticas</a>
+    <a href="#prompts">Prompts</a>
+    <a href="#contexts">Bounded Contexts</a>
+    <a href="#arquitectura">Arquitectura</a>
+    <a href="#docker">Docker</a>
+    <a href="#params">Par&aacute;metros</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#tests">Tests</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Informe de Estado T&eacute;cnico</h1>
+  <p>Agente conversacional RAG &mdash; Instituto Andaluz de Patrimonio Hist&oacute;rico (IAPH)</p>
+  <p style="color: var(--slate-500); font-size: .82rem; margin-top: .3rem;">Comisionado por la Universidad de Ja&eacute;n</p>
+  <div class="meta">
+    <span>&#128197; <code>2026-03-13</code></span>
+    <span>&#127795; Rama: <code>develop</code></span>
+    <span>&#128640; Commit: <code>1d9081d</code></span>
+    <span>&#9881;&#65039; Monorepo: <code>backend/ + frontend/</code></span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 1. VISION GENERAL ===================== -->
+<section id="vision">
+  <h2 class="section-title"><span class="icon">&#127758;</span> Visi&oacute;n General del Sistema</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">134,599</div>
+      <div class="stat-label">Registros patrimoniales</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--orange-500);">
+      <div class="stat-value" style="color: var(--orange-600);">~66M</div>
+      <div class="stat-label">Tokens totales</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--rose-500);">
+      <div class="stat-value" style="color: var(--rose-600);">4</div>
+      <div class="stat-label">Bounded Contexts</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">14</div>
+      <div class="stat-label">Endpoints API</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple-500);">
+      <div class="stat-value" style="color: var(--purple-700);">5</div>
+      <div class="stat-label">P&aacute;ginas frontend</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--teal-500);">
+      <div class="stat-value" style="color: var(--teal-700);">768d</div>
+      <div class="stat-label">Embeddings MrBERT</div>
+    </div>
+  </div>
+
+  <!-- Architecture diagram SVG -->
+  <div class="card" style="overflow-x: auto;">
+    <h3>Diagrama de Arquitectura</h3>
+    <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" style="width: 100%; max-width: 900px; margin: 1rem auto; display: block;">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#f59e0b"/>
+          <stop offset="50%" style="stop-color:#f97316"/>
+          <stop offset="100%" style="stop-color:#f43f5e"/>
+        </linearGradient>
+        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#1e293b"/>
+          <stop offset="100%" style="stop-color:#334155"/>
+        </linearGradient>
+        <filter id="shadow1"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/></filter>
+      </defs>
+      <!-- Frontend box -->
+      <rect x="20" y="20" width="180" height="160" rx="12" fill="#fff" stroke="#e2e8f0" stroke-width="2" filter="url(#shadow1)"/>
+      <rect x="20" y="20" width="180" height="36" rx="12" fill="url(#grad1)"/>
+      <rect x="20" y="44" width="180" height="12" fill="url(#grad1)"/>
+      <text x="110" y="44" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Frontend</text>
+      <text x="110" y="80" text-anchor="middle" fill="#475569" font-size="11">Next.js 16 + TypeScript</text>
+      <text x="110" y="98" text-anchor="middle" fill="#475569" font-size="11">Tailwind CSS v4</text>
+      <text x="110" y="116" text-anchor="middle" fill="#475569" font-size="11">Zustand stores</text>
+      <text x="110" y="134" text-anchor="middle" fill="#475569" font-size="11">react-leaflet</text>
+      <text x="110" y="160" text-anchor="middle" fill="#94a3b8" font-size="10">:3000</text>
+      <!-- Arrow frontend -> backend -->
+      <line x1="200" y1="100" x2="250" y2="100" stroke="#f97316" stroke-width="2" marker-end="url(#arrowhead)"/>
+      <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f97316"/></marker></defs>
+      <!-- Backend box -->
+      <rect x="260" y="10" width="400" height="220" rx="12" fill="#fff" stroke="#e2e8f0" stroke-width="2" filter="url(#shadow1)"/>
+      <rect x="260" y="10" width="400" height="36" rx="12" fill="url(#grad2)"/>
+      <rect x="260" y="34" width="400" height="12" fill="url(#grad2)"/>
+      <text x="460" y="34" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">Backend &mdash; FastAPI (Hexagonal)</text>
+      <text x="460" y="56" text-anchor="middle" fill="#94a3b8" font-size="10">:8080</text>
+      <!-- Context boxes inside backend -->
+      <rect x="280" y="68" width="85" height="50" rx="6" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+      <text x="322" y="90" text-anchor="middle" fill="#1d4ed8" font-size="10" font-weight="600">Chat</text>
+      <text x="322" y="106" text-anchor="middle" fill="#3b82f6" font-size="9">Sesiones</text>
+      <rect x="375" y="68" width="85" height="50" rx="6" fill="#fff7ed" stroke="#fdba74" stroke-width="1"/>
+      <text x="417" y="90" text-anchor="middle" fill="#ea580c" font-size="10" font-weight="600">RAG</text>
+      <text x="417" y="106" text-anchor="middle" fill="#f97316" font-size="9">Retrieval</text>
+      <rect x="470" y="68" width="85" height="50" rx="6" fill="#f3e8ff" stroke="#c084fc" stroke-width="1"/>
+      <text x="512" y="90" text-anchor="middle" fill="#7e22ce" font-size="10" font-weight="600">Routes</text>
+      <text x="512" y="106" text-anchor="middle" fill="#a855f7" font-size="9">Rutas</text>
+      <rect x="565" y="68" width="78" height="50" rx="6" fill="#ccfbf1" stroke="#5eead4" stroke-width="1"/>
+      <text x="604" y="90" text-anchor="middle" fill="#0f766e" font-size="10" font-weight="600">Accesib.</text>
+      <text x="604" y="106" text-anchor="middle" fill="#14b8a6" font-size="9">L. F&aacute;cil</text>
+      <!-- Hexagonal layers -->
+      <rect x="280" y="135" width="360" height="22" rx="4" fill="#fef3c7"/>
+      <text x="460" y="150" text-anchor="middle" fill="#92400e" font-size="9" font-weight="600">Domain &larr; Application &larr; Infrastructure (Ports &amp; Adapters)</text>
+      <!-- Composition -->
+      <rect x="280" y="168" width="360" height="22" rx="4" fill="#f1f5f9"/>
+      <text x="460" y="183" text-anchor="middle" fill="#475569" font-size="9">Composition (DI wiring) &bull; Alembic migrations &bull; config.py</text>
+      <rect x="280" y="198" width="360" height="22" rx="4" fill="#f1f5f9"/>
+      <text x="460" y="213" text-anchor="middle" fill="#475569" font-size="9">async SQLAlchemy &bull; httpx adapters &bull; pgvector &bull; tsvector</text>
+      <!-- Infrastructure row -->
+      <rect x="20" y="270" width="250" height="130" rx="12" fill="#fff" stroke="#e2e8f0" stroke-width="2" filter="url(#shadow1)"/>
+      <rect x="20" y="270" width="250" height="32" rx="12" fill="#1e293b"/>
+      <rect x="20" y="290" width="250" height="12" fill="#1e293b"/>
+      <text x="145" y="292" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">PostgreSQL + pgvector</text>
+      <text x="145" y="325" text-anchor="middle" fill="#475569" font-size="11">Vector store (HNSW, cosine)</text>
+      <text x="145" y="345" text-anchor="middle" fill="#475569" font-size="11">Full-text search (GIN, tsvector)</text>
+      <text x="145" y="365" text-anchor="middle" fill="#475569" font-size="11">Chat sessions &amp; messages</text>
+      <text x="145" y="385" text-anchor="middle" fill="#94a3b8" font-size="10">:5432</text>
+      <!-- Embedding service -->
+      <rect x="300" y="270" width="250" height="130" rx="12" fill="#fff" stroke="#e2e8f0" stroke-width="2" filter="url(#shadow1)"/>
+      <rect x="300" y="270" width="250" height="32" rx="12" fill="#1e293b"/>
+      <rect x="300" y="290" width="250" height="12" fill="#1e293b"/>
+      <text x="425" y="292" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">Embedding Service</text>
+      <text x="425" y="325" text-anchor="middle" fill="#475569" font-size="11">BSC-LT/MrBERT (308M)</text>
+      <text x="425" y="345" text-anchor="middle" fill="#475569" font-size="11">ModernBERT &bull; 768 dims</text>
+      <text x="425" y="365" text-anchor="middle" fill="#475569" font-size="11">Mean pooling &bull; 8192 ctx</text>
+      <text x="425" y="385" text-anchor="middle" fill="#94a3b8" font-size="10">:8001 (GPU)</text>
+      <!-- LLM service -->
+      <rect x="580" y="270" width="250" height="130" rx="12" fill="#fff" stroke="#e2e8f0" stroke-width="2" filter="url(#shadow1)"/>
+      <rect x="580" y="270" width="250" height="32" rx="12" fill="#1e293b"/>
+      <rect x="580" y="290" width="250" height="12" fill="#1e293b"/>
+      <text x="705" y="292" text-anchor="middle" fill="#fff" font-size="12" font-weight="700">LLM Service (vLLM)</text>
+      <text x="705" y="325" text-anchor="middle" fill="#475569" font-size="11">salamandra-7b-instruct</text>
+      <text x="705" y="345" text-anchor="middle" fill="#475569" font-size="11">OpenAI-compatible API</text>
+      <text x="705" y="365" text-anchor="middle" fill="#475569" font-size="11">Temp 0.3 &bull; Max 512 tok</text>
+      <text x="705" y="385" text-anchor="middle" fill="#94a3b8" font-size="10">:8000 (GPU, perfil llm)</text>
+      <!-- Connection arrows -->
+      <line x1="460" y1="230" x2="145" y2="270" stroke="#cbd5e1" stroke-width="1.5"/>
+      <line x1="460" y1="230" x2="425" y2="270" stroke="#cbd5e1" stroke-width="1.5"/>
+      <line x1="460" y1="230" x2="705" y2="270" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,3"/>
+    </svg>
+    <p style="text-align: center; font-size: .78rem; color: var(--slate-400);">L&iacute;nea discontinua = servicio opcional (perfil Docker <code>llm</code>)</p>
+  </div>
+</section>
+
+<!-- ===================== 2. MODELOS IA ===================== -->
+<section id="modelos">
+  <h2 class="section-title"><span class="icon">&#129302;</span> Modelos de IA</h2>
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <div style="display: flex; justify-content: space-between; align-items: start;">
+        <h3>&#128300; MrBERT &mdash; Encoder</h3>
+        <span class="badge badge-green">Activo</span>
+      </div>
+      <dl class="kv" style="margin-top: .8rem;">
+        <dt>Modelo</dt><dd><code>BSC-LT/MrBERT</code></dd>
+        <dt>Arquitectura</dt><dd>ModernBERT</dd>
+        <dt>Par&aacute;metros</dt><dd>308M</dd>
+        <dt>Contexto</dt><dd>8,192 tokens</dd>
+        <dt>Dimensi&oacute;n embedding</dt><dd><strong>768</strong></dd>
+        <dt>Vocabulario</dt><dd>256K tokens</dd>
+        <dt>Pooling</dt><dd><span class="badge badge-orange">Mean pooling</span> (NO CLS)</dd>
+        <dt>Idiomas</dt><dd>35 (incluye espa&ntilde;ol)</dd>
+        <dt>Licencia</dt><dd>Apache 2.0</dd>
+        <dt>Servicio</dt><dd><code>POST /embed</code> &rarr; <code>:8001</code></dd>
+      </dl>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--rose-500);">
+      <div style="display: flex; justify-content: space-between; align-items: start;">
+        <h3>&#128172; Salamandra &mdash; Decoder</h3>
+        <span class="badge badge-yellow">Fine-tuning pendiente</span>
+      </div>
+      <dl class="kv" style="margin-top: .8rem;">
+        <dt>Modelo</dt><dd><code>BSC-LT/salamandra-7b-instruct</code></dd>
+        <dt>Tipo</dt><dd>LLM Instruct</dd>
+        <dt>Par&aacute;metros</dt><dd>7B</dd>
+        <dt>Capacidad</dt><dd>Espa&ntilde;ol nativo (BSC)</dd>
+        <dt>Serving</dt><dd><span class="badge badge-blue">vLLM</span> OpenAI-compatible</dd>
+        <dt>Temperatura</dt><dd>0.3 (baja &rarr; m&aacute;s fiel)</dd>
+        <dt>Max tokens</dt><dd>512</dd>
+        <dt>Timeout</dt><dd>120s (retry autom&aacute;tico)</dd>
+        <dt>GPU</dt><dd>NVIDIA requerida</dd>
+        <dt>Servicio</dt><dd><code>POST /v1/chat/completions</code> &rarr; <code>:8000</code></dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 3. CORPUS ===================== -->
+<section id="corpus">
+  <h2 class="section-title"><span class="icon">&#128218;</span> Corpus de Datos</h2>
+
+  <h3 style="margin-bottom: .8rem;">3.1 Datasets (Parquet)</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr><th>Dataset</th><th>Registros</th><th>Tokens</th><th>Distribuci&oacute;n</th><th>Columnas clave</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-orange">Patrimonio Mueble</span></td>
+          <td><strong>105,009</strong></td>
+          <td>~41M</td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:78%"></div></div><div class="pbar-label">78.0%</div></div></td>
+          <td><code>type</code>, <code>disciplines</code>, <code>styles</code>, <code>materials</code>, <code>techniques</code></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-amber">Patrimonio Inmueble</span></td>
+          <td><strong>27,572</strong></td>
+          <td>~20M</td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:20.5%"></div></div><div class="pbar-label">20.5%</div></div></td>
+          <td><code>characterisation</code>, tipolog&iacute;as en HTML</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-rose">Patrimonio Inmaterial</span></td>
+          <td><strong>1,901</strong></td>
+          <td>~5M</td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:1.4%"></div></div><div class="pbar-label">1.4%</div></div></td>
+          <td><code>subject_topic</code>, <code>activity_types</code>, <code>district</code></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-teal">Paisaje Cultural</span></td>
+          <td><strong>117</strong></td>
+          <td>~119K</td>
+          <td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:0.3%"></div></div><div class="pbar-label">0.1%</div></div></td>
+          <td><code>landscape_demarcation</code>, <code>topic</code>, <code>area</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .8rem;">3.2 Tipolog&iacute;a del Patrimonio</h3>
+  <div class="card-grid">
+    <!-- Inmueble characterisation -->
+    <div class="card">
+      <h3>Inmueble &mdash; Caracterizaci&oacute;n</h3>
+      <p style="font-size: .8rem; color: var(--slate-500); margin-bottom: .8rem;">Campo <code>characterisation</code> &mdash; 9 categor&iacute;as</p>
+      <div style="display: flex; flex-direction: column; gap: .4rem;">
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Arqueol&oacute;gica</span><div class="pbar"><div class="pbar-fill" style="width:55.4%; background: linear-gradient(90deg, #f59e0b, #ea580c);"></div></div><div class="pbar-label">15,288</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Arquitect&oacute;nica</span><div class="pbar"><div class="pbar-fill" style="width:20%; background: linear-gradient(90deg, #f97316, #f43f5e);"></div></div><div class="pbar-label">5,524</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Etnol&oacute;gica</span><div class="pbar"><div class="pbar-fill" style="width:11.4%; background: linear-gradient(90deg, #fb923c, #fb7185);"></div></div><div class="pbar-label">3,136</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Arq. + Etnol&oacute;gica</span><div class="pbar"><div class="pbar-fill" style="width:7.5%; background:#fbbf24;"></div></div><div class="pbar-label">2,065</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Arq. + Arquitect.</span><div class="pbar"><div class="pbar-fill" style="width:4.2%; background:#fde68a;"></div></div><div class="pbar-label">1,167</div></div>
+      </div>
+    </div>
+    <!-- Inmueble tipologias -->
+    <div class="card">
+      <h3>Inmueble &mdash; Tipolog&iacute;as detalladas</h3>
+      <p style="font-size: .8rem; color: var(--slate-500); margin-bottom: .8rem;">Extra&iacute;das de tablas HTML en campo <code>text</code></p>
+      <div style="display: flex; flex-direction: column; gap: .4rem;">
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Asentamientos</span><div class="pbar"><div class="pbar-fill" style="width:100%; background: linear-gradient(90deg, #f59e0b, #ea580c);"></div></div><div class="pbar-label">4,019</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Villae</span><div class="pbar"><div class="pbar-fill" style="width:40%;"></div></div><div class="pbar-label">1,620</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Cortijos</span><div class="pbar"><div class="pbar-fill" style="width:17%;"></div></div><div class="pbar-label">695</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Castillos</span><div class="pbar"><div class="pbar-fill" style="width:10.7%;"></div></div><div class="pbar-label">431</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Iglesias</span><div class="pbar"><div class="pbar-fill" style="width:8.2%;"></div></div><div class="pbar-label">329</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Torres defensivas</span><div class="pbar"><div class="pbar-fill" style="width:5%;"></div></div><div class="pbar-label">203</div></div>
+      </div>
+    </div>
+    <!-- Mueble type -->
+    <div class="card">
+      <h3>Mueble &mdash; Tipos</h3>
+      <p style="font-size: .8rem; color: var(--slate-500); margin-bottom: .8rem;">Campo <code>type</code> &mdash; 4,256 valores &uacute;nicos</p>
+      <div style="display: flex; flex-direction: column; gap: .4rem;">
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Pinturas caballete</span><div class="pbar"><div class="pbar-fill" style="width:100%; background: linear-gradient(90deg, #a855f7, #f43f5e);"></div></div><div class="pbar-label">9,341</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Esculturas bulto</span><div class="pbar"><div class="pbar-fill" style="width:51%;"></div></div><div class="pbar-label">4,778</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Pinturas murales</span><div class="pbar"><div class="pbar-fill" style="width:25%;"></div></div><div class="pbar-label">2,313</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Retablos</span><div class="pbar"><div class="pbar-fill" style="width:23%;"></div></div><div class="pbar-label">2,176</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Relieves</span><div class="pbar"><div class="pbar-fill" style="width:24%;"></div></div><div class="pbar-label">2,257</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Azulejos</span><div class="pbar"><div class="pbar-fill" style="width:10.7%;"></div></div><div class="pbar-label">1,002</div></div>
+      </div>
+    </div>
+    <!-- Inmaterial -->
+    <div class="card">
+      <h3>Inmaterial &mdash; Tem&aacute;ticas</h3>
+      <p style="font-size: .8rem; color: var(--slate-500); margin-bottom: .8rem;">Campo <code>subject_topic</code> &mdash; 4 categor&iacute;as principales</p>
+      <div style="display: flex; flex-direction: column; gap: .4rem;">
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Rituales festivos</span><div class="pbar"><div class="pbar-fill" style="width:100%; background: linear-gradient(90deg, #14b8a6, #3b82f6);"></div></div><div class="pbar-label">812</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Oficios y saberes</span><div class="pbar"><div class="pbar-fill" style="width:70%;"></div></div><div class="pbar-label">567</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Modos de expresi&oacute;n</span><div class="pbar"><div class="pbar-fill" style="width:36%;"></div></div><div class="pbar-label">292</div></div>
+        <div class="pbar-wrap"><span style="font-size:.8rem; min-width:160px;">Alimentaci&oacute;n</span><div class="pbar"><div class="pbar-fill" style="width:28%;"></div></div><div class="pbar-label">228</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .8rem;">3.3 Distribuci&oacute;n por Provincia (Patrimonio Inmueble)</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Provincia</th><th>Registros</th><th>Distribuci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>Sevilla</td><td>5,983</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:100%"></div></div><div class="pbar-label">21.7%</div></div></td></tr>
+        <tr><td>Ja&eacute;n</td><td>3,854</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:64%"></div></div><div class="pbar-label">14.0%</div></div></td></tr>
+        <tr><td>C&oacute;rdoba</td><td>3,779</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:63%"></div></div><div class="pbar-label">13.7%</div></div></td></tr>
+        <tr><td>C&aacute;diz</td><td>3,494</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:58%"></div></div><div class="pbar-label">12.7%</div></div></td></tr>
+        <tr><td>Granada</td><td>2,805</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:47%"></div></div><div class="pbar-label">10.2%</div></div></td></tr>
+        <tr><td>M&aacute;laga</td><td>2,584</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:43%"></div></div><div class="pbar-label">9.4%</div></div></td></tr>
+        <tr><td>Almer&iacute;a</td><td>2,357</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:39%"></div></div><div class="pbar-label">8.5%</div></div></td></tr>
+        <tr><td>Huelva</td><td>2,293</td><td><div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" style="width:38%"></div></div><div class="pbar-label">8.3%</div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .8rem;">3.4 Georreferenciaci&oacute;n</h3>
+  <div class="card" style="border-left: 4px solid var(--red-500);">
+    <div style="display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem;">
+      <span class="badge badge-red">NO IMPLEMENTADA</span>
+      <strong>Sin coordenadas geogr&aacute;ficas</strong>
+    </div>
+    <p style="font-size: .88rem; color: var(--slate-600);">
+      No hay lat/lon ni UTM en ning&uacute;n campo estructurado de los parquets.
+      La ubicaci&oacute;n se resuelve solo por <code>province</code> + <code>municipality</code>.
+      La ficha web de la Gu&iacute;a Digital IAPH podr&iacute;a contener coordenadas, pero no se extrajeron en el scraping original.
+      Hay ~270 registros con datos sucios (HTML mezclado) en los campos de localizaci&oacute;n.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 4. PIPELINE RAG ===================== -->
+<section id="pipeline">
+  <h2 class="section-title"><span class="icon">&#9889;</span> Pipeline RAG &mdash; Flujo Completo</h2>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <h4>Embedding de la Query</h4>
+      <p>MrBERT genera vector <strong>768d</strong> via <code>POST /embed</code>. Mean pooling sobre todos los tokens.</p>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-parallel">
+      <div class="flow-step" style="border-color: var(--blue-500);">
+        <div class="step-num" style="background: var(--blue-500);">2a</div>
+        <h4>B&uacute;squeda Vectorial</h4>
+        <p>pgvector <code>&lt;=&gt;</code> cosine distance. Top <strong>20</strong> chunks. Filtros: <code>heritage_type</code>, <code>province</code>.</p>
+      </div>
+      <div class="flow-step" style="border-color: var(--teal-500);">
+        <div class="step-num" style="background: var(--teal-500);">2b</div>
+        <h4>B&uacute;squeda Full-Text</h4>
+        <p>PostgreSQL tsvector + <code>ts_rank_cd</code>. Idioma: espa&ntilde;ol. 37 stopwords. Top <strong>20</strong>.</p>
+      </div>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-step" style="border-color: var(--amber-500);">
+      <div class="step-num">3</div>
+      <h4>Fusi&oacute;n H&iacute;brida &mdash; Reciprocal Rank Fusion (RRF)</h4>
+      <p>
+        <code>RRF(d) = &Sigma; 1/(k + rank + 1)</code> con <strong>k=60</strong>.
+        Texto ponderado <strong>&times;1.5</strong> (keywords exactas son se&ntilde;al fuerte en dominio patrimonial).
+        Normaliza a [0, 1] invertido (0 = mejor).
+      </p>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-step" style="border-color: var(--red-500);">
+      <div class="step-num" style="background: var(--red-500);">4</div>
+      <h4>Filtro de Relevancia</h4>
+      <p>
+        Umbral: <strong>score &le; 0.35</strong>. Si 0 chunks pasan &rarr;
+        <span class="badge badge-red">ABSTENCI&Oacute;N</span>
+        (no se invoca al LLM, respuesta fija).
+      </p>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-step" style="border-color: var(--purple-500);">
+      <div class="step-num" style="background: var(--purple-500);">5</div>
+      <h4>Re-ranking Heur&iacute;stico (4 se&ntilde;ales)</h4>
+      <p>
+        <span class="badge badge-amber">40% base</span>
+        <span class="badge badge-orange">30% t&iacute;tulo</span>
+        <span class="badge badge-rose">20% cobertura</span>
+        <span class="badge badge-slate">10% posici&oacute;n</span>
+        &mdash; Output: top <strong>5</strong> chunks.
+      </p>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-step" style="border-color: var(--green-500);">
+      <div class="step-num" style="background: var(--green-500);">6</div>
+      <h4>Ensamblado de Contexto</h4>
+      <p>
+        M&aacute;x <strong>6,000 caracteres</strong>.
+        Formato: <code>[N] T&iacute;tulo (tipo, provincia) + Contenido + Fuente: URL</code>.
+        Separador: <code>---</code>.
+      </p>
+    </div>
+    <div class="flow-arrow"></div>
+
+    <div class="flow-step" style="border-color: var(--rose-500);">
+      <div class="step-num" style="background: var(--rose-500);">7</div>
+      <h4>Generaci&oacute;n LLM</h4>
+      <p>
+        <strong>salamandra-7b-instruct</strong> via vLLM.
+        System prompt: grounding estricto (7 reglas). Temp: <strong>0.3</strong>. Max: <strong>512 tokens</strong>.
+        Auto-retry con tokens reducidos si error 400.
+      </p>
+    </div>
+  </div>
+
+  <h3 style="margin: 2rem 0 .8rem;">Ejemplo de ejecuci&oacute;n</h3>
+  <div class="card">
+    <h4>&#128269; Input &mdash; Request</h4>
+    <pre><span class="fn">POST</span> /api/v1/rag/query
+{
+  <span class="str">"query"</span>: <span class="str">"Qu&eacute; castillos hay en la provincia de Ja&eacute;n?"</span>,
+  <span class="str">"top_k"</span>: <span class="num">5</span>,
+  <span class="str">"heritage_type_filter"</span>: <span class="str">"patrimonio_inmueble"</span>,
+  <span class="str">"province_filter"</span>: <span class="str">"Ja&eacute;n"</span>
+}</pre>
+
+    <h4>&#9881;&#65039; Paso 1 &mdash; Embedding</h4>
+    <pre><span class="cm">// MrBERT genera vector 768-dimensional</span>
+query_embedding = [<span class="num">0.023</span>, <span class="num">-0.118</span>, ..., <span class="num">0.045</span>] <span class="cm">// 768 floats</span></pre>
+
+    <h4>&#128270; Paso 2a &mdash; B&uacute;squeda vectorial (SQL)</h4>
+    <pre><span class="kw">SELECT</span> id, document_id, title, heritage_type, province,
+       municipality, url, content,
+       embedding <span class="fn">&lt;=&gt;</span> <span class="str">:query_vec</span> <span class="kw">AS</span> score
+<span class="kw">FROM</span> document_chunks_v1
+<span class="kw">WHERE</span> heritage_type = <span class="str">'patrimonio_inmueble'</span>
+  <span class="kw">AND</span> province = <span class="str">'Ja&eacute;n'</span>
+<span class="kw">ORDER BY</span> score <span class="kw">ASC</span>
+<span class="kw">LIMIT</span> <span class="num">20</span></pre>
+
+    <h4>&#128270; Paso 2b &mdash; B&uacute;squeda full-text (SQL)</h4>
+    <pre><span class="kw">SELECT</span> ...,
+       <span class="fn">ts_rank_cd</span>(search_vector, <span class="fn">plainto_tsquery</span>(<span class="str">'spanish'</span>, <span class="str">'castillos provincia jaen'</span>)) <span class="kw">AS</span> score
+<span class="kw">FROM</span> document_chunks_v1
+<span class="kw">WHERE</span> search_vector <span class="fn">@@</span> <span class="fn">plainto_tsquery</span>(<span class="str">'spanish'</span>, <span class="str">'castillos provincia jaen'</span>)
+<span class="kw">ORDER BY</span> score <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="num">20</span></pre>
+
+    <h4>&#127922; Paso 3 &mdash; RRF Fusion</h4>
+    <pre><span class="cm">// Chunk que aparece #1 en ambas listas:</span>
+vector_rrf  = <span class="num">1.0</span> / (<span class="num">60</span> + <span class="num">0</span> + <span class="num">1</span>) = <span class="num">0.0164</span>
+text_rrf    = <span class="num">1.5</span> / (<span class="num">60</span> + <span class="num">0</span> + <span class="num">1</span>) = <span class="num">0.0246</span>
+total_rrf   = <span class="num">0.0410</span>  <span class="cm">// m&aacute;ximo posible</span>
+normalized  = <span class="num">0.0</span>    <span class="cm">// 1 - (0.041/0.041) = 0  (mejor score)</span></pre>
+
+    <h4>&#128200; Paso 5 &mdash; Re-ranking</h4>
+    <pre><span class="cm">// Chunk con "Castillo" en t&iacute;tulo:</span>
+base_score     = <span class="num">1.0</span> - <span class="num">0.0</span>  = <span class="num">1.0</span>   <span class="cm">// &times; 0.4 = 0.40</span>
+title_match    = <span class="num">1.0</span>          <span class="cm">// "castillo" &isin; title &rarr; &times; 0.3 = 0.30</span>
+term_coverage  = <span class="num">0.67</span>         <span class="cm">// 2/3 terms found &rarr; &times; 0.2 = 0.13</span>
+position       = <span class="num">0.5</span>          <span class="cm">// neutral &rarr; &times; 0.1 = 0.05</span>
+<span class="kw">final_score</span>    = <span class="num">0.88</span>         <span class="cm">// alto → ser&aacute; top resultado</span></pre>
+
+    <h4>&#128203; Paso 6 &mdash; Contexto ensamblado</h4>
+    <pre>[<span class="num">1</span>] Castillo de Ba&ntilde;os de la Encina (<span class="str">patrimonio_inmueble</span>, <span class="str">Ja&eacute;n</span>)
+Fortaleza de origen califal del siglo X, construida en tapial sobre un cerro
+que domina el valle del Rumblar. Declarada Monumento Nacional en 1931...
+Fuente: https://guiadigital.iaph.es/bien/inmueble/12345
+---
+[<span class="num">2</span>] Castillo de Santa Catalina (<span class="str">patrimonio_inmueble</span>, <span class="str">Ja&eacute;n</span>)
+...</pre>
+
+    <h4>&#128172; Paso 7 &mdash; Output (Response)</h4>
+    <pre>{
+  <span class="str">"answer"</span>: <span class="str">"En la provincia de Ja&eacute;n se encuentran varios castillos
+    destacados. El Castillo de Ba&ntilde;os de la Encina [1] es una fortaleza
+    califal del siglo X..."</span>,
+  <span class="str">"sources"</span>: [
+    {<span class="str">"title"</span>: <span class="str">"Castillo de Ba&ntilde;os de la Encina"</span>, <span class="str">"score"</span>: <span class="num">0.12</span>, ...},
+    {<span class="str">"title"</span>: <span class="str">"Castillo de Santa Catalina"</span>, <span class="str">"score"</span>: <span class="num">0.18</span>, ...}
+  ],
+  <span class="str">"abstained"</span>: <span class="kw">false</span>
+}</pre>
+  </div>
+</section>
+
+<!-- ===================== 5. INGESTION ===================== -->
+<section id="ingestion">
+  <h2 class="section-title"><span class="icon">&#128229;</span> Pipeline de Ingesti&oacute;n</h2>
+
+  <div class="card">
+    <h3>Flujo de ingesti&oacute;n Parquet &rarr; BD</h3>
+    <div class="flow" style="margin-top: 1rem;">
+      <div class="flow-step" style="border-color: var(--amber-500);">
+        <div class="step-num">1</div>
+        <h4>ParquetDocumentLoader</h4>
+        <p>Lee parquet con pandas. Extrae columnas: <code>id, url, title, province, municipality, text</code>. Resto &rarr; <code>metadata</code> dict (no persistido).</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--orange-500);">
+        <div class="step-num">2</div>
+        <h4>ChunkingService</h4>
+        <p><strong>512 tokens/chunk</strong>, <strong>64 tokens overlap</strong>. Paragraph-aware (divide en <code>\n\n</code>). Word-level fallback para p&aacute;rrafos grandes. Evita chunks finales diminutos.</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--rose-500);">
+        <div class="step-num">3</div>
+        <h4>HttpEmbeddingAdapter</h4>
+        <p>MrBERT via HTTP. Batch size: <strong>8 chunks</strong>. Cada chunk se enriquece con metadata (t&iacute;tulo, tipo, provincia) antes de embeber.</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" style="border-color: var(--green-500);">
+        <div class="step-num">4</div>
+        <h4>DocumentRepository</h4>
+        <p><code>INSERT INTO document_chunks_v1</code>. Idempotente: <code>chunk_exists()</code> previene duplicados. Trigger PostgreSQL auto-genera <code>search_vector</code> (tsvector).</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Campos persistidos vs descartados</h3>
+    <div class="split">
+      <div>
+        <h4 style="color: var(--green-700);">&#9989; Persistidos en BD</h4>
+        <table style="font-size: .82rem;">
+          <tr><td><code>document_id</code></td><td>&larr; <code>id</code></td></tr>
+          <tr><td><code>url</code></td><td>&larr; <code>url</code></td></tr>
+          <tr><td><code>title</code></td><td>&larr; <code>title</code></td></tr>
+          <tr><td><code>province</code></td><td>&larr; <code>province</code></td></tr>
+          <tr><td><code>municipality</code></td><td>&larr; <code>municipality</code></td></tr>
+          <tr><td><code>content</code></td><td>&larr; <code>text</code> (fragmentado)</td></tr>
+          <tr><td><code>heritage_type</code></td><td>&larr; del dataset</td></tr>
+          <tr><td><code>chunk_index</code></td><td>&larr; de chunking</td></tr>
+          <tr><td><code>token_count</code></td><td>&larr; de chunking</td></tr>
+          <tr><td><code>embedding</code></td><td>&larr; MrBERT (768d)</td></tr>
+          <tr><td><code>search_vector</code></td><td>&larr; trigger PG (tsvector)</td></tr>
+        </table>
+      </div>
+      <div>
+        <h4 style="color: var(--red-700);">&#10060; Descartados</h4>
+        <table style="font-size: .82rem;">
+          <tr><td><span class="badge badge-amber">Inmueble</span></td><td><code>characterisation</code></td></tr>
+          <tr><td><span class="badge badge-orange">Mueble</span></td><td><code>type</code>, <code>disciplines</code>, <code>styles</code></td></tr>
+          <tr><td><span class="badge badge-orange">Mueble</span></td><td><code>historic_periods</code>, <code>chronology</code></td></tr>
+          <tr><td><span class="badge badge-orange">Mueble</span></td><td><code>materials</code>, <code>techniques</code></td></tr>
+          <tr><td><span class="badge badge-orange">Mueble</span></td><td><code>property</code>, <code>dimensions</code></td></tr>
+          <tr><td><span class="badge badge-rose">Inmaterial</span></td><td><code>subject_topic</code>, <code>activity_types</code></td></tr>
+          <tr><td><span class="badge badge-rose">Inmaterial</span></td><td><code>district</code>, <code>date</code>, <code>frequency</code></td></tr>
+          <tr><td><span class="badge badge-teal">Paisaje</span></td><td><code>landscape_demarcation</code>, <code>topic</code>, <code>area</code></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 6. HEURISTICAS ===================== -->
+<section id="heuristicas">
+  <h2 class="section-title"><span class="icon">&#129504;</span> Heur&iacute;sticas y Algoritmos</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>&#127922; Reciprocal Rank Fusion (RRF)</h3>
+      <pre style="font-size: .82rem;"><span class="fn">RRF</span>(d) = &Sigma; w<sub>i</sub> / (k + rank<sub>i</sub>(d) + <span class="num">1</span>)
+
+k = <span class="num">60</span>           <span class="cm">// constante de suavizado</span>
+w_vector = <span class="num">1.0</span>   <span class="cm">// peso b&uacute;squeda vectorial</span>
+w_text   = <span class="num">1.5</span>   <span class="cm">// peso b&uacute;squeda textual (+50%)</span></pre>
+      <p style="font-size: .85rem; color: var(--slate-600); margin-top: .5rem;">
+        Combina rankings sin calibrar scores. El peso extra en texto se justifica porque
+        keywords exactas (ej. "castillo", "retablo") son se&ntilde;al fuerte en dominio patrimonial con terminolog&iacute;a espec&iacute;fica.
+      </p>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>&#128200; Re-ranking Heur&iacute;stico</h3>
+      <pre style="font-size: .82rem;"><span class="fn">score</span>(chunk) =
+  <span class="num">0.4</span> &times; (1 - cosine_dist)        <span class="cm">// base</span>
++ <span class="num">0.3</span> &times; title_match(q, title)   <span class="cm">// t&iacute;tulo</span>
++ <span class="num">0.2</span> &times; coverage(q, content)    <span class="cm">// cobertura</span>
++ <span class="num">0.1</span> &times; <span class="num">0.5</span>                     <span class="cm">// posici&oacute;n (neutral)</span></pre>
+      <p style="font-size: .85rem; color: var(--slate-600); margin-top: .5rem;">
+        <strong>title_match</strong>: fracci&oacute;n de t&eacute;rminos de la query que aparecen en el t&iacute;tulo del chunk.
+        <strong>coverage</strong>: fracci&oacute;n de t&eacute;rminos de la query presentes en el contenido.
+        Tokenizaci&oacute;n con 23 stopwords espa&ntilde;oles + verbos conversacionales.
+      </p>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--red-500);">
+      <h3>&#128683; Filtro de Relevancia</h3>
+      <pre style="font-size: .82rem;"><span class="kw">if</span> chunk.score &lt;= <span class="num">0.35</span>:  <span class="cm">// pasa</span>
+<span class="kw">if</span> chunk.score &gt;  <span class="num">0.35</span>:  <span class="cm">// descartado</span>
+
+<span class="kw">if</span> len(filtered) == <span class="num">0</span>:
+    <span class="kw">return</span> ABSTENCION  <span class="cm">// no invoca LLM</span></pre>
+      <p style="font-size: .85rem; color: var(--slate-600); margin-top: .5rem;">
+        Patr&oacute;n de abstenci&oacute;n: si ning&uacute;n chunk supera el umbral, el sistema responde con un mensaje fijo
+        sin invocar al LLM. Esto previene alucinaciones en queries fuera de dominio.
+      </p>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--teal-500);">
+      <h3>&#9986;&#65039; Chunking Paragraph-Aware</h3>
+      <pre style="font-size: .82rem;">chunk_size    = <span class="num">512</span> tokens
+chunk_overlap = <span class="num">64</span>  tokens
+
+<span class="cm">// 1. Divide por p&aacute;rrafos (\n\n)</span>
+<span class="cm">// 2. Si p&aacute;rrafo > 512 tok &rarr; split por palabras</span>
+<span class="cm">// 3. Solapamiento de 64 tok en fronteras</span>
+<span class="cm">// 4. Evita chunks finales < umbral</span></pre>
+      <p style="font-size: .85rem; color: var(--slate-600); margin-top: .5rem;">
+        Los chunks se enriquecen con metadata antes de embeber: se prepende
+        t&iacute;tulo + tipo + provincia + municipio al contenido, mejorando la relevancia sem&aacute;ntica del embedding.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 7. PROMPTS ===================== -->
+<section id="prompts">
+  <h2 class="section-title"><span class="icon">&#128172;</span> Prompts del Sistema</h2>
+
+  <div class="card" style="border-left: 4px solid var(--orange-500);">
+    <h3>RAG &mdash; System Prompt</h3>
+    <p style="font-size: .78rem; color: var(--slate-400); margin-bottom: .5rem;">backend/src/domain/rag/prompts.py</p>
+    <pre>Eres un asistente experto en patrimonio hist&oacute;rico andaluz del Instituto
+Andaluz de Patrimonio Hist&oacute;rico (IAPH).
+
+<span class="kw">REGLAS ESTRICTAS:</span>
+<span class="num">1.</span> Responde UNICAMENTE con informaci&oacute;n que aparece en el contexto proporcionado.
+<span class="num">2.</span> NUNCA inventes datos, fechas, ubicaciones ni atribuciones que no est&eacute;n
+   en el contexto.
+<span class="num">3.</span> Si la informaci&oacute;n para responder NO est&aacute; en el contexto, di exactamente:
+   <span class="str">'No dispongo de informaci&oacute;n suficiente en mis fuentes para responder
+   a esta pregunta.'</span>
+<span class="num">4.</span> Cita las fuentes usando el n&uacute;mero de referencia [N] que aparece
+   en el contexto.
+<span class="num">5.</span> Si el contexto contiene informaci&oacute;n parcial, indica expl&iacute;citamente
+   que es parcial.
+<span class="num">6.</span> Responde en espa&ntilde;ol de forma clara y precisa.
+<span class="num">7.</span> No completes con conocimiento externo bajo ninguna circunstancia.</pre>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--amber-500); margin-top: 1rem;">
+    <h3>RAG &mdash; User Prompt Template</h3>
+    <pre>&lt;<span class="kw">contexto</span>&gt;
+{context}
+&lt;/<span class="kw">contexto</span>&gt;
+
+Pregunta: <span class="str">{query}</span>
+
+Responde bas&aacute;ndote EXCLUSIVAMENTE en el contexto anterior.
+Si no hay informaci&oacute;n relevante en el contexto, ind&iacute;calo.
+
+Respuesta:</pre>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card" style="border-left: 4px solid var(--teal-500);">
+      <h3>Accesibilidad &mdash; B&aacute;sico (Lectura F&aacute;cil)</h3>
+      <p style="font-size: .78rem; color: var(--slate-400); margin-bottom: .5rem;">Directrices ILSMH</p>
+      <pre style="font-size: .78rem;">Eres un experto en Lectura F&aacute;cil siguiendo las
+directrices de ILSMH.
+
+<span class="kw">Reglas:</span>
+- Frases cortas (<span class="num">m&aacute;ximo 15 palabras</span>)
+- Una idea por frase
+- Vocabulario simple y cotidiano
+- Evita met&aacute;foras, iron&iacute;as y expresiones figuradas
+- Usa voz activa siempre
+- P&aacute;rrafos muy cortos (<span class="num">2-3 frases</span>)
+- Explica nombres propios dif&iacute;ciles</pre>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--purple-500);">
+      <h3>Rutas &mdash; System Prompt</h3>
+      <pre style="font-size: .78rem;">Eres un experto gu&iacute;a tur&iacute;stico del patrimonio
+hist&oacute;rico andaluz del IAPH.
+
+Genera rutas culturales personalizadas en
+espa&ntilde;ol, detalladas y atractivas para
+el visitante.</pre>
+      <h4 style="margin-top: .8rem;">Gu&iacute;a interactivo</h4>
+      <pre style="font-size: .78rem;">Eres un gu&iacute;a experto del patrimonio hist&oacute;rico
+andaluz. Responde preguntas sobre la ruta y
+los elementos patrimoniales en espa&ntilde;ol,
+de forma cercana y detallada.</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 8. BOUNDED CONTEXTS ===================== -->
+<section id="contexts">
+  <h2 class="section-title"><span class="icon">&#128230;</span> Bounded Contexts &amp; API Endpoints</h2>
+
+  <!-- Chat -->
+  <div class="card" style="border-left: 4px solid var(--blue-500);">
+    <h3>&#128172; Chat &mdash; Conversaciones con historial</h3>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-bottom: .8rem;">
+      Sesiones persistentes con historial de mensajes. Integra el pipeline RAG completo para cada mensaje.
+      Contextualiza queries usando los &uacute;ltimos 4 mensajes.
+    </p>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/chat/sessions</code><span class="ep-desc">Crear sesi&oacute;n</span></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/chat/sessions</code><span class="ep-desc">Listar sesiones</span></div>
+    <div class="endpoint"><span class="method method-patch">PATCH</span><code>/api/v1/chat/sessions/{id}</code><span class="ep-desc">Renombrar sesi&oacute;n</span></div>
+    <div class="endpoint"><span class="method method-delete">DELETE</span><code>/api/v1/chat/sessions/{id}</code><span class="ep-desc">Eliminar sesi&oacute;n</span></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/chat/sessions/{id}/messages</code><span class="ep-desc">Historial de mensajes</span></div>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/chat/sessions/{id}/messages</code><span class="ep-desc">Enviar mensaje &rarr; RAG &rarr; respuesta</span></div>
+  </div>
+
+  <!-- RAG -->
+  <div class="card" style="border-left: 4px solid var(--orange-500); margin-top: 1rem;">
+    <h3>&#128269; RAG &mdash; Consulta directa</h3>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-bottom: .8rem;">
+      Endpoint directo al pipeline RAG. Sin estado de sesi&oacute;n. Soporta filtros por tipo de patrimonio y provincia.
+    </p>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/rag/query</code><span class="ep-desc">Ejecutar consulta RAG</span></div>
+  </div>
+
+  <!-- Routes -->
+  <div class="card" style="border-left: 4px solid var(--purple-500); margin-top: 1rem;">
+    <h3>&#128506;&#65039; Routes &mdash; Rutas virtuales de patrimonio</h3>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-bottom: .8rem;">
+      Genera rutas tur&iacute;sticas personalizadas consultando RAG por cada tipo de patrimonio,
+      combinando contexto y generando narrativa con LLM. Incluye gu&iacute;a interactivo por ruta.
+    </p>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/routes/generate</code><span class="ep-desc">Generar ruta (provincia, paradas, tipos, intereses)</span></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/routes</code><span class="ep-desc">Listar rutas</span></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/routes/{id}</code><span class="ep-desc">Detalle de ruta</span></div>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/routes/{id}/guide</code><span class="ep-desc">Preguntar al gu&iacute;a sobre la ruta</span></div>
+  </div>
+
+  <!-- Accessibility -->
+  <div class="card" style="border-left: 4px solid var(--teal-500); margin-top: 1rem;">
+    <h3>&#9855;&#65039; Accessibility &mdash; Lectura F&aacute;cil</h3>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-bottom: .8rem;">
+      Simplifica textos patrimoniales seg&uacute;n directrices ILSMH. Dos niveles: b&aacute;sico (max 15 palabras/frase) e intermedio (max 25). Stateless (sin BD).
+    </p>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/accessibility/simplify</code><span class="ep-desc">Simplificar texto</span></div>
+  </div>
+
+  <!-- Documents -->
+  <div class="card" style="border-left: 4px solid var(--amber-500); margin-top: 1rem;">
+    <h3>&#128229; Documents &mdash; Ingesti&oacute;n</h3>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-bottom: .8rem;">
+      Ingesta de parquets con chunking y embedding. Endpoint de debug para inspeccionar chunks por documento.
+    </p>
+    <div class="endpoint"><span class="method method-post">POST</span><code>/api/v1/documents/ingest</code><span class="ep-desc">Ingestar parquet</span></div>
+    <div class="endpoint"><span class="method method-get">GET</span><code>/api/v1/documents/chunks/{document_id}</code><span class="ep-desc">Ver chunks (debug)</span></div>
+  </div>
+</section>
+
+<!-- ===================== 9. ARQUITECTURA ===================== -->
+<section id="arquitectura">
+  <h2 class="section-title"><span class="icon">&#127959;&#65039;</span> Arquitectura Hexagonal</h2>
+
+  <div class="card">
+    <div class="tree">
+<pre style="background: #fff; color: var(--slate-700); border: 1px solid var(--slate-200);">
+<span class="dir">backend/src/</span>
+├── <span class="dir">api/v1/endpoints/</span>              <span class="note">← Capa API (FastAPI routers, schemas, deps)</span>
+│   ├── <span class="dir">chat/</span>                       <span class="note">  chat.py, schemas.py, deps.py</span>
+│   ├── <span class="dir">rag/</span>                        <span class="note">  rag.py, schemas.py, deps.py</span>
+│   ├── <span class="dir">routes/</span>                     <span class="note">  routes.py, schemas.py, deps.py</span>
+│   ├── <span class="dir">documents/</span>                  <span class="note">  documents.py, schemas.py, deps.py</span>
+│   └── <span class="dir">accessibility/</span>              <span class="note">  accessibility.py, schemas.py, deps.py</span>
+│
+├── <span class="dir">application/</span>                    <span class="note">← Capa Aplicaci&oacute;n (use cases, DTOs)</span>
+│   ├── <span class="dir">chat/</span>
+│   │   ├── <span class="dir">use_cases/</span>              <span class="note">  CreateSession, SendMessage, ListSessions...</span>
+│   │   ├── <span class="dir">dto/</span>                    <span class="note">  CreateSessionDTO, SendMessageDTO, MessageDTO</span>
+│   │   └── <span class="dir">services/</span>               <span class="note">  ChatApplicationService</span>
+│   ├── <span class="dir">rag/</span>
+│   │   ├── <span class="dir">use_cases/</span>              <span class="note">  RAGQueryUseCase (orquestador principal)</span>
+│   │   └── <span class="dir">dto/</span>                    <span class="note">  RAGQueryDTO, RAGResponseDTO, SourceDTO</span>
+│   ├── <span class="dir">routes/</span>                     <span class="note">  GenerateRoute, GuideQuery, ListRoutes</span>
+│   ├── <span class="dir">documents/</span>                  <span class="note">  IngestDocuments, DocumentsAppService</span>
+│   └── <span class="dir">accessibility/</span>              <span class="note">  SimplifyText</span>
+│
+├── <span class="dir">domain/</span>                         <span class="note">← Capa Dominio (entidades, puertos, servicios)</span>
+│   ├── <span class="dir">chat/</span>
+│   │   ├── <span class="dir">entities/</span>               <span class="note">  ChatSession, Message, MessageRole</span>
+│   │   └── <span class="dir">ports/</span>                  <span class="note">  ChatRepository, RAGPort</span>
+│   ├── <span class="dir">rag/</span>
+│   │   ├── <span class="dir">entities/</span>               <span class="note">  RAGQuery, RAGResponse, RetrievedChunk</span>
+│   │   ├── <span class="dir">ports/</span>                  <span class="note">  EmbeddingPort, VectorSearchPort, TextSearchPort, LLMPort</span>
+│   │   ├── <span class="dir">services/</span>               <span class="note">  HybridSearch, Reranking, RelevanceFilter, ContextAssembly</span>
+│   │   └── <span class="file">prompts.py</span>              <span class="note">  System prompt + user prompt builder</span>
+│   ├── <span class="dir">routes/</span>                     <span class="note">  VirtualRoute, RouteStop, RouteBuilder, prompts</span>
+│   ├── <span class="dir">documents/</span>                  <span class="note">  Document, Chunk, ChunkEmbedding, HeritageType</span>
+│   └── <span class="dir">accessibility/</span>              <span class="note">  SimplifiedText, SimplificationLevel, prompts</span>
+│
+├── <span class="dir">infrastructure/</span>                <span class="note">← Capa Infraestructura (adaptadores concretos)</span>
+│   ├── <span class="dir">chat/adapters/</span>              <span class="note">  PgChatRepository, HttpRAGAdapter</span>
+│   ├── <span class="dir">rag/adapters/</span>               <span class="note">  PgVectorSearch, PgTextSearch, VLLMAdapter, HttpEmbedding</span>
+│   ├── <span class="dir">routes/</span>                     <span class="note">  PgRouteRepository, HttpLLMAdapter, HttpRAGAdapter</span>
+│   ├── <span class="dir">documents/</span>
+│   │   ├── <span class="dir">adapters/</span>               <span class="note">  ParquetLoader, HttpEmbedding</span>
+│   │   ├── <span class="dir">repositories/</span>           <span class="note">  SqlAlchemyDocumentRepository</span>
+│   │   └── <span class="file">models.py</span>              <span class="note">  DocumentChunkModel (ORM, Vector(768))</span>
+│   └── <span class="dir">accessibility/</span>              <span class="note">  VLLMAccessibilityAdapter</span>
+│
+├── <span class="dir">composition/</span>                    <span class="note">← Wiring / Dependency Injection</span>
+│   ├── <span class="file">rag_composition.py</span>
+│   ├── <span class="file">chat_composition.py</span>
+│   ├── <span class="file">routes_composition.py</span>
+│   ├── <span class="file">documents_composition.py</span>
+│   └── <span class="file">accessibility_composition.py</span>
+│
+├── <span class="dir">db/</span>                             <span class="note">← Database (async engine, session, Base)</span>
+├── <span class="file">config.py</span>                       <span class="note">← Settings (pydantic-settings, .env)</span>
+└── <span class="file">main.py</span>                         <span class="note">← FastAPI app + CORS + router registration</span>
+</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 10. DOCKER ===================== -->
+<section id="docker">
+  <h2 class="section-title"><span class="icon">&#128051;</span> Infraestructura Docker</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr><th>Servicio</th><th>Imagen</th><th>Puerto</th><th>GPU</th><th>Health Check</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>PostgreSQL + pgvector</strong></td>
+          <td><code>pgvector/pgvector:pg16</code></td>
+          <td>15432 &rarr; 5432</td>
+          <td>&#10060;</td>
+          <td><code>pg_isready</code></td>
+          <td><span class="badge badge-green">Siempre activo</span></td>
+        </tr>
+        <tr>
+          <td><strong>Embedding Service</strong></td>
+          <td>Custom (MrBERT)</td>
+          <td>18001 &rarr; 8001</td>
+          <td>&#9989; NVIDIA</td>
+          <td><code>GET /health</code></td>
+          <td><span class="badge badge-green">Siempre activo</span></td>
+        </tr>
+        <tr>
+          <td><strong>API (FastAPI)</strong></td>
+          <td>Custom</td>
+          <td>18080 &rarr; 8080</td>
+          <td>&#10060;</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-green">Siempre activo</span></td>
+        </tr>
+        <tr>
+          <td><strong>LLM Service (vLLM)</strong></td>
+          <td><code>vllm/vllm-openai</code></td>
+          <td>18000 &rarr; 8000</td>
+          <td>&#9989; NVIDIA</td>
+          <td>&mdash;</td>
+          <td><span class="badge badge-yellow">Perfil <code>llm</code></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Migraciones Alembic</h3>
+    <table>
+      <thead><tr><th>#</th><th>Revisi&oacute;n</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>ecfb8a0665c7</code></td><td>Habilita extensi&oacute;n <code>pgvector</code></td></tr>
+        <tr><td>2</td><td><code>10ea8c52cb35</code></td><td>Crea tablas: <code>document_chunks</code>, <code>virtual_routes</code>, <code>chat_sessions</code>, <code>chat_messages</code></td></tr>
+        <tr><td>3</td><td><code>ce98c0e62f84</code></td><td>A&ntilde;ade columna <code>search_vector</code> (tsvector) + &iacute;ndice GIN + trigger auto-update</td></tr>
+        <tr><td>4</td><td><code>ced3f5d3c1d8</code></td><td>Versiona tabla: <code>document_chunks</code> &rarr; <code>document_chunks_v1</code> + crea <code>v2</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 11. PARAMETROS ===================== -->
+<section id="params">
+  <h2 class="section-title"><span class="icon">&#9881;&#65039;</span> Par&aacute;metros Configurables</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Par&aacute;metro</th><th>Valor</th><th>Fichero</th><th>Prop&oacute;sito</th></tr></thead>
+      <tbody>
+        <tr><td><code>embedding_dim</code></td><td><strong>768</strong></td><td>config.py</td><td>Dimensi&oacute;n MrBERT</td></tr>
+        <tr><td><code>rag_top_k</code></td><td><strong>3</strong></td><td>config.py</td><td>Chunks finales al usuario</td></tr>
+        <tr><td><code>rag_retrieval_k</code></td><td><strong>20</strong></td><td>config.py</td><td>Candidatos iniciales (pre-filtro)</td></tr>
+        <tr><td><code>rag_score_threshold</code></td><td><strong>0.35</strong></td><td>config.py</td><td>Umbral de relevancia (cosine dist)</td></tr>
+        <tr><td><code>rag_chunk_size</code></td><td><strong>512</strong></td><td>config.py</td><td>Tokens por chunk</td></tr>
+        <tr><td><code>rag_chunk_overlap</code></td><td><strong>64</strong></td><td>config.py</td><td>Solapamiento entre chunks</td></tr>
+        <tr><td><code>llm_temperature</code></td><td><strong>0.3</strong></td><td>config.py</td><td>Creatividad (baja &rarr; m&aacute;s fiel)</td></tr>
+        <tr><td><code>llm_max_tokens</code></td><td><strong>512</strong></td><td>config.py</td><td>Longitud m&aacute;xima de respuesta</td></tr>
+        <tr><td><code>rrf_k_param</code></td><td><strong>60</strong></td><td>HybridSearchService</td><td>Constante RRF</td></tr>
+        <tr><td><code>rrf_text_weight</code></td><td><strong>1.5</strong></td><td>HybridSearchService</td><td>Peso extra b&uacute;squeda textual</td></tr>
+        <tr><td><code>max_context_chars</code></td><td><strong>6,000</strong></td><td>ContextAssemblyService</td><td>Budget de contexto para LLM</td></tr>
+        <tr><td><code>weight_base</code></td><td><strong>0.4</strong></td><td>RerankingService</td><td>Peso score base</td></tr>
+        <tr><td><code>weight_title</code></td><td><strong>0.3</strong></td><td>RerankingService</td><td>Peso match en t&iacute;tulo</td></tr>
+        <tr><td><code>weight_coverage</code></td><td><strong>0.2</strong></td><td>RerankingService</td><td>Peso cobertura de t&eacute;rminos</td></tr>
+        <tr><td><code>weight_position</code></td><td><strong>0.1</strong></td><td>RerankingService</td><td>Peso se&ntilde;al de posici&oacute;n</td></tr>
+        <tr><td><code>chunks_table_version</code></td><td><strong>v1</strong></td><td>config.py</td><td>Versi&oacute;n tabla document_chunks</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 12. FRONTEND ===================== -->
+<section id="frontend">
+  <h2 class="section-title"><span class="icon">&#127912;</span> Frontend</h2>
+
+  <div class="card" style="margin-bottom: 1rem;">
+    <h3>Stack tecnol&oacute;gico</h3>
+    <div style="display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .5rem;">
+      <span class="badge badge-blue">Next.js 16</span>
+      <span class="badge badge-blue">App Router</span>
+      <span class="badge badge-purple">TypeScript</span>
+      <span class="badge badge-teal">Tailwind CSS v4</span>
+      <span class="badge badge-amber">Zustand</span>
+      <span class="badge badge-green">react-leaflet</span>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>P&aacute;ginas</h3>
+    <table>
+      <thead><tr><th>Ruta</th><th>Descripci&oacute;n</th><th>Componentes clave</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>Landing: hero, 3 feature cards, estad&iacute;sticas</td><td>Hero, FeatureCards, StatBar</td><td><span class="badge badge-green">Completo</span></td></tr>
+        <tr><td><code>/chat</code></td><td>Chat con sidebar de sesiones, burbujas, fuentes</td><td>SessionItem, MessageBubble, ChatInput, SourceCard</td><td><span class="badge badge-green">Completo</span></td></tr>
+        <tr><td><code>/routes</code></td><td>Formulario generaci&oacute;n + listado de rutas</td><td>RouteCard, ProvinceSelect, HeritageToggle</td><td><span class="badge badge-green">Completo</span></td></tr>
+        <tr><td><code>/routes/[id]</code></td><td>Detalle de ruta con paradas + gu&iacute;a interactivo</td><td>StopTimeline, GuideChat</td><td><span class="badge badge-green">Completo</span></td></tr>
+        <tr><td><code>/accessibility</code></td><td>Simplificaci&oacute;n de texto (Lectura F&aacute;cil)</td><td>LevelRadio, TextArea, CopyButton</td><td><span class="badge badge-green">Completo</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card">
+      <h3>Zustand Store &mdash; <code>useChatStore</code></h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Estado: sessions[], activeSessionId, messages[], loading, sending.<br>
+        Acciones: loadSessions, createSession, selectSession, deleteSession, renameSession, sendMessage.<br>
+        Features: UI optimista, filtros heritage_type/province, auto-scroll.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Zustand Store &mdash; <code>useRoutesStore</code></h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Estado: routes[], activeRoute, loading, generating.<br>
+        Acciones: loadRoutes, generateRoute, selectRoute.<br>
+        Features: prepend de nuevas rutas, selecci&oacute;n autom&aacute;tica tras generaci&oacute;n.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 13. TESTS ===================== -->
+<section id="tests">
+  <h2 class="section-title"><span class="icon">&#129514;</span> Tests</h2>
+
+  <div class="card" style="border-left: 4px solid var(--yellow-500);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: .8rem;">
+      <h3>Cobertura actual</h3>
+      <span class="badge badge-yellow">M&iacute;nima</span>
+    </div>
+    <table>
+      <thead><tr><th>Suite</th><th>Fichero</th><th>Tests</th><th>Cobertura</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Chunking domain</td>
+          <td><code>tests/domain/test_chunking_service.py</code></td>
+          <td>12</td>
+          <td>Init, empty, short/long, overlap, unique IDs</td>
+        </tr>
+        <tr>
+          <td>Documents API schemas</td>
+          <td><code>tests/api/test_documents_schema.py</code></td>
+          <td>8</td>
+          <td>Validaci&oacute;n Pydantic IngestRequest/Response</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="font-weight: 700; background: var(--slate-100);">
+          <td colspan="2">Total</td>
+          <td>20</td>
+          <td>Solo chunking + schemas</td>
+        </tr>
+      </tfoot>
+    </table>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-top: .8rem;">
+      &#9888;&#65039; Sin tests de integraci&oacute;n, sin tests del pipeline RAG, sin tests de API endpoints,
+      sin tests del frontend. El &uacute;nico c&oacute;digo de dominio con tests es el <code>ChunkingService</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 14. GAPS ===================== -->
+<section id="gaps">
+  <h2 class="section-title"><span class="icon">&#128680;</span> Gaps y Pr&oacute;ximos Pasos</h2>
+
+  <h3 style="margin-bottom: .8rem;">Gaps cr&iacute;ticos</h3>
+
+  <div class="gap-card high">
+    <div class="gap-title">
+      <span class="badge badge-red">ALTA</span>
+      G1 &mdash; Sin georreferenciaci&oacute;n
+    </div>
+    <p>
+      No hay coordenadas lat/lon en los datos. Las rutas virtuales no pueden mostrarse en mapa.
+      <code>react-leaflet</code> est&aacute; en el frontend pero sin datos geogr&aacute;ficos.
+      <strong>Acci&oacute;n:</strong> geocoding por municipio+provincia, o scraping de fichas de la Gu&iacute;a Digital IAPH.
+    </p>
+  </div>
+
+  <div class="gap-card high">
+    <div class="gap-title">
+      <span class="badge badge-red">ALTA</span>
+      G2 &mdash; Tipolog&iacute;a no filtrable
+    </div>
+    <p>
+      Campos ricos de tipolog&iacute;a (<code>characterisation</code>, <code>type</code>, <code>subject_topic</code>, etc.) se descartan
+      en la ingesti&oacute;n. No se pueden usar como filtros en la b&uacute;squeda vectorial ni textual.
+      <strong>Acci&oacute;n:</strong> persistir columnas adicionales en <code>document_chunks</code> + indexar + exponer como filtros en API.
+    </p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G3 &mdash; Datos sucios
+    </div>
+    <p>
+      ~270 registros tienen HTML/metadata mezclado en campos <code>province</code> y <code>municipality</code>.
+      Esto puede provocar fallos en filtros de b&uacute;squeda.
+      <strong>Acci&oacute;n:</strong> pipeline de limpieza pre-ingesti&oacute;n.
+    </p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G4 &mdash; Tests m&iacute;nimos
+    </div>
+    <p>
+      Solo 20 tests unitarios (chunking + schemas). Sin tests de integraci&oacute;n del pipeline RAG,
+      sin tests de endpoints API, sin tests de frontend.
+      <strong>Acci&oacute;n:</strong> tests de integraci&oacute;n con fixtures de BD, tests e2e del pipeline.
+    </p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title">
+      <span class="badge badge-yellow">MEDIA</span>
+      G5 &mdash; LLM sin fine-tuning
+    </div>
+    <p>
+      Salamandra-7b-instruct se usa en su versi&oacute;n base sin ajuste al dominio patrimonial IAPH.
+      La calidad de las respuestas est&aacute; limitada por el conocimiento gen&eacute;rico del modelo.
+      <strong>Acci&oacute;n:</strong> fine-tuning con corpus IAPH (en progreso).
+    </p>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .8rem;">Funcionalidades pendientes</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Feature</th><th>Descripci&oacute;n</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Mapa interactivo</td>
+          <td>Visualizaci&oacute;n de rutas y patrimonio con react-leaflet</td>
+          <td><span class="badge badge-red">Bloqueado (sin datos geo)</span></td>
+        </tr>
+        <tr>
+          <td>Caso de uso #2</td>
+          <td>Por definir</td>
+          <td><span class="badge badge-slate">No iniciado</span></td>
+        </tr>
+        <tr>
+          <td>Caso de uso #3</td>
+          <td>Por definir</td>
+          <td><span class="badge badge-slate">No iniciado</span></td>
+        </tr>
+        <tr>
+          <td>Fine-tuning Salamandra</td>
+          <td>Ajuste del LLM al dominio IAPH</td>
+          <td><span class="badge badge-yellow">En progreso</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== COMMANDS ===================== -->
+<section>
+  <h2 class="section-title"><span class="icon">&#128187;</span> Comandos de Referencia R&aacute;pida</h2>
+  <div class="card">
+    <pre><span class="cm"># Desde la ra&iacute;z del monorepo</span>
+<span class="fn">make dev</span>              <span class="cm"># Todo: infra + API + frontend</span>
+<span class="fn">make backend</span>          <span class="cm"># Solo backend (infra + FastAPI)</span>
+<span class="fn">make frontend</span>         <span class="cm"># Solo Next.js (:3000)</span>
+<span class="fn">make infra</span>            <span class="cm"># Solo postgres + embedding</span>
+<span class="fn">make infra-llm</span>        <span class="cm"># Todo incluyendo LLM (requiere GPU)</span>
+<span class="fn">make infra-down</span>       <span class="cm"># Parar todos los servicios Docker</span>
+<span class="fn">make migrate</span>          <span class="cm"># Aplicar migraciones Alembic</span>
+<span class="fn">make test</span>             <span class="cm"># Ejecutar tests (pytest)</span>
+<span class="fn">make lint</span>             <span class="cm"># Ruff check en src/</span>
+
+<span class="cm"># Desde backend/</span>
+<span class="fn">make ingest</span>           <span class="cm"># Ingestar los 4 datasets de patrimonio</span>
+<span class="fn">make migrate-new</span> MSG=<span class="str">"descripcion"</span>  <span class="cm"># Nueva migraci&oacute;n</span></pre>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer style="background: var(--slate-900); color: var(--slate-400); padding: 2rem; text-align: center; font-size: .82rem;">
+  <p>Informe generado autom&aacute;ticamente &mdash; Revisi&oacute;n del repositorio en rama <code style="color: var(--amber-400);">develop</code>, commit <code style="color: var(--amber-400);">1d9081d</code></p>
+  <p style="margin-top: .3rem;">IAPH RAG Monorepo &bull; Universidad de Ja&eacute;n &bull; 2026-03-13</p>
+</footer>
+
+<!-- Smooth scroll -->
+<script>
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
