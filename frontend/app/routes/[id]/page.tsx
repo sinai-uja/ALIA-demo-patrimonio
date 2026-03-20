@@ -180,9 +180,85 @@ export default function RouteDetailPage() {
 
   return (
     <div className="relative h-[calc(100vh-3.625rem)] overflow-hidden">
+      {/* Guide chat — left sidebar */}
+      <aside className="absolute left-0 top-0 bottom-0 w-80 z-10 border-r border-stone-200/60 bg-white flex flex-col">
+        <div className="px-4 py-4 border-b border-stone-200/60 shrink-0">
+          <h2 className="text-sm font-semibold text-stone-900">
+            Guia interactivo
+          </h2>
+          <p className="text-xs text-stone-400 mt-0.5">
+            Pregunta sobre esta ruta
+          </p>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+          {guideMessages.length === 0 && !guiding && (
+            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+              <svg className="w-10 h-10 text-stone-200 mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+              </svg>
+              <p className="text-xs text-stone-400">
+                Pregunta sobre las paradas, historia o cualquier detalle de esta ruta
+              </p>
+            </div>
+          )}
+          {guideMessages.map((m, i) => (
+            <div
+              key={i}
+              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <span
+                className={`inline-block rounded-2xl px-3 py-2 text-xs leading-relaxed max-w-[90%] ${
+                  m.role === "user"
+                    ? "bg-gradient-to-br from-amber-600 to-orange-600 text-white rounded-br-md"
+                    : "bg-stone-50 border border-stone-200 text-stone-700 rounded-bl-md"
+                }`}
+              >
+                {m.role === "assistant" ? (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                      ol: ({ children }) => <ol className="list-decimal pl-3.5 mb-1.5 last:mb-0 space-y-0.5">{children}</ol>,
+                      ul: ({ children }) => <ul className="list-disc pl-3.5 mb-1.5 last:mb-0 space-y-0.5">{children}</ul>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                    }}
+                  >
+                    {m.content}
+                  </ReactMarkdown>
+                ) : (
+                  m.content
+                )}
+              </span>
+            </div>
+          ))}
+          {guiding && (
+            <div className="flex justify-start">
+              <span className="inline-block rounded-2xl rounded-bl-md bg-stone-50 border border-stone-200 px-3 py-2">
+                <span className="flex gap-1">
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Input — pinned to bottom */}
+        <div className="px-3 py-3 border-t border-stone-200/60 shrink-0">
+          <ChatInput
+            onSend={handleGuideQuestion}
+            disabled={guiding}
+            placeholder="Pregunta sobre la ruta..."
+          />
+        </div>
+      </aside>
+
       {/* Main content */}
       <div
-        className={`absolute top-0 bottom-0 left-0 overflow-y-auto transition-all duration-300 ${
+        className={`absolute top-0 bottom-0 left-80 overflow-y-auto transition-all duration-300 ${
           hasDetail ? "right-[480px]" : "right-0"
         }`}
       >
@@ -244,68 +320,6 @@ export default function RouteDetailPage() {
           ) : (
             <LegacyStopsLayout route={activeRoute} />
           )}
-
-          {/* Guide chat section */}
-          <div className="rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-stone-900">
-                Guia interactivo
-              </h2>
-              <p className="text-sm text-stone-500 mt-0.5">
-                Pregunta sobre esta ruta o cualquiera de sus elementos
-              </p>
-            </div>
-            {guideMessages.length > 0 && (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {guideMessages.map((m, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <span
-                      className={`inline-block rounded-2xl px-4 py-2.5 text-sm max-w-[80%] ${
-                        m.role === "user"
-                          ? "bg-gradient-to-br from-amber-600 to-orange-600 text-white rounded-br-md"
-                          : "bg-stone-50 border border-stone-200 text-stone-700 rounded-bl-md"
-                      }`}
-                    >
-                      {m.role === "assistant" ? (
-                        <ReactMarkdown
-                          components={{
-                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 last:mb-0 space-y-1">{children}</ol>,
-                            ul: ({ children }) => <ul className="list-disc pl-4 mb-2 last:mb-0 space-y-1">{children}</ul>,
-                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                            em: ({ children }) => <em className="italic">{children}</em>,
-                          }}
-                        >
-                          {m.content}
-                        </ReactMarkdown>
-                      ) : (
-                        m.content
-                      )}
-                    </span>
-                  </div>
-                ))}
-                {guiding && (
-                  <div className="flex justify-start">
-                    <span className="inline-block rounded-2xl rounded-bl-md bg-stone-50 border border-stone-200 px-4 py-2.5">
-                      <span className="flex gap-1">
-                        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
-                        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
-                        <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
-                      </span>
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-            <ChatInput
-              onSend={handleGuideQuestion}
-              disabled={guiding}
-              placeholder="Pregunta sobre la ruta..."
-            />
-          </div>
         </div>
       </div>
 
