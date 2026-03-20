@@ -62,7 +62,7 @@ Tambien colapsa espacios multiples y elimina preposiciones colgantes (`de`, `del
 **Puerto:** `LLMPort.generate_structured()`
 **Prompt:** `QUERY_EXTRACTION_SYSTEM_PROMPT` + `build_query_extraction_prompt()`
 
-El LLM recibe el texto limpio + informacion de filtros activos y produce una consulta corta (10-15 palabras) optimizada para la recuperacion RAG.
+El LLM recibe el texto limpio + informacion de filtros activos y produce una consulta corta (maximo 10 palabras) optimizada para la recuperacion RAG. El prompt incluye reglas estrictas para evitar que el LLM anada terminos que el usuario no escribio (tipos patrimoniales, ubicaciones, etc.).
 
 ```
 System: "Eres un asistente experto en patrimonio historico andaluz del IAPH.
@@ -225,6 +225,54 @@ Ambos implementan la misma interfaz `LLMPort`. Se conmuta en `composition/routes
 
 ---
 
+## Pipeline de la guia interactiva (`POST /routes/{id}/guide`)
+
+La guia interactiva permite al usuario hacer preguntas sobre una ruta generada. El pipeline **no usa RAG** — en su lugar, enriquece cada parada con la descripcion completa del bien patrimonial desde la tabla `heritage_assets`.
+
+### Flujo
+
+```mermaid
+flowchart TD
+    A["POST /routes/{id}/guide\n(question)"] --> B["GuideQueryUseCase.execute()"]
+    B --> S1["Paso 1: Cargar ruta de BD"]
+    S1 --> S2["Paso 2: Obtener descripciones completas\nde heritage_assets"]
+    S2 --> S3["Paso 3: Construir contexto enriquecido\npor parada"]
+    S3 --> S4["Paso 4: LLM genera respuesta"]
+    S4 --> R["GuideResponseDTO(answer)"]
+```
+
+### Paso 1 — Cargar ruta
+
+**Puerto:** `RouteRepository.get_route()`
+
+Recupera la ruta con todas sus paradas de la BD.
+
+### Paso 2 — Obtener descripciones completas
+
+**Puerto:** `HeritageAssetLookupPort.get_asset_full_descriptions()`
+**Adaptador:** `PgHeritageAssetLookupAdapter`
+
+Extrae los `heritage_asset_id` de cada parada y consulta `heritage_assets` para obtener las descripciones textuales completas (campo `description` del `raw_data`). Devuelve un diccionario `{asset_id: description}`.
+
+### Paso 3 — Construir contexto enriquecido
+
+Para cada parada, compone un bloque con:
+- Numero de parada y titulo
+- Tipo de patrimonio, ubicacion (municipio, provincia)
+- Descripcion completa del bien patrimonial (si disponible)
+- Segmento narrativo de la ruta (si existe)
+
+### Paso 4 — LLM genera respuesta
+
+**Puerto:** `LLMPort.generate_structured()`
+**Prompt:** `GUIDE_SYSTEM_PROMPT` + `build_guide_prompt()`
+
+El LLM esta **acotado a las paradas de la ruta**: solo responde sobre los bienes que forman parte de la ruta. Si el usuario pregunta sobre algo fuera de la ruta, indica amablemente que esa informacion no esta en la ruta y sugiere usar la herramienta de busqueda o crear una nueva ruta.
+
+La respuesta se devuelve como `GuideResponseDTO(answer=...)` sin fuentes (ya que toda la informacion proviene directamente de los datos de la ruta).
+
+---
+
 ## Ficheros clave
 
 | Capa | Fichero | Rol |
@@ -242,6 +290,7 @@ Ambos implementan la misma interfaz `LLMPort`. Se conmuta en `composition/routes
 | Infra | `infrastructure/routes/adapters/gemini_llm_adapter.py` | LLM Gemini |
 | Infra | `infrastructure/routes/adapters/llm_adapter.py` | LLM vLLM |
 | Infra | `infrastructure/routes/adapters/rag_adapter.py` | RAG en proceso |
-| Infra | `infrastructure/routes/adapters/heritage_asset_lookup_adapter.py` | Lookup de imagenes/coordenadas en heritage_assets |
+| Aplicacion | `application/routes/use_cases/guide_query.py` | Orquestacion del pipeline de guia interactiva |
+| Infra | `infrastructure/routes/adapters/heritage_asset_lookup_adapter.py` | Lookup de imagenes, coordenadas y descripciones en heritage_assets |
 | Infra | `infrastructure/routes/repositories/route_repository.py` | Persistencia BD |
 | Composicion | `composition/routes_composition.py` | Cableado de dependencias |

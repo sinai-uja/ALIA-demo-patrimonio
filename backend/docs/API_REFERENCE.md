@@ -214,13 +214,17 @@ Lista rutas. Filtro opcional: `?province=Jaén`.
 
 Detalle de una ruta.
 
+#### `DELETE /routes/{id}`
+
+Elimina una ruta virtual. Devuelve `204 No Content` si se elimina correctamente, `404` si no existe.
+
 #### `POST /routes/{id}/guide`
 
-Pregunta al guía sobre una ruta.
+Pregunta al guía interactivo sobre una ruta. El guía solo responde sobre las paradas de la ruta; si la pregunta es sobre algo externo, sugiere usar la búsqueda o crear una nueva ruta.
 
 **Request:** `{ "question": "¿Cuál es la parada más importante?" }`
 
-**Response:** `{ "answer": "...", "sources": [...] }`
+**Response:** `{ "answer": "..." }`
 
 ---
 
