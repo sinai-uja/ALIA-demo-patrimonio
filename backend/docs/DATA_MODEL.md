@@ -262,8 +262,12 @@ El parser vive en `src/domain/heritage/value_objects/raw_data.py`. Las funciones
 
 ## Pipeline de ingesta
 
-```
-Parquet → ParquetDocumentLoader → ChunkingService → HttpEmbeddingAdapter (MrBERT) → PostgreSQL
+```mermaid
+flowchart LR
+    P["Parquet"] --> PDL["ParquetDocumentLoader"]
+    PDL --> CS["ChunkingService"]
+    CS --> HEA["HttpEmbeddingAdapter\n(MrBERT)"]
+    HEA --> PG["PostgreSQL"]
 ```
 
 1. **Carga**: Lee el parquet con pandas. Mapea columnas estándar (`id`, `url`, `title`, `province`, `municipality`, `text`) a la entidad `Document`; el resto va a `metadata` (dict).
@@ -276,16 +280,17 @@ Comando: `cd backend && make ingest`
 
 ## Flujo de recuperación (RAG query)
 
-```
-Query del usuario
-  → Embedding (MrBERT)
-  → Búsqueda híbrida: vector (HNSW coseno) + full-text (tsvector), 20 candidatos cada una
-  → Fusión (Reciprocal Rank Fusion, peso 1.5x en full-text)
-  → Filtro de relevancia (cosine distance ≤ 0.35)
-  → Reranking heurístico (base score + title match + coverage + position)
-  → Top-k chunks (default 5)
-  → Prompt al LLM con contexto
-  → Respuesta generada (o abstención si no hay chunks relevantes)
+```mermaid
+flowchart TD
+    Q["Query del usuario"] --> EMB["Embedding (MrBERT)"]
+    EMB --> VS["Vector Search\n(HNSW coseno, k=20)"] & TS["Text Search\n(tsvector, k=20)"]
+    VS & TS --> FUS["Fusion\n(RRF, peso 1.5x full-text)"]
+    FUS --> FIL["Filtro de relevancia\n(cosine distance <= 0.35)"]
+    FIL --> RRK["Reranking heuristico\n(base + title + coverage + position)"]
+    RRK --> TOP["Top-k chunks (default 5)"]
+    TOP --> LLM["Prompt al LLM con contexto"]
+    LLM --> RES["Respuesta generada"]
+    FIL -- "todos descartados" --> ABS["Abstencion"]
 ```
 
 Los campos de `document_chunks` usados en la respuesta: `title`, `heritage_type`, `province`, `municipality`, `url`, `content` y `metadata` (v3) se devuelven como `sources` en los mensajes del asistente.

@@ -112,14 +112,16 @@ class HeritageRepository(ABC):
 
 No se usa framework DI. Cada contexto tiene una función en `src/composition/` que construye el árbol de dependencias manualmente:
 
-```
-src/composition/
-├── documents_composition.py    → build_documents_application_service(db)
-├── rag_composition.py          → build_rag_application_service(db)
-├── chat_composition.py         → build_chat_application_service(db)
-├── routes_composition.py       → build_routes_application_service(db)
-├── accessibility_composition.py → build_accessibility_application_service()
-└── heritage_composition.py     → build_heritage_application_service(db)
+```mermaid
+flowchart LR
+    subgraph "src/composition/"
+        D["documents_composition.py"] --> D1["build_documents_application_service(db)"]
+        R["rag_composition.py"] --> R1["build_rag_application_service(db)"]
+        C["chat_composition.py"] --> C1["build_chat_application_service(db)"]
+        RT["routes_composition.py"] --> RT1["build_routes_application_service(db)"]
+        A["accessibility_composition.py"] --> A1["build_accessibility_application_service()"]
+        H["heritage_composition.py"] --> H1["build_heritage_application_service(db)"]
+    end
 ```
 
 Cada endpoint de FastAPI usa `Depends()` para invocar la función de composición:
@@ -132,10 +134,11 @@ async def get_{context}_service(db = Depends(get_db)):
 
 ### Dependencias entre contextos
 
-```
-chat ──→ rag    (via InProcessRAGAdapter)
-routes ─→ rag    (via InProcessRAGAdapter)
-routes ─→ search (via InProcessEntityDetectionAdapter + PgFilterMetadataAdapter)
+```mermaid
+flowchart LR
+    chat -->|InProcessRAGAdapter| rag
+    routes -->|InProcessRAGAdapter| rag
+    routes -->|InProcessEntityDetectionAdapter\n+ PgFilterMetadataAdapter| search
 ```
 
 Chat y Routes reutilizan el pipeline RAG completo sin HTTP, a través de `InProcessRAGAdapter` que envuelve `RAGApplicationService`. Routes también depende de Search para la detección de entidades (`InProcessEntityDetectionAdapter` envuelve `SearchApplicationService`) y para obtener valores de filtros (`PgFilterMetadataAdapter`).
@@ -149,10 +152,15 @@ Chat y Routes reutilizan el pipeline RAG completo sin HTTP, a través de `InProc
 
 ## Patrón de ingesta idempotente
 
-```
-Parquet → DocumentLoader → ChunkingService → check chunk_exists()
-    → si existe: skip
-    → si no: enrich content → embed → persist chunk + embedding
+```mermaid
+flowchart TD
+    P["Parquet"] --> DL["DocumentLoader"]
+    DL --> CS["ChunkingService"]
+    CS --> CHK{"chunk_exists()?"}
+    CHK -- "si existe" --> SKIP["Skip"]
+    CHK -- "si no" --> ENR["Enrich content"]
+    ENR --> EMB["Embed (MrBERT)"]
+    EMB --> PER["Persist chunk + embedding"]
 ```
 
 La ingesta se puede re-ejecutar sin duplicar datos.

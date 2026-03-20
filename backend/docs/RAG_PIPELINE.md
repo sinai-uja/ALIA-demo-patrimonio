@@ -4,43 +4,21 @@ Flujo completo desde la pregunta del usuario hasta la respuesta generada.
 
 ## Diagrama de flujo
 
-```
-Pregunta del usuario
-    │
-    ▼
-[1. Query Reformulation]  ← solo en chat con historial
-    │                       Concatena: "pregunta anterior — pregunta actual"
-    ▼
-[2. Embedding]            ← MrBERT, 768 dimensiones
-    │
-    ├──────────────────────────────┐
-    ▼                              ▼
-[3a. Vector Search]          [3b. Text Search]
-    pgvector coseno              tsvector español
-    k=20 candidatos              k=20 candidatos
-    │                              │
-    └──────────┬───────────────────┘
-               ▼
-[4. Hybrid Fusion]         ← RRF (k=60, text_weight=1.5)
-    20 chunks fusionados
-               │
-               ▼
-[5. Relevance Filter]     ← umbral: cosine distance ≤ 0.35
-    chunks relevantes (o abstención)
-               │
-               ▼
-[6. Reranking]            ← heurístico: base + title + coverage + position
-    lexical gate → descarta sin match léxico
-    top-k=5 chunks
-               │
-               ▼
-[7. Context Assembly]     ← max 6000 chars, formato markdown numerado
-               │
-               ▼
-[8. LLM Generation]       ← salamandra-7b, T=0.3, max_tokens=512
-               │
-               ▼
-Respuesta con citas [N] + sources
+```mermaid
+flowchart TD
+    Q["Pregunta del usuario"] --> R1
+    R1["1. Query Reformulation\n(solo en chat con historial)"] --> E
+    E["2. Embedding\n(MrBERT, 768 dim)"] --> VS & TS
+    VS["3a. Vector Search\npgvector coseno, k=20"] --> HF
+    TS["3b. Text Search\ntsvector espanol, k=20"] --> HF
+    HF["4. Hybrid Fusion\nRRF (k=60, text_weight=1.5)"] --> RF
+    RF["5. Relevance Filter\numbral: cosine distance <= 0.35"] --> RK
+    RK["6. Reranking\nheuristico + lexical gate, top-k=5"] --> CA
+    CA["7. Context Assembly\nmax 6000 chars, markdown numerado"] --> LLM
+    LLM["8. LLM Generation\nsalamandra-7b, T=0.3, max_tokens=512"] --> RES
+    RES["Respuesta con citas + sources"]
+    RF -- "todos descartados" --> ABS["Abstencion"]
+    RK -- "sin match lexico" --> ABS
 ```
 
 ## Etapas en detalle
