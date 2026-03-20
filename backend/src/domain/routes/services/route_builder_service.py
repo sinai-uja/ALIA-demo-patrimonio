@@ -89,6 +89,13 @@ class RouteBuilderService:
 
             preview = asset_previews.get(heritage_asset_id, None) if heritage_asset_id else None
 
+            # Prefer heritage asset description over RAG chunk content
+            description = (
+                preview.description[:500]
+                if preview and preview.description
+                else chunk.get("content", "")[:500]
+            )
+
             stops.append(
                 RouteStop(
                     order=idx,
@@ -97,7 +104,7 @@ class RouteBuilderService:
                     province=chunk.get("province", province),
                     municipality=chunk.get("municipality"),
                     url=chunk.get("url", ""),
-                    description=chunk.get("content", "")[:500],
+                    description=description,
                     visit_duration_minutes=duration,
                     heritage_asset_id=heritage_asset_id,
                     document_id=document_id or None,

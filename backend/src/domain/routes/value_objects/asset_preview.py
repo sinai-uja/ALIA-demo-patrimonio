@@ -9,3 +9,4 @@ class AssetPreview:
     image_url: str | None = None
     latitude: float | None = None
     longitude: float | None = None
+    description: str | None = None

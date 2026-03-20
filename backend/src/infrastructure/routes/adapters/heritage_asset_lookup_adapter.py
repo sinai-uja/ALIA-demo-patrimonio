@@ -41,7 +41,16 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
 
         query = text(f"""
             SELECT id, latitude, longitude, image_url,
-                   image_ids[1] AS first_image_id
+                   image_ids[1] AS first_image_id,
+                   COALESCE(
+                       NULLIF(TRIM(raw_data->>'clob.descripcion_s'), ''),
+                       NULLIF(TRIM(raw_data->>'clob.desarrollo_s'), ''),
+                       NULLIF(TRIM(raw_data->>'clob.origenes_s'), ''),
+                       NULLIF(TRIM(raw_data->>'clob.desc_espacio_s'), ''),
+                       NULLIF(TRIM(raw_data->>'identifica.dat_historico_s'), ''),
+                       NULLIF(TRIM(raw_data->>'identifica.tipologias_s'), ''),
+                       NULLIF(TRIM(raw_data->>'identifica.caracterizacion_s'), '')
+                   ) AS description
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
@@ -57,6 +66,7 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
         for row in rows:
             asset_id = row[0]
             first_image_id = row[4]
+            description = row[5]
             image_url = (
                 f"https://guiadigital.iaph.es/imagenes-cache/"
                 f"{asset_id}/{first_image_id}--fic.jpg"
@@ -68,6 +78,7 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
                 image_url=image_url,
                 latitude=row[1],
                 longitude=row[2],
+                description=description,
             )
 
         return previews
