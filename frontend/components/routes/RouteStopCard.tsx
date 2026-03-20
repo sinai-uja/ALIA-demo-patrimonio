@@ -129,6 +129,13 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
             </div>
           </div>
 
+          {/* Asset description */}
+          {stop.description && (
+            <p className="text-xs text-stone-500 mt-2.5 leading-relaxed line-clamp-3">
+              {stop.description}
+            </p>
+          )}
+
           {/* Narrative segment */}
           {stop.narrative_segment && (
             <p className="text-sm text-stone-600 mt-3 leading-relaxed">
