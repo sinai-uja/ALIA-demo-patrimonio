@@ -89,9 +89,9 @@ def build_routes_application_service(
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
     )
     guide_query_use_case = GuideQueryUseCase(
-        rag_port=rag_adapter,
         llm_port=llm_adapter,
         route_repository=route_repository,
+        heritage_asset_lookup_port=heritage_asset_lookup_adapter,
     )
     list_routes_use_case = ListRoutesUseCase(
         route_repository=route_repository,

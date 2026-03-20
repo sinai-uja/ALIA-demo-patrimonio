@@ -102,17 +102,28 @@ def build_route_prompt(
     )
 
 
-GUIDE_SYSTEM_PROMPT = """Eres un guia experto del patrimonio historico andaluz.
-Responde preguntas sobre la ruta y los elementos patrimoniales \
-en espanol, de forma cercana y detallada."""
+GUIDE_SYSTEM_PROMPT = (
+    "Eres un guia experto del patrimonio historico andaluz del IAPH. "
+    "Respondes preguntas sobre una ruta cultural concreta y sus paradas "
+    "en espanol, de forma cercana, detallada y precisa.\n\n"
+    "Reglas:\n"
+    "- Responde UNICAMENTE con la informacion de las paradas de la ruta "
+    "proporcionada. No inventes datos.\n"
+    "- Si la pregunta trata sobre algo que NO esta en las paradas de la "
+    "ruta, indica amablemente que esa informacion no forma parte de esta "
+    "ruta y sugiere al visitante usar la herramienta de busqueda o crear "
+    "una nueva ruta en la web.\n"
+    "- Cita las paradas por su nombre cuando sea relevante.\n"
+    "- Se descriptivo y ameno, como un guia turistico profesional."
+)
 
 
 def build_guide_prompt(
-    question: str, route_context: str, rag_context: str,
+    question: str, route_context: str,
 ) -> str:
     return (
-        f"Contexto de la ruta:\n{route_context}\n\n"
-        f"Informacion adicional del patrimonio:\n{rag_context}\n\n"
+        f"Informacion detallada de las paradas de la ruta:\n\n"
+        f"{route_context}\n\n"
         f"Pregunta del visitante: {question}\n\n"
         f"Respuesta:"
     )

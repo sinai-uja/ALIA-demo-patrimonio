@@ -85,3 +85,72 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             )
 
         return previews
+
+    async def get_asset_full_descriptions(
+        self, asset_ids: list[str],
+    ) -> dict[str, str]:
+        if not asset_ids:
+            return {}
+
+        unique_ids = list(set(asset_ids))
+        placeholders = ", ".join(f":id_{i}" for i in range(len(unique_ids)))
+        params = {f"id_{i}": v for i, v in enumerate(unique_ids)}
+
+        query = text(f"""
+            SELECT
+                id,
+                denomination,
+                municipality,
+                province,
+                protection,
+                raw_data->>'clob.descripcion_s' AS descripcion,
+                raw_data->>'clob.desarrollo_s' AS desarrollo,
+                raw_data->>'clob.origenes_s' AS origenes,
+                raw_data->>'clob.desc_espacio_s' AS desc_espacio,
+                raw_data->>'clob.evolucion_s' AS evolucion,
+                raw_data->>'identifica.dat_historico_s' AS dat_historico,
+                raw_data->>'identifica.tipologias_s' AS tipologias,
+                raw_data->>'identifica.caracterizacion_s' AS caracterizacion,
+                raw_data->>'identifica.cronologia_s' AS cronologia
+            FROM heritage_assets
+            WHERE id IN ({placeholders})
+        """)
+        result = await self._db.execute(query, params)
+        rows = result.fetchall()
+
+        descriptions: dict[str, str] = {}
+        for row in rows:
+            sections: list[str] = []
+            asset_id = row[0]
+
+            if row[1]:  # denomination
+                sections.append(f"Nombre oficial: {row[1]}")
+            if row[2] or row[3]:  # municipality, province
+                loc = ", ".join(filter(None, [row[2], row[3]]))
+                sections.append(f"Ubicacion: {loc}")
+            if row[4]:  # protection
+                sections.append(f"Proteccion: {row[4]}")
+
+            field_labels = [
+                (5, "Descripcion"),
+                (6, "Desarrollo"),
+                (7, "Origenes"),
+                (8, "Descripcion espacial"),
+                (9, "Evolucion"),
+                (10, "Datos historicos"),
+                (11, "Tipologias"),
+                (12, "Caracterizacion"),
+                (13, "Cronologia"),
+            ]
+            for idx, label in field_labels:
+                val = row[idx]
+                if val and val.strip():
+                    sections.append(f"{label}: {val.strip()}")
+
+            descriptions[asset_id] = "\n\n".join(sections) if sections else ""
+
+        logger.info(
+            "Heritage asset full descriptions: requested=%d, found=%d",
+            len(unique_ids), len(rows),
+        )
+        return descriptions

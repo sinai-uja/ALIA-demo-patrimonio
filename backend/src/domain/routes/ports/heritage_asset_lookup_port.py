@@ -11,3 +11,9 @@ class HeritageAssetLookupPort(ABC):
         self, asset_ids: list[str],
     ) -> dict[str, AssetPreview]:
         """Return preview data keyed by asset ID for the given IDs."""
+
+    @abstractmethod
+    async def get_asset_full_descriptions(
+        self, asset_ids: list[str],
+    ) -> dict[str, str]:
+        """Return rich textual descriptions keyed by asset ID."""
