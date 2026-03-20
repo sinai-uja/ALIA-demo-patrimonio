@@ -43,6 +43,11 @@ class VirtualRouteSchema(BaseModel):
     created_at: str
 
 
+class GuideMessageSchema(BaseModel):
+    role: str = Field(..., pattern="^(user|assistant)$")
+    content: str
+
+
 class GuideQueryRequest(BaseModel):
     question: str = Field(
         ...,
@@ -50,6 +55,10 @@ class GuideQueryRequest(BaseModel):
         description=(
             "Question about the route or its heritage sites"
         ),
+    )
+    history: list[GuideMessageSchema] = Field(
+        default_factory=list,
+        description="Previous conversation messages for context",
     )
 
 

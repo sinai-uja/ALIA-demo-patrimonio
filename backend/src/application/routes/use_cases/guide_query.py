@@ -65,7 +65,7 @@ class GuideQueryUseCase:
 
         route_context = "\n\n---\n\n".join(route_context_parts)
 
-        # 4. Generate answer with LLM
+        # 4. Generate answer with LLM (with conversation history)
         user_prompt = build_guide_prompt(
             question=dto.question,
             route_context=route_context,
@@ -73,6 +73,7 @@ class GuideQueryUseCase:
         answer = await self._llm_port.generate_structured(
             system_prompt=GUIDE_SYSTEM_PROMPT,
             user_prompt=user_prompt,
+            history=dto.history if dto.history else None,
         )
 
         return GuideResponseDTO(answer=answer)

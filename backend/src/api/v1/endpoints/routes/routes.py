@@ -173,6 +173,10 @@ async def guide_query(
     dto = GuideQueryDTO(
         route_id=route_id,
         question=request.question,
+        history=[
+            {"role": m.role, "content": m.content}
+            for m in request.history
+        ],
     )
 
     try:

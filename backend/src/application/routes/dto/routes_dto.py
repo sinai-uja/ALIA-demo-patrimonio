@@ -52,6 +52,7 @@ class GuideQueryDTO:
 
     route_id: str
     question: str
+    history: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

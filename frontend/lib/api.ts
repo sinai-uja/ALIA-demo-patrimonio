@@ -166,10 +166,14 @@ export const routes = {
     }
   },
 
-  guide: (routeId: string, question: string) =>
+  guide: (
+    routeId: string,
+    question: string,
+    history?: { role: string; content: string }[],
+  ) =>
     apiFetch<{ answer: string; sources: RagSource[] }>(
       `/routes/${routeId}/guide`,
-      { method: "POST", body: JSON.stringify({ question }) }
+      { method: "POST", body: JSON.stringify({ question, history: history ?? [] }) }
     ),
 };
 

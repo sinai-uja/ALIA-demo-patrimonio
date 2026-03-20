@@ -24,12 +24,13 @@ class VLLMRoutesAdapter(LLMPort):
         system_prompt: str,
         user_prompt: str,
         max_tokens: int | None = None,
+        history: list[dict[str, str]] | None = None,
     ) -> str:
         effective_max_tokens = max_tokens or self._max_tokens
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+        messages = [{"role": "system", "content": system_prompt}]
+        if history:
+            messages.extend(history)
+        messages.append({"role": "user", "content": user_prompt})
 
         payload = {
             "model": self._model_name,

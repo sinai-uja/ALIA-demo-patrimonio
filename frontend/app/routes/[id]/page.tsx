@@ -139,10 +139,14 @@ export default function RouteDetailPage() {
 
   const handleGuideQuestion = async (question: string) => {
     if (!id) return;
+    const currentHistory = guideMessages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
     setGuideMessages((m) => [...m, { role: "user", content: question }]);
     setGuiding(true);
     try {
-      const resp = await routesApi.guide(id, question);
+      const resp = await routesApi.guide(id, question, currentHistory);
       setGuideMessages((m) => [
         ...m,
         { role: "assistant", content: resp.answer, sources: resp.sources },

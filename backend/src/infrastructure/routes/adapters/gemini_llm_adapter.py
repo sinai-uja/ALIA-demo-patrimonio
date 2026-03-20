@@ -32,6 +32,7 @@ class GeminiRoutesAdapter(LLMPort):
         system_prompt: str,
         user_prompt: str,
         max_tokens: int | None = None,
+        history: list[dict[str, str]] | None = None,
     ) -> str:
         effective_max_tokens = max_tokens or self._max_tokens
         logger.info(
@@ -41,9 +42,16 @@ class GeminiRoutesAdapter(LLMPort):
             len(user_prompt),
         )
 
+        contents: list[dict] = []
+        if history:
+            for msg in history:
+                role = "model" if msg["role"] == "assistant" else "user"
+                contents.append({"role": role, "parts": [{"text": msg["content"]}]})
+        contents.append({"role": "user", "parts": [{"text": user_prompt}]})
+
         payload = {
             "system_instruction": {"parts": [{"text": system_prompt}]},
-            "contents": [{"parts": [{"text": user_prompt}]}],
+            "contents": contents,
             "generationConfig": {
                 "maxOutputTokens": effective_max_tokens,
                 "temperature": self._temperature,
