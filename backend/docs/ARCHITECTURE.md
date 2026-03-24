@@ -92,7 +92,7 @@ class HeritageRepository(ABC):
 
 | Puerto | Adaptador | Tecnología |
 |--------|----------|------------|
-| `EmbeddingPort` | `HttpEmbeddingAdapter` | HTTP → servicio MrBERT (puerto 8001) |
+| `EmbeddingPort` | `HttpEmbeddingAdapter` | HTTP → servicio de embeddings (MrBERT o Qwen3, puerto 8001) |
 | `VectorSearchPort` | `PgVectorSearchAdapter` | pgvector `<=>` coseno |
 | `TextSearchPort` | `PgTextSearchAdapter` | PostgreSQL `tsvector` + `plainto_tsquery('spanish')` |
 | `LLMPort` (RAG) | `VLLMAdapter` / `GeminiLLMAdapter` | vLLM o Gemini (según `LLM_PROVIDER`) |
@@ -160,7 +160,7 @@ flowchart TD
     CS --> CHK{"chunk_exists()?"}
     CHK -- "si existe" --> SKIP["Skip"]
     CHK -- "si no" --> ENR["Enrich content"]
-    ENR --> EMB["Embed (MrBERT)"]
+    ENR --> EMB["Embed (MrBERT / Qwen3)"]
     EMB --> PER["Persist chunk + embedding"]
 ```
 

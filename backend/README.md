@@ -73,8 +73,11 @@ Configuration is loaded from a `.env` file via `pydantic-settings`. See `.env.ex
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_URL` | `postgresql+asyncpg://uja:uja@localhost:5432/uja_iaph` | Async PostgreSQL connection URL |
-| `EMBEDDING_SERVICE_URL` | `http://localhost:8001` | MrBERT embedding HTTP service URL |
-| `EMBEDDING_DIM` | `768` | Embedding vector dimension |
+| `EMBEDDING_SERVICE_URL` | `http://localhost:8001` | Embedding HTTP service URL |
+| `EMBEDDING_DIM` | `768` | Embedding vector dimension (768 for MrBERT, 1024 for Qwen3) |
+| `EMBEDDING_MODEL_DIR` | `MrBERT` | Model directory under `backend/models/` (`MrBERT` or `Qwen3-Embedding-0.6B`) |
+| `POOLING_STRATEGY` | `mean` | Pooling strategy: `mean` (MrBERT) or `last_token` (Qwen3) |
+| `MAX_LENGTH` | `8192` | Max token length for encoder (8192 MrBERT, 32768 Qwen3) |
 | `LLM_PROVIDER` | `gemini` | LLM backend: `vllm` or `gemini` |
 | `LLM_SERVICE_URL` | `http://localhost:8000/v1` | vLLM OpenAI-compatible endpoint URL |
 | `LLM_MODEL_NAME` | `BSC-LT/salamandra-7b-instruct` | LLM model identifier |
@@ -275,7 +278,7 @@ Defined in `docker/docker-compose.yml`:
 | Service | Image | Port | Notes |
 |---------|-------|------|-------|
 | `postgres` | `pgvector/pgvector:pg16` | 5432 | PostgreSQL 16 with pgvector extension |
-| `embedding-service` | Custom (Dockerfile in `docker/embedding-service/`) | 8001 | MrBERT FastAPI microservice; model mounted from `models/MrBERT/` |
+| `embedding-service` | Custom (Dockerfile in `docker/embedding-service/`) | 8001 | Embedding FastAPI microservice; model mounted from `models/${EMBEDDING_MODEL_DIR}/` (MrBERT or Qwen3) |
 | `llm-service` | `vllm/vllm-openai:latest` | 8000 | vLLM serving salamandra-7b-instruct; profile `llm`, requires NVIDIA GPU |
 | `api` | Custom (Dockerfile in `docker/api/`) | 8080 | FastAPI backend; depends on postgres and embedding-service |
 

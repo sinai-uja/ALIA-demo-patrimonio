@@ -17,7 +17,7 @@ Licencia: uso comercial permitido en todos los casos.
 
 ## Tablas en base de datos
 
-### `document_chunks_v1` / `document_chunks_v2` / `document_chunks_v3` — Chunks del corpus
+### `document_chunks_v1` / `document_chunks_v2` / `document_chunks_v3` / `document_chunks_v4` — Chunks del corpus
 
 Tabla principal del sistema RAG. Cada fila es un fragmento de texto de un bien patrimonial con su embedding vectorial.
 
@@ -31,28 +31,29 @@ Tabla principal del sistema RAG. Cada fila es un fragmento de texto de un bien p
 | `municipality` | String | SÍ | v1+ | Municipio (nulo en paisajes culturales) |
 | `url` | String | NO | v1+ | Enlace a la ficha en la Guía Digital del IAPH |
 | `chunk_index` | Integer | NO | v1+ | Índice secuencial del chunk dentro del documento (base 0) |
-| `content` | Text | NO | v1+ | Texto del chunk (en v3, incluye cabecera de metadata tipo-específica) |
+| `content` | Text | NO | v1+ | Texto del chunk (en v3 incluye cabecera tipo-específica; en v4 incluye plantilla en lenguaje natural) |
 | `token_count` | Integer | NO | v1+ | Conteo de palabras del chunk |
-| `embedding` | Vector(768) | NO | v1+ | Embedding MrBERT (768 dimensiones, mean pooling) |
+| `embedding` | Vector(`EMBEDDING_DIM`) | NO | v1+ | Embedding vectorial (dimensión configurable: 768 para MrBERT, 1024 para Qwen3) |
 | `created_at` | DateTime(tz) | NO | v1+ | Timestamp de creación |
 | `search_vector` | tsvector | SÍ | v2+ | Vector de búsqueda full-text (pesos: title='A', content='B'). Actualizado por trigger PL/pgSQL |
-| `metadata` | JSONB | SÍ | **v3** | Campos extra del parquet original (ver detalle por tipo abajo) |
+| `metadata` | JSONB | SÍ | **v3+** | Campos extra del parquet original (ver detalle por tipo abajo) |
 
 **Índices:**
 - B-tree sobre `document_id` — búsqueda por documento
 - HNSW sobre `embedding` — búsqueda vectorial por similitud coseno
 - GIN sobre `search_vector` — búsqueda full-text (v2+)
-- GIN sobre `metadata` — consultas JSONB (v3)
+- GIN sobre `metadata` — consultas JSONB (v3+)
 
-**Versionado:** Coexisten v1, v2 y v3 (ver `docs/CHUNKS_VERSIONS.md`). Se selecciona mediante `CHUNKS_TABLE_VERSION` en `.env`.
+**Versionado:** Coexisten v1, v2, v3 y v4 (ver `docs/CHUNKS_VERSIONS.md`). Se selecciona mediante `CHUNKS_TABLE_VERSION` en `.env`.
 
 | Versión | Estrategia | Tamaño chunk | Overlap | Enrichment en content | Columna metadata | Registros |
 |---------|------------|--------------|---------|----------------------|-----------------|-----------|
 | v1 | Ventana fija de palabras | 512 | 64 | No | No | ~149,290 |
 | v2 | Por párrafos (`\n\n`) | 1024 | 128 | Básico (título, tipo, provincia) | No | Pendiente |
 | v3 | Por párrafos (`\n\n`) | 1024 | 128 | Tipo-específico (autores, estilos, cronología...) | Sí (JSONB) | Pendiente |
+| v4 | Por párrafos (`\n\n`) | 1024 | 128 | Plantilla en lenguaje natural por tipo | Sí (JSONB) | Pendiente |
 
-### Contenido de la columna `metadata` JSONB (v3) por tipo de activo
+### Contenido de la columna `metadata` JSONB (v3/v4) por tipo de activo
 
 Todos los campos extra del parquet se almacenan en el JSON. Los campos marcados con **E** también se incluyen en la cabecera del `content` (enrichment para embedding + full-text).
 
@@ -273,15 +274,15 @@ El parser vive en `src/domain/heritage/value_objects/raw_data.py`. Las funciones
 flowchart LR
     P["Parquet"] --> PDL["ParquetDocumentLoader"]
     PDL --> CS["ChunkingService"]
-    CS --> HEA["HttpEmbeddingAdapter\n(MrBERT)"]
+    CS --> HEA["HttpEmbeddingAdapter\n(MrBERT / Qwen3)"]
     HEA --> PG["PostgreSQL"]
 ```
 
 1. **Carga**: Lee el parquet con pandas. Mapea columnas estándar (`id`, `url`, `title`, `province`, `municipality`, `text`) a la entidad `Document`; el resto va a `metadata` (dict).
-2. **Chunking**: Divide el campo `text` en chunks. v1 usa ventana fija de palabras; v2/v3 respetan límites de párrafo.
+2. **Chunking**: Divide el campo `text` en chunks. v1 usa ventana fija de palabras; v2/v3/v4 respetan límites de párrafo.
 3. **Idempotencia**: Comprueba si ya existe `(document_id, chunk_index)` en la tabla antes de procesar.
-4. **Embedding**: Envía el texto al servicio MrBERT (batch size=2). En v2 se antepone cabecera básica; en v3 se antepone cabecera tipo-específica (autores, estilos, etc.) al texto antes de embeber.
-5. **Persistencia**: Guarda chunk + embedding en la tabla correspondiente. En v3 también guarda la columna `metadata` JSONB con todos los campos extra del parquet.
+4. **Embedding**: Envía el texto al servicio de embeddings (batch size=2). En v2 se antepone cabecera básica; en v3 se antepone cabecera tipo-específica; en v4 se antepone una plantilla en lenguaje natural por tipo patrimonial.
+5. **Persistencia**: Guarda chunk + embedding en la tabla correspondiente. En v3/v4 también guarda la columna `metadata` JSONB con todos los campos extra del parquet.
 
 Comando: `cd backend && make ingest`
 
@@ -289,7 +290,7 @@ Comando: `cd backend && make ingest`
 
 ```mermaid
 flowchart TD
-    Q["Query del usuario"] --> EMB["Embedding (MrBERT)"]
+    Q["Query del usuario"] --> EMB["Embedding (MrBERT / Qwen3)"]
     EMB --> VS["Vector Search\n(HNSW coseno, k=20)"] & TS["Text Search\n(tsvector, k=20)"]
     VS & TS --> FUS["Fusion\n(RRF, peso 1.5x full-text)"]
     FUS --> FIL["Filtro de relevancia\n(cosine distance <= 0.35)"]

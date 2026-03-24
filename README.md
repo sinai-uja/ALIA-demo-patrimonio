@@ -26,7 +26,8 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 
 | Role | Model | Notes |
 |------|-------|-------|
-| Encoder | `BSC-LT/MrBERT` | 308M params · 768-dim · 8,192 token context · mean pooling · Apache 2.0 |
+| Encoder (default) | `BSC-LT/MrBERT` | 308M params · 768-dim · 8,192 token context · mean pooling · Apache 2.0 |
+| Encoder (alt.) | `Qwen/Qwen3-Embedding-0.6B` | 600M params · 1,024-dim · 32K token context · last-token pooling |
 | Decoder | `BSC-LT/salamandra-7b-instruct` | Spanish-capable LLM · served via vLLM |
 
 ## Infrastructure
@@ -34,7 +35,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 | Service | Image | Port |
 |---------|-------|------|
 | PostgreSQL + pgvector | `pgvector/pgvector:pg16` | 5432 |
-| Embedding service | custom (MrBERT + FastAPI) | 8001 |
+| Embedding service | custom (MrBERT / Qwen3 + FastAPI) | 8001 |
 | LLM service | `vllm/vllm-openai` *(profile: `llm`)* | 8000 |
 | Backend API | custom (FastAPI) | 8080 |
 

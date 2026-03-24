@@ -8,7 +8,7 @@ Flujo completo desde la pregunta del usuario hasta la respuesta generada.
 flowchart TD
     Q["Pregunta del usuario"] --> R1
     R1["1. Query Reformulation\n(solo en chat con historial)"] --> E
-    E["2. Embedding\n(MrBERT, 768 dim)"] --> VS & TS
+    E["2. Embedding\n(MrBERT / Qwen3, configurable)"] --> VS & TS
     VS["3a. Vector Search\npgvector coseno, k=20"] --> HF
     TS["3b. Text Search\ntsvector espanol, k=20"] --> HF
     HF["4. Hybrid Fusion\nRRF (k=60, text_weight=1.5)"] --> RF
@@ -35,12 +35,16 @@ Solo se activa en conversaciones con historial. Concatena la última pregunta de
 
 ### 2. Embedding
 
-**Adaptador:** `HttpEmbeddingAdapter` → servicio MrBERT (puerto 8001)
+**Adaptador:** `HttpEmbeddingAdapter` → servicio de embeddings (puerto 8001)
 
-- Modelo: `BSC-LT/MrBERT` (308M params, ModernBERT)
-- Dimensión: 768
-- Pooling: mean pooling sobre todos los tokens
-- Contexto: 8,192 tokens
+Encoder configurable via variables de entorno (`EMBEDDING_MODEL_DIR`, `POOLING_STRATEGY`, `MAX_LENGTH`, `EMBEDDING_DIM`):
+
+| | MrBERT (default) | Qwen3-Embedding-0.6B |
+|---|---|---|
+| Modelo | `BSC-LT/MrBERT` (308M params) | `Qwen/Qwen3-Embedding-0.6B` (600M params) |
+| Dimensión | 768 | 1024 |
+| Pooling | mean pooling | last-token pooling (left-padding) |
+| Contexto | 8,192 tokens | 32,768 tokens |
 
 ### 3a. Vector Search (búsqueda semántica)
 
