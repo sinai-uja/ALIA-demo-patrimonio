@@ -1,4 +1,4 @@
-.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest load-assets fetch-assets help
+.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest load-assets fetch-assets download-qwen3 help
 
 COMPOSE = docker compose -f docker/docker-compose.yml
 ENV_FILE = config/.env
@@ -17,6 +17,7 @@ help:
 	@echo "  ingest       Ingest all IAPH parquet datasets"
 	@echo "  load-assets  Load IAPH API data from ZIP into heritage_assets"
 	@echo "  fetch-assets Fetch IAPH API data live (requires IAPH_API_TOKEN)"
+	@echo "  download-qwen3 Download Qwen3-Embedding-0.6B model"
 
 dev: infra
 	uv run fastapi dev src/main.py --port 18080
@@ -50,3 +51,6 @@ load-assets:
 
 fetch-assets:
 	uv run python -m scripts.fetch_iaph_api
+
+download-qwen3:
+	bash scripts/download_qwen3.sh

@@ -8,6 +8,7 @@ import time
 
 from src.application.documents.dto.ingest_dto import IngestDocumentsCommand
 from src.composition.documents_composition import build_documents_application_service
+from src.config import settings
 from src.db.base import AsyncSessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -42,8 +43,8 @@ async def ingest_dataset(name: str, source_path: str, heritage_type: str) -> Non
         command = IngestDocumentsCommand(
             source_path=source_path,
             heritage_type=heritage_type,
-            chunk_size=512,
-            chunk_overlap=64,
+            chunk_size=settings.rag_chunk_size,
+            chunk_overlap=settings.rag_chunk_overlap,
         )
         result = await service.ingest_documents(command)
 

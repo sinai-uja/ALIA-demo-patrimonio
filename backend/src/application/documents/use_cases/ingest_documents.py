@@ -13,7 +13,7 @@ logger = logging.getLogger("iaph")
 
 EMBEDDING_BATCH_SIZE = 2
 
-# Type-specific metadata fields to prepend to chunk content for richer embeddings.
+# Type-specific metadata fields to prepend to chunk content for richer embeddings (v2/v3).
 # Each entry is (parquet_column_name, human_readable_label).
 _ENRICHMENT_FIELDS: dict[HeritageType, list[tuple[str, str]]] = {
     HeritageType.PATRIMONIO_MUEBLE: [
@@ -53,11 +53,13 @@ class IngestDocumentsUseCase:
         chunking_service: ChunkingService,
         embedding_port: EmbeddingPort,
         document_repository: DocumentRepository,
+        chunks_version: str = "v1",
     ) -> None:
         self._loader = document_loader
         self._chunker = chunking_service
         self._embedding_port = embedding_port
         self._repository = document_repository
+        self._chunks_version = chunks_version
 
     async def execute(self, command: IngestDocumentsCommand) -> IngestResultDTO:
         heritage_type = HeritageType(command.heritage_type)
@@ -144,14 +146,19 @@ class IngestDocumentsUseCase:
                 results.append(result[0])
             return results
 
-    @staticmethod
-    def _enrich_for_embedding(document, content: str) -> str:
+    def _enrich_for_embedding(self, document, content: str) -> str:
         """Prepend document metadata to chunk content for richer embeddings.
 
-        Includes base fields (title, type, province, municipality) plus
-        type-specific metadata fields (authors, styles, chronology, etc.)
-        to improve retrieval for domain-specific queries.
+        For v4, uses natural language templates per heritage type.
+        For v1/v2/v3, uses pipe-separated key-value header.
         """
+        if self._chunks_version == "v4":
+            return self._enrich_v4(document, content)
+        return self._enrich_header(document, content)
+
+    @staticmethod
+    def _enrich_header(document, content: str) -> str:
+        """v2/v3 enrichment: pipe-separated metadata header."""
         parts = [f"Titulo: {document.title}"]
         parts.append(f"Tipo: {document.heritage_type.value}")
         parts.append(f"Provincia: {document.province}")
@@ -166,3 +173,119 @@ class IngestDocumentsUseCase:
 
         header = " | ".join(parts)
         return f"{header}\n---\n{content}"
+
+    @staticmethod
+    def _get_meta(document, key: str) -> str | None:
+        """Get a metadata value, returning None if missing or empty."""
+        value = document.metadata.get(key)
+        if value is None or str(value).strip() == "" or str(value).lower() == "nan":
+            return None
+        return str(value).strip()
+
+    def _enrich_v4(self, document, content: str) -> str:
+        """v4 enrichment: natural language templates per heritage type."""
+        ht = document.heritage_type
+        if ht == HeritageType.PAISAJE_CULTURAL:
+            return self._template_paisaje(document, content)
+        if ht == HeritageType.PATRIMONIO_INMATERIAL:
+            return self._template_inmaterial(document, content)
+        if ht == HeritageType.PATRIMONIO_INMUEBLE:
+            return self._template_inmueble(document, content)
+        if ht == HeritageType.PATRIMONIO_MUEBLE:
+            return self._template_mueble(document, content)
+        # Fallback to header-based enrichment for unknown types
+        return self._enrich_header(document, content)
+
+    def _template_paisaje(self, document, content: str) -> str:
+        header = (
+            f"Paisaje cultural titulado '{document.title}' "
+            f"y ubicado en la provincia de '{document.province}'."
+        )
+        return f"{header}\n{content}"
+
+    def _template_inmaterial(self, document, content: str) -> str:
+        activity_types = self._get_meta(document, "activity_types")
+        subject_topic = self._get_meta(document, "subject_topic")
+        district = self._get_meta(document, "district")
+        municipality = document.municipality
+        province = document.province
+
+        parts = [f"Bien inmaterial titulado '{document.title}'"]
+        if activity_types and subject_topic:
+            parts[0] += f", clasificado como {activity_types} bajo la categoría {subject_topic}"
+        elif activity_types:
+            parts[0] += f", clasificado como {activity_types}"
+        elif subject_topic:
+            parts[0] += f", de categoría {subject_topic}"
+        parts[0] += "."
+
+        location_parts = [p for p in [district, municipality, province] if p]
+        if location_parts:
+            parts.append(f"Ubicado en {', '.join(location_parts)}.")
+
+        header = " ".join(parts)
+        return f"{header}\n{content}"
+
+    def _template_inmueble(self, document, content: str) -> str:
+        characterisation = self._get_meta(document, "characterisation")
+        type_val = self._get_meta(document, "type")
+        municipality = document.municipality
+        province = document.province
+        style = self._get_meta(document, "styles")
+        historic_periods = self._get_meta(document, "historic_periods")
+
+        line1 = f"Bien inmueble titulado '{document.title}'."
+        if characterisation and type_val:
+            line1 = (
+                f"Bien inmueble titulado '{document.title}'. "
+                f"Es una propiedad de naturaleza {characterisation} y tipo {type_val}."
+            )
+        elif characterisation:
+            line1 = (
+                f"Bien inmueble titulado '{document.title}'. "
+                f"Es una propiedad de naturaleza {characterisation}."
+            )
+
+        if municipality:
+            line1 += f" Ubicado en el municipio de {municipality}, provincia de {province}."
+        else:
+            line1 += f" Ubicado en la provincia de {province}."
+
+        lines = [line1]
+        if style and historic_periods:
+            lines.append(f"De estilo {style} y período histórico {historic_periods}.")
+        elif style:
+            lines.append(f"De estilo {style}.")
+        elif historic_periods:
+            lines.append(f"De período histórico {historic_periods}.")
+
+        header = "\n".join(lines)
+        return f"{header}\n{content}"
+
+    def _template_mueble(self, document, content: str) -> str:
+        type_val = self._get_meta(document, "type")
+        municipality = document.municipality
+        province = document.province
+        style = self._get_meta(document, "styles")
+        historic_periods = self._get_meta(document, "historic_periods")
+
+        if type_val:
+            line1 = f"Bien mueble titulado '{document.title}' de tipo {type_val}."
+        else:
+            line1 = f"Bien mueble titulado '{document.title}'."
+
+        if municipality:
+            line1 += f" Ubicado en el municipio de {municipality}, provincia de {province}."
+        else:
+            line1 += f" Ubicado en la provincia de {province}."
+
+        lines = [line1]
+        if style and historic_periods:
+            lines.append(f"De estilo {style} y período histórico {historic_periods}.")
+        elif style:
+            lines.append(f"De estilo {style}.")
+        elif historic_periods:
+            lines.append(f"De período histórico {historic_periods}.")
+
+        header = "\n".join(lines)
+        return f"{header}\n{content}"

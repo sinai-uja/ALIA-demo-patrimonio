@@ -9,6 +9,7 @@ La tabla `document_chunks` utiliza un esquema de versionado (`document_chunks_v1
 | v1 | `document_chunks_v1` | Ventana fija por palabras | Solo texto del chunk | 512 palabras | 64 | ~149,290 |
 | v2 | `document_chunks_v2` | Por parrafos (respeta `\n\n`) | Metadata basica + texto | 1024 palabras | 128 | Pendiente de ingesta |
 | v3 | `document_chunks_v3` | Por parrafos (respeta `\n\n`) | Metadata tipo-especifica + texto | 1024 palabras | 128 | Pendiente de ingesta |
+| v4 | `document_chunks_v4` | Por parrafos (respeta `\n\n`) | Plantilla lenguaje natural + texto | 1024 palabras | 128 | Pendiente de ingesta |
 
 ## Como cambiar de version
 
@@ -134,6 +135,117 @@ Reiniciar el backend tras el cambio. No hace falta migracion ni re-ingesta para 
    SELECT LEFT(content, 200) FROM document_chunks_v3 LIMIT 1;
    -- Verificar metadata JSONB
    SELECT metadata FROM document_chunks_v3 LIMIT 1;
+   ```
+
+### v4 — Plantillas en lenguaje natural + encoder configurable (MrBERT / Qwen3)
+
+- **Tabla**: `document_chunks_v4`
+- **Estrategia**: Misma que v2/v3 (parrafos, sin cortar a mitad de parrafo)
+- **Encoder soportado**: MrBERT (768 dims) o **Qwen/Qwen3-Embedding-0.6B** (1024 dims), seleccionable por variable de entorno
+- **Contenido del embedding**: Plantillas en lenguaje natural por tipo patrimonial, seguidas del fragmento de texto:
+
+  **Paisaje Cultural:**
+  ```
+  Paisaje cultural titulado '{title}' y ubicado en la provincia de '{province}'.
+  {texto del chunk}
+  ```
+
+  **Bien Inmaterial:**
+  ```
+  Bien inmaterial titulado '{title}', clasificado como {activity_types} bajo la categoría {subject_topic}. Ubicado en {district}, {municipality}, {province}.
+  {texto del chunk}
+  ```
+
+  **Bien Inmueble:**
+  ```
+  Bien inmueble titulado '{title}'. Es una propiedad de naturaleza {characterisation} y tipo {type}. Ubicado en el municipio de {municipality}, provincia de {province}.
+  De estilo {style} y período histórico {historic_periods}.
+  {texto del chunk}
+  ```
+
+  **Bien Mueble:**
+  ```
+  Bien mueble titulado '{title}' de tipo {type}. Ubicado en el municipio de {municipality}, provincia de {province}.
+  De estilo {style} y período histórico {historic_periods}.
+  {texto del chunk}
+  ```
+
+  > Campos ausentes se omiten automaticamente de la plantilla.
+
+- **Columna `metadata` JSONB**: Igual que v3, almacena TODOS los campos extra del parquet.
+- **Campos de metadata JSONB por tipo** (segun especificacion de Samuel Sanchez):
+
+  | Tipo patrimonial | Campos en metadata JSONB |
+  |------------------|--------------------------|
+  | Paisaje Cultural | landscape_demarcation, area, topic |
+  | Patrimonio Inmaterial | subject_topic, activity_types, district, date, frequency |
+  | Patrimonio Inmueble | code, characterisation |
+  | Patrimonio Mueble | code, type, disciplines, historic_periods, styles, chronology, iconographies, authors, materials, techniques, dimensions, protection |
+
+- **Configuracion para MrBERT** (retrocompatible):
+  ```bash
+  CHUNKS_TABLE_VERSION=v4
+  EMBEDDING_MODEL_DIR=MrBERT
+  POOLING_STRATEGY=mean
+  MAX_LENGTH=8192
+  EMBEDDING_DIM=768
+  RAG_CHUNK_SIZE=1024
+  RAG_CHUNK_OVERLAP=128
+  ```
+
+- **Configuracion para Qwen3-Embedding-0.6B** (recomendada):
+  ```bash
+  CHUNKS_TABLE_VERSION=v4
+  EMBEDDING_MODEL_DIR=Qwen3-Embedding-0.6B
+  POOLING_STRATEGY=last_token
+  MAX_LENGTH=32768
+  EMBEDDING_DIM=1024
+  RAG_CHUNK_SIZE=1024
+  RAG_CHUNK_OVERLAP=128
+  ```
+
+## Como ingestar en v4
+
+1. (Opcional) Descargar modelo Qwen3:
+   ```bash
+   cd backend && make download-qwen3
+   ```
+
+2. Aplicar la migracion:
+   ```bash
+   make migrate
+   ```
+
+3. Configurar variables de entorno en `backend/config/.env` (elegir encoder):
+   ```bash
+   CHUNKS_TABLE_VERSION=v4
+   # Para Qwen3:
+   EMBEDDING_MODEL_DIR=Qwen3-Embedding-0.6B
+   POOLING_STRATEGY=last_token
+   MAX_LENGTH=32768
+   EMBEDDING_DIM=1024
+   RAG_CHUNK_SIZE=1024
+   RAG_CHUNK_OVERLAP=128
+   ```
+
+4. Reconstruir el servicio de embeddings si se cambio de encoder:
+   ```bash
+   docker compose -f docker/docker-compose.yml build embedding-service
+   ```
+
+5. Ejecutar la ingesta:
+   ```bash
+   cd backend && make ingest
+   ```
+
+6. Verificar:
+   ```sql
+   -- Verificar plantilla en content
+   SELECT LEFT(content, 300) FROM document_chunks_v4 LIMIT 5;
+   -- Verificar metadata JSONB
+   SELECT metadata FROM document_chunks_v4 LIMIT 1;
+   -- Verificar dimension del embedding
+   SELECT array_length(embedding::real[], 1) FROM document_chunks_v4 LIMIT 1;
    ```
 
 ## Como anadir una nueva version

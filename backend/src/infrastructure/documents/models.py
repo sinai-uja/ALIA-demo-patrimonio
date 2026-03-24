@@ -38,7 +38,7 @@ class DocumentChunkModel(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    embedding = mapped_column(Vector(768), nullable=False)
+    embedding = mapped_column(Vector(settings.embedding_dim), nullable=False)
     metadata_: Mapped[dict | None] = mapped_column(
         "metadata", JSONB, nullable=True, server_default=text("'{}'::jsonb")
     )

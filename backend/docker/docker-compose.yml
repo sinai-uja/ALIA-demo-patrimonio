@@ -28,10 +28,12 @@ services:
     ports:
       - "18001:8001"
     volumes:
-      - ../models/MrBERT:/app/model:ro
+      - ../models/${EMBEDDING_MODEL_DIR:-MrBERT}:/app/model:ro
     environment:
       MODEL_PATH: /app/model
       DEVICE: cuda
+      POOLING_STRATEGY: ${POOLING_STRATEGY:-mean}
+      MAX_LENGTH: ${MAX_LENGTH:-8192}
     deploy:
       resources:
         reservations:

@@ -4,6 +4,7 @@ from src.application.documents.services.documents_application_service import (
     DocumentsApplicationService,
 )
 from src.application.documents.use_cases.ingest_documents import IngestDocumentsUseCase
+from src.config import settings
 from src.domain.documents.services.chunking_service import ChunkingService
 from src.infrastructure.documents.adapters.embedding_adapter import HttpEmbeddingAdapter
 from src.infrastructure.documents.adapters.parquet_loader import ParquetDocumentLoader
@@ -26,6 +27,7 @@ def build_documents_application_service(
         chunking_service=chunking_service,
         embedding_port=embedding_adapter,
         document_repository=repository,
+        chunks_version=settings.chunks_table_version,
     )
 
     return DocumentsApplicationService(
