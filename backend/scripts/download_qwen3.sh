@@ -12,18 +12,7 @@ fi
 
 mkdir -p "$MODEL_DIR"
 
-if command -v huggingface-cli &> /dev/null; then
-    echo "Downloading Qwen/Qwen3-Embedding-0.6B via huggingface-cli..."
-    huggingface-cli download Qwen/Qwen3-Embedding-0.6B --local-dir "$MODEL_DIR"
-elif command -v git &> /dev/null && git lfs version &> /dev/null; then
-    echo "Downloading Qwen/Qwen3-Embedding-0.6B via git lfs..."
-    git clone https://huggingface.co/Qwen/Qwen3-Embedding-0.6B "$MODEL_DIR"
-else
-    echo "ERROR: Neither huggingface-cli nor git-lfs found."
-    echo "Install one of:"
-    echo "  pip install huggingface_hub[cli]"
-    echo "  apt install git-lfs && git lfs install"
-    exit 1
-fi
+echo "Downloading Qwen/Qwen3-Embedding-0.6B via huggingface_hub..."
+uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3-Embedding-0.6B', local_dir='$MODEL_DIR')"
 
 echo "Model downloaded to $MODEL_DIR"

@@ -147,7 +147,7 @@ async def embed(request: EmbedRequest):
 
         embeddings = pool_fn(output, encoded["attention_mask"])
         embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
-        result = embeddings.cpu().numpy().tolist()
+        result = embeddings.cpu().float().numpy().tolist()
 
         return EmbedResponse(embeddings=result)
 
