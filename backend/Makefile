@@ -1,4 +1,4 @@
-.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest load-assets fetch-assets download-qwen3 help
+.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 help
 
 COMPOSE = docker compose -f docker/docker-compose.yml
 ENV_FILE = config/.env
@@ -14,7 +14,8 @@ help:
 	@echo "  migrate-new  Generate a new Alembic migration (MSG='description')"
 	@echo "  lint         Run ruff check on src/"
 	@echo "  test         Run test suite with pytest"
-	@echo "  ingest       Ingest all IAPH parquet datasets"
+	@echo "  ingest       Ingest all IAPH parquet datasets (skips existing chunks)"
+	@echo "  reingest     Delete all chunks and re-ingest from scratch"
 	@echo "  load-assets  Load IAPH API data from ZIP into heritage_assets"
 	@echo "  fetch-assets Fetch IAPH API data live (requires IAPH_API_TOKEN)"
 	@echo "  download-qwen3 Download Qwen3-Embedding-0.6B model"
@@ -45,6 +46,9 @@ test:
 
 ingest:
 	uv run python -m scripts.ingest --dataset all
+
+reingest:
+	uv run python -m scripts.ingest --dataset all --reingest
 
 load-assets:
 	uv run python -m scripts.load_api_assets --source ../data/API_IAPH.zip

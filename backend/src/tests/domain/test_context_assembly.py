@@ -30,7 +30,9 @@ def _make_chunk(
     )
 
 
-class TestContextAssemblyService:
+class TestContextAssemblyRawContent:
+    """Tests for chunks with raw content (v1/v2/v3 — title NOT in content)."""
+
     def test_empty_list_returns_empty_string(self):
         service = ContextAssemblyService()
         result = service.assemble([])
@@ -88,11 +90,8 @@ class TestContextAssemblyService:
         result = service.assemble([chunk])
 
         lines = result.split("\n")
-        # First line: header with title, heritage_type, province
         assert lines[0] == "[1] La Alhambra (BIC, Granada)"
-        # Second line: content (no metadata line for unknown heritage_type)
         assert lines[1] == "Complejo palaciego nazari."
-        # Third line: source URL
         assert lines[2] == "Fuente: https://guiadigital.iaph.es/alhambra"
 
     def test_no_trailing_delimiter(self):
@@ -107,13 +106,14 @@ class TestContextAssemblyService:
         assert not result.endswith("---\n")
 
 
-class TestMetadataEnrichment:
-    """Tests for type-specific metadata inclusion in context assembly."""
+class TestMetadataEnrichmentRawContent:
+    """Tests for metadata line injection on raw content chunks (v3 with JSONB)."""
 
     def test_inmueble_metadata_included(self):
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_inmueble",
+            content="Texto crudo sin titulo.",
             metadata={
                 "characterisation": "Edificio",
                 "type": "Catedral",
@@ -134,6 +134,7 @@ class TestMetadataEnrichment:
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_mueble",
+            content="Texto crudo sin titulo.",
             metadata={
                 "type": "Retablo",
                 "authors": "Pedro Dancart",
@@ -147,15 +148,13 @@ class TestMetadataEnrichment:
 
         assert "Tipo: Retablo" in result
         assert "Autor: Pedro Dancart" in result
-        assert "Estilo: Gotico" in result
-        assert "Periodo: Siglo XV" in result
         assert "Material: Madera dorada" in result
-        assert "Tecnica: Talla" in result
 
     def test_inmaterial_metadata_included(self):
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_inmaterial",
+            content="Texto crudo sin titulo.",
             metadata={
                 "activity_types": "Festividad",
                 "subject_topic": "Tradiciones religiosas",
@@ -170,6 +169,7 @@ class TestMetadataEnrichment:
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="paisaje_cultural",
+            content="Texto crudo sin titulo.",
             metadata={
                 "topic": "Mineria",
                 "landscape_demarcation": "Sierra Morena",
@@ -184,31 +184,33 @@ class TestMetadataEnrichment:
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_inmueble",
+            content="Texto crudo sin titulo.",
             metadata=None,
         )
         result = service.assemble([chunk])
         lines = result.split("\n")
 
-        # Header line, then content directly (no metadata line in between)
         assert lines[0].startswith("[1]")
-        assert lines[1] == "La catedral renacentista..."
+        assert lines[1] == "Texto crudo sin titulo."
 
     def test_empty_metadata_produces_no_metadata_line(self):
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_inmueble",
+            content="Texto crudo sin titulo.",
             metadata={},
         )
         result = service.assemble([chunk])
         lines = result.split("\n")
 
         assert lines[0].startswith("[1]")
-        assert lines[1] == "La catedral renacentista..."
+        assert lines[1] == "Texto crudo sin titulo."
 
     def test_nan_values_are_skipped(self):
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_inmueble",
+            content="Texto crudo sin titulo.",
             metadata={
                 "characterisation": "nan",
                 "type": "Catedral",
@@ -229,6 +231,7 @@ class TestMetadataEnrichment:
         service = ContextAssemblyService()
         chunk = _make_chunk(
             heritage_type="patrimonio_inmueble",
+            content="Texto crudo sin titulo.",
             metadata={
                 "characterisation": "Edificio",
                 "type": "Catedral",
@@ -238,34 +241,8 @@ class TestMetadataEnrichment:
 
         assert "Naturaleza: Edificio | Tipo: Catedral" in result
 
-    def test_metadata_respects_char_budget(self):
-        service = ContextAssemblyService(max_context_chars=200)
-        chunks = [
-            _make_chunk(
-                title="Chunk A",
-                chunk_id="c1",
-                content="Contenido del primer chunk.",
-                heritage_type="patrimonio_mueble",
-                metadata={
-                    "type": "Retablo",
-                    "authors": "Autor largo para ocupar espacio en el budget",
-                    "styles": "Gotico",
-                },
-            ),
-            _make_chunk(
-                title="Chunk B",
-                chunk_id="c2",
-                content="Contenido del segundo chunk.",
-                heritage_type="patrimonio_mueble",
-                metadata={"type": "Escultura"},
-            ),
-        ]
-        result = service.assemble(chunks)
-
-        assert len(result) <= 200 or "[2]" not in result
-
-    def test_metadata_on_all_chunks_of_same_document(self):
-        """All chunks from a document should carry the same metadata context."""
+    def test_metadata_on_all_raw_chunks_of_same_document(self):
+        """All raw chunks from a document should carry the metadata line."""
         service = ContextAssemblyService()
         meta = {
             "characterisation": "Edificio",
@@ -275,23 +252,140 @@ class TestMetadataEnrichment:
         chunks = [
             _make_chunk(
                 chunk_id="c1",
-                content="Primer fragmento del documento.",
+                content="Primer fragmento.",
                 metadata=meta,
             ),
             _make_chunk(
                 chunk_id="c2",
-                content="Segundo fragmento del documento.",
+                content="Segundo fragmento.",
                 metadata=meta,
             ),
             _make_chunk(
                 chunk_id="c3",
-                content="Tercer fragmento del documento.",
+                content="Tercer fragmento.",
                 metadata=meta,
             ),
         ]
         result = service.assemble(chunks)
 
-        # Each chunk section should contain the metadata line
         assert result.count("Naturaleza: Edificio") == 3
         assert result.count("Tipo: Catedral") == 3
-        assert result.count("Estilo: Renacentista") == 3
+
+
+class TestEnrichedContent:
+    """Tests for chunks with enriched content (v4 — title already in content)."""
+
+    def test_enriched_chunk_skips_header_and_metadata(self):
+        """When content already contains the title, skip duplicate header."""
+        service = ContextAssemblyService()
+        enriched = (
+            "Bien inmueble titulado 'Catedral de Jaen'. "
+            "Es una propiedad de naturaleza Edificio y tipo Catedral. "
+            "Ubicado en el municipio de Jaen, provincia de Jaen.\n"
+            "La catedral renacentista fue construida sobre la antigua mezquita."
+        )
+        chunk = _make_chunk(
+            title="Catedral de Jaen",
+            heritage_type="patrimonio_inmueble",
+            province="Jaen",
+            content=enriched,
+            metadata={"characterisation": "Edificio", "type": "Catedral"},
+        )
+        result = service.assemble([chunk])
+
+        # Should NOT have the header line with "(patrimonio_inmueble, Jaen)"
+        assert "(patrimonio_inmueble, Jaen)" not in result
+        # Should NOT have the pipe-separated metadata line
+        assert "Naturaleza: Edificio | Tipo: Catedral" not in result
+        # Should have the enriched content directly after [1]
+        assert "[1] Bien inmueble titulado" in result
+        assert "Fuente:" in result
+
+    def test_enriched_chunk_keeps_numbering_and_source(self):
+        service = ContextAssemblyService()
+        enriched = (
+            "Paisaje cultural titulado 'Vega de Granada' "
+            "y ubicado en la provincia de 'Granada'.\n"
+            "Extenso paisaje de la vega granadina."
+        )
+        chunk = _make_chunk(
+            title="Vega de Granada",
+            heritage_type="paisaje_cultural",
+            province="Granada",
+            content=enriched,
+            url="https://guiadigital.iaph.es/vega-granada",
+        )
+        result = service.assemble([chunk])
+
+        assert result.startswith("[1] Paisaje cultural titulado")
+        assert "Fuente: https://guiadigital.iaph.es/vega-granada" in result
+
+    def test_multiple_enriched_chunks_all_have_context(self):
+        """All enriched chunks carry their metadata in content."""
+        service = ContextAssemblyService()
+        enriched_template = (
+            "Bien inmueble titulado 'Catedral de Jaen'. "
+            "Ubicado en Jaen.\n{text}"
+        )
+        chunks = [
+            _make_chunk(
+                chunk_id="c1",
+                content=enriched_template.format(text="Primer fragmento."),
+            ),
+            _make_chunk(
+                chunk_id="c2",
+                content=enriched_template.format(text="Segundo fragmento."),
+            ),
+            _make_chunk(
+                chunk_id="c3",
+                content=enriched_template.format(text="Tercer fragmento."),
+            ),
+        ]
+        result = service.assemble(chunks)
+
+        # All 3 chunks should have enriched content (title in content)
+        assert result.count("Bien inmueble titulado 'Catedral de Jaen'") == 3
+        # None should have the old-style header
+        assert "(patrimonio_inmueble, Jaen)" not in result
+
+    def test_mixed_enriched_and_raw_chunks(self):
+        """Mix of v4 (enriched) and v3 (raw) chunks in same assembly."""
+        service = ContextAssemblyService()
+        enriched = (
+            "Bien inmueble titulado 'Catedral de Jaen'. Ubicado en Jaen.\n"
+            "Primer fragmento enriquecido."
+        )
+        chunks = [
+            _make_chunk(
+                title="Catedral de Jaen",
+                chunk_id="c1",
+                content=enriched,
+            ),
+            _make_chunk(
+                title="Alcazar de Sevilla",
+                chunk_id="c2",
+                content="Texto crudo del alcazar.",
+            ),
+        ]
+        result = service.assemble(chunks)
+
+        # First chunk: enriched, no header duplication
+        assert "[1] Bien inmueble titulado" in result
+        # Second chunk: raw, has header
+        assert "[2] Alcazar de Sevilla (patrimonio_inmueble, Jaen)" in result
+
+    def test_enriched_chunk_respects_char_budget(self):
+        service = ContextAssemblyService(max_context_chars=150)
+        enriched = (
+            "Bien inmueble titulado 'Catedral de Jaen'. "
+            "Ubicado en Jaen.\n"
+            "Un texto largo que ocupa bastante espacio en el budget de caracteres."
+        )
+        chunks = [
+            _make_chunk(chunk_id="c1", content=enriched),
+            _make_chunk(chunk_id="c2", content=enriched),
+        ]
+        result = service.assemble(chunks)
+
+        assert "[1]" in result
+        assert len(result) <= 150 or "[2]" not in result

@@ -3,13 +3,15 @@
 import argparse
 import asyncio
 import logging
-import sys
 import time
 
 from src.application.documents.dto.ingest_dto import IngestDocumentsCommand
 from src.composition.documents_composition import build_documents_application_service
 from src.config import settings
 from src.db.base import AsyncSessionLocal
+from src.infrastructure.documents.repositories.document_repository import (
+    SqlAlchemyDocumentRepository,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -32,6 +34,14 @@ DATASETS = {
         "patrimonio_mueble",
     ),
 }
+
+
+async def purge_chunks() -> int:
+    """Delete all chunks from the current chunks table."""
+    async with AsyncSessionLocal() as db:
+        repo = SqlAlchemyDocumentRepository(session=db)
+        deleted = await repo.delete_all_chunks()
+    return deleted
 
 
 async def ingest_dataset(name: str, source_path: str, heritage_type: str) -> None:
@@ -59,7 +69,15 @@ async def ingest_dataset(name: str, source_path: str, heritage_type: str) -> Non
     )
 
 
-async def main(datasets: dict[str, tuple[str, str]]) -> None:
+async def main(datasets: dict[str, tuple[str, str]], *, reingest: bool = False) -> None:
+    if reingest:
+        deleted = await purge_chunks()
+        logger.info(
+            "Reingest: deleted %d existing chunks from '%s'",
+            deleted,
+            settings.chunks_table_name,
+        )
+
     for name, (path, ht) in datasets.items():
         await ingest_dataset(name, path, ht)
 
@@ -72,10 +90,15 @@ def cli() -> None:
         default="all",
         help="Dataset to ingest (default: all)",
     )
+    parser.add_argument(
+        "--reingest",
+        action="store_true",
+        help="Delete all existing chunks before ingesting (full re-ingestion)",
+    )
     args = parser.parse_args()
 
     targets = DATASETS if args.dataset == "all" else {args.dataset: DATASETS[args.dataset]}
-    asyncio.run(main(targets))
+    asyncio.run(main(targets, reingest=args.reingest))
 
 
 if __name__ == "__main__":

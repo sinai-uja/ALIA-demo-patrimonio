@@ -1,6 +1,6 @@
 import math
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.documents.entities.chunk import Chunk
@@ -80,6 +80,13 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none() is not None
+
+    async def delete_all_chunks(self) -> int:
+        result = await self._session.execute(
+            text(f"DELETE FROM {DocumentChunkModel.__tablename__}")
+        )
+        await self._session.commit()
+        return result.rowcount
 
     async def commit(self) -> None:
         await self._session.commit()

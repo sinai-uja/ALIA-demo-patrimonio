@@ -46,14 +46,24 @@ class ContextAssemblyService:
         total_chars = 0
 
         for idx, chunk in enumerate(chunks, start=1):
-            meta_line = self._build_metadata_line(chunk.heritage_type, chunk.metadata)
-            meta_part = f"{meta_line}\n" if meta_line else ""
-            section = (
-                f"[{idx}] {chunk.title} ({chunk.heritage_type}, {chunk.province})\n"
-                f"{meta_part}"
-                f"{chunk.content}\n"
-                f"Fuente: {chunk.url}"
-            )
+            # If content already contains the title, it was enriched at ingestion (v4)
+            # — skip the header and metadata line to avoid duplication.
+            if chunk.title in chunk.content:
+                section = (
+                    f"[{idx}] {chunk.content}\n"
+                    f"Fuente: {chunk.url}"
+                )
+            else:
+                meta_line = self._build_metadata_line(
+                    chunk.heritage_type, chunk.metadata,
+                )
+                meta_part = f"{meta_line}\n" if meta_line else ""
+                section = (
+                    f"[{idx}] {chunk.title} ({chunk.heritage_type}, {chunk.province})\n"
+                    f"{meta_part}"
+                    f"{chunk.content}\n"
+                    f"Fuente: {chunk.url}"
+                )
             if total_chars + len(section) > self._max_chars and sections:
                 break
             sections.append(section)

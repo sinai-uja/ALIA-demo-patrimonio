@@ -88,13 +88,13 @@ class IngestDocumentsUseCase:
                     new_chunks.append(chunk)
 
             # Embed and persist in batches
-            # Prepend metadata to each chunk for richer embeddings
+            # Enrich chunk content with metadata so the stored text matches the embedding
             for batch_start in range(0, len(new_chunks), EMBEDDING_BATCH_SIZE):
                 batch = new_chunks[batch_start : batch_start + EMBEDDING_BATCH_SIZE]
-                texts = [
-                    self._enrich_for_embedding(document, c.content) for c in batch
-                ]
+                for chunk in batch:
+                    chunk.content = self._enrich_for_embedding(document, chunk.content)
 
+                texts = [c.content for c in batch]
                 embeddings = await self._embed_with_retry(texts)
 
                 for chunk, embedding_vector in zip(batch, embeddings):
