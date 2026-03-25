@@ -14,7 +14,7 @@ flowchart TD
     HF["4. Hybrid Fusion\nRRF (k=60, text_weight=1.5)"] --> RF
     RF["5. Relevance Filter\numbral: cosine distance <= 0.35"] --> RK
     RK["6. Reranking\nheuristico + lexical gate, top-k=5"] --> CA
-    CA["7. Context Assembly\nmax 6000 chars, markdown numerado"] --> LLM
+    CA["7. Context Assembly\nmax 6000 chars, metadata tipo-específica"] --> LLM
     LLM["8. LLM Generation\nsalamandra-7b, T=0.3, max_tokens=512"] --> RES
     RES["Respuesta con citas + sources"]
     RF -- "todos descartados" --> ABS["Abstencion"]
@@ -136,16 +136,39 @@ final = 0.4 * base + 0.3 * title_match + 0.2 * coverage + 0.1 * position
 
 **Servicio:** `domain/rag/services/context_assembly_service.py`
 
-Ensambla los top-k chunks en texto markdown numerado:
+Ensambla los top-k chunks en texto numerado. El servicio detecta si el contenido del chunk ya fue enriquecido en la ingesta (v4: el titulo aparece dentro de `chunk.content`) y adapta el formato:
+
+**Chunks v4 (contenido enriquecido en ingesta):**
+
+El `content` almacenado ya incluye la plantilla en lenguaje natural con metadata. El servicio lo detecta (titulo presente en content) y evita duplicar la cabecera:
+
+```
+[1] Bien inmueble titulado 'Catedral de Jaén'. Es una propiedad de naturaleza Arquitectónica...
+La catedral renacentista fue diseñada por Andrés de Vandelvira...
+Fuente: https://guiadigital.iaph.es/...
+```
+
+**Chunks v1-v3 (contenido sin enriquecer):**
+
+Se añade cabecera con titulo/tipo/provincia y linea de metadata tipo-especifica:
 
 ```
 [1] Catedral de Jaén (patrimonio_inmueble, Jaén)
+Naturaleza: Arquitectónica | Tipo: Catedral | Estilo: Renacentista | Periodo: Edad Moderna | Proteccion: BIC
 La catedral renacentista fue diseñada por Andrés de Vandelvira...
 Fuente: https://guiadigital.iaph.es/...
----
-[2] Palacio de las Cadenas (patrimonio_inmueble, Jaén)
-...
 ```
+
+**Campos incluidos por tipo patrimonial (solo v1-v3):**
+
+| Tipo | Campos en la línea de metadata |
+|------|-------------------------------|
+| `patrimonio_inmueble` | Naturaleza, Tipo, Estilo, Periodo, Proteccion |
+| `patrimonio_mueble` | Tipo, Autor, Estilo, Periodo, Material, Tecnica |
+| `patrimonio_inmaterial` | Tipo actividad, Tema |
+| `paisaje_cultural` | Tema, Demarcacion |
+
+Solo se incluyen campos con valor no vacío. Si ningún campo tiene valor, la línea de metadata se omite.
 
 - **Presupuesto:** máximo 6,000 caracteres
 - Itera chunks en orden; para cuando se excede el límite

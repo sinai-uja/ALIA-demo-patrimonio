@@ -142,6 +142,7 @@ Reiniciar el backend tras el cambio. No hace falta migracion ni re-ingesta para 
 - **Tabla**: `document_chunks_v4`
 - **Estrategia**: Misma que v2/v3 (parrafos, sin cortar a mitad de parrafo)
 - **Encoder soportado**: MrBERT (768 dims) o **Qwen/Qwen3-Embedding-0.6B** (1024 dims), seleccionable por variable de entorno
+- **Contenido almacenado en `chunk.content`**: El texto enriquecido (plantilla + texto crudo) se almacena directamente en la columna `content` del chunk, no solo como input al encoder. Esto permite que el context assembly reutilice la metadata sin duplicar cabeceras.
 - **Contenido del embedding**: Plantillas en lenguaje natural por tipo patrimonial, seguidas del fragmento de texto:
 
   **Paisaje Cultural:**
@@ -235,7 +236,8 @@ Reiniciar el backend tras el cambio. No hace falta migracion ni re-ingesta para 
 
 5. Ejecutar la ingesta:
    ```bash
-   cd backend && make ingest
+   cd backend && make ingest       # solo inserta chunks nuevos (skip existing)
+   cd backend && make reingest     # borra todos los chunks y re-ingesta desde cero
    ```
 
 6. Verificar:
