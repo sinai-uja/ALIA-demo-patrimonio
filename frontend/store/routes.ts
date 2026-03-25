@@ -80,6 +80,7 @@ interface RoutesState {
   fetchSuggestions: (q: string) => Promise<void>;
   loadFilterValues: (provinces?: string[]) => Promise<void>;
   addFilter: (filter: ActiveFilter) => void;
+  addFilters: (filters: ActiveFilter[]) => void;
   removeFilter: (filter: ActiveFilter) => void;
   clearFilters: () => void;
   clearSuggestions: () => void;
@@ -168,6 +169,21 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     const updated = [...activeFilters, filter];
     set({ activeFilters: updated });
     if (filter.type === "province") {
+      const provinces = updated.filter((f) => f.type === "province").map((f) => f.value);
+      get().loadFilterValues(provinces);
+    }
+  },
+
+  addFilters: (filters) => {
+    const { activeFilters } = get();
+    const newFilters = filters.filter(
+      (f) => !activeFilters.some((a) => a.type === f.type && a.value === f.value)
+    );
+    if (newFilters.length === 0) return;
+    const updated = [...activeFilters, ...newFilters];
+    set({ activeFilters: updated });
+    const hasProvince = newFilters.some((f) => f.type === "province");
+    if (hasProvince) {
       const provinces = updated.filter((f) => f.type === "province").map((f) => f.value);
       get().loadFilterValues(provinces);
     }

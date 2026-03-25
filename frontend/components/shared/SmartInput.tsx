@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { DetectedEntity, SuggestionResponse } from "@/lib/api";
+import type { DetectedEntity } from "@/lib/api";
 
 // ── Shared constants ─────────────────────────────────────────────────────────
 
@@ -85,17 +85,13 @@ export interface SmartInputProps {
   onSubmit: () => void;
   detectedEntities: DetectedEntity[];
   activeFilters: ActiveFilter[];
-  suggestions: SuggestionResponse | null;
   loading: boolean;
   onEntitySelect: (entity: EntityInfo) => void;
   onFetchSuggestions: (query: string) => void;
   onClearSuggestions: () => void;
   placeholder?: string;
-  submitLabel?: string;
-  /** Icon rendered in the input left side and dropdown submit row */
+  /** Icon rendered in the input left side */
   icon?: React.ReactNode;
-  /** Extra text after the query in the dropdown submit row */
-  submitSuffix?: React.ReactNode;
   /** Content rendered inside the input on the right (e.g. stop counter) */
   rightContent?: React.ReactNode;
 }
@@ -258,18 +254,14 @@ export function SmartInput({
   onSubmit,
   detectedEntities,
   activeFilters,
-  suggestions,
   loading,
   onEntitySelect,
   onFetchSuggestions,
   onClearSuggestions,
   placeholder = "Buscar en el patrimonio historico andaluz...",
-  submitLabel = "Buscar",
   icon,
-  submitSuffix,
   rightContent,
 }: SmartInputProps) {
-  const [showDropdown, setShowDropdown] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tooltipHideRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -305,7 +297,6 @@ export function SmartInput({
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowDropdown(false);
         setTooltip(null);
       }
     }
@@ -319,12 +310,10 @@ export function SmartInput({
       setTooltip(null);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (value.trim().length >= 2) {
-        setShowDropdown(true);
         debounceRef.current = setTimeout(() => {
           onFetchSuggestions(value);
         }, 300);
       } else {
-        setShowDropdown(false);
         onClearSuggestions();
       }
     },
@@ -334,14 +323,7 @@ export function SmartInput({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    setShowDropdown(false);
     setTooltip(null);
-    onClearSuggestions();
-    onSubmit();
-  };
-
-  const handleSubmitSuggestionClick = () => {
-    setShowDropdown(false);
     onClearSuggestions();
     onSubmit();
   };
@@ -378,13 +360,6 @@ export function SmartInput({
 
   const segments = buildSegments(query, detectedEntities, activeFilters);
   const hasEntities = segments.some((s) => s.kind !== "text");
-
-  const dropdownEntities = (suggestions?.detected_entities ?? []).filter(
-    (e) =>
-      !activeFilters.some(
-        (f) => f.type === (e.entity_type as ActiveFilter["type"]) && f.value === e.value,
-      ),
-  );
 
   // Shared text styles — must be identical between input and backdrop
   const textStyle: React.CSSProperties = {
@@ -441,7 +416,6 @@ export function SmartInput({
             type="text"
             value={query}
             onChange={(e) => handleChange(e.target.value)}
-            onFocus={() => { if (query.trim().length >= 2) setShowDropdown(true); }}
             placeholder={placeholder}
             className={`w-full border border-stone-200 bg-white pl-12 ${rightContent ? "pr-36" : "pr-4"} py-4 rounded-2xl placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none shadow-sm transition-all relative`}
             style={{
@@ -494,56 +468,6 @@ export function SmartInput({
         </div>
       )}
 
-      {/* Dropdown */}
-      {showDropdown && query.trim().length >= 2 && (
-        <div className="absolute top-full z-40 mt-1.5 w-full rounded-xl border border-stone-200 bg-white shadow-lg overflow-hidden">
-          <button
-            onClick={handleSubmitSuggestionClick}
-            className="w-full text-left px-4 py-3 text-sm hover:bg-stone-50 transition-colors flex items-center gap-3 border-b border-stone-100"
-          >
-            <span className="w-4 h-4 shrink-0 text-amber-500">
-              {resolvedIcon}
-            </span>
-            <span>
-              {submitLabel} <span className="font-semibold text-stone-800">&ldquo;{query.trim()}&rdquo;</span>
-              {submitSuffix}
-            </span>
-          </button>
-
-          {dropdownEntities.map((entity, i) => {
-            const colors: Record<string, string> = {
-              province: "bg-blue-100 text-blue-700",
-              municipality: "bg-emerald-100 text-emerald-700",
-              heritage_type: "bg-amber-100 text-amber-700",
-            };
-            const color = colors[entity.entity_type] ?? "bg-stone-100 text-stone-700";
-            return (
-              <button
-                key={`${entity.entity_type}-${entity.value}-${i}`}
-                onClick={() =>
-                  handleEntitySelect({
-                    entityType: entity.entity_type,
-                    value: entity.value,
-                    displayLabel: entity.display_label,
-                    matchedText: entity.matched_text,
-                  })
-                }
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-stone-50 transition-colors flex items-center gap-3"
-              >
-                <svg className="w-4 h-4 text-stone-300 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-                </svg>
-                <span className="flex items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
-                    {entity.display_label}
-                  </span>
-                  <span className="text-xs text-stone-400">Filtrar</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

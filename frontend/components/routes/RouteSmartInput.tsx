@@ -8,6 +8,8 @@ import {
   type EntityInfo,
   type ActiveFilter,
 } from "@/components/shared/SmartInput";
+import { ClarificationPanel } from "@/components/shared/ClarificationPanel";
+import { useClarification } from "@/hooks/useClarification";
 
 const RouteIcon = (
   <svg
@@ -24,12 +26,23 @@ export function RouteSmartInput({ numStopsSelector }: { numStopsSelector?: React
   const syncFiltersWithQuery = useRoutesStore((s) => s.syncFiltersWithQuery);
   const generateRoute = useRoutesStore((s) => s.generateRoute);
   const fetchSuggestions = useRoutesStore((s) => s.fetchSuggestions);
-  const suggestions = useRoutesStore((s) => s.suggestions);
   const detectedEntities = useRoutesStore((s) => s.detectedEntities);
   const activeFilters = useRoutesStore((s) => s.activeFilters);
   const addFilter = useRoutesStore((s) => s.addFilter);
+  const addFilters = useRoutesStore((s) => s.addFilters);
   const clearSuggestions = useRoutesStore((s) => s.clearSuggestions);
   const generating = useRoutesStore((s) => s.generating);
+
+  const clarification = useClarification({
+    detectedEntities,
+    activeFilters,
+    onAddFilters: addFilters,
+    onExecute: () => {
+      generateRoute().catch((err) => {
+        console.error("Route generation failed:", err);
+      });
+    },
+  });
 
   const handleQueryChange = useCallback(
     (value: string) => {
@@ -40,10 +53,13 @@ export function RouteSmartInput({ numStopsSelector }: { numStopsSelector?: React
   );
 
   const handleSubmit = useCallback(() => {
-    generateRoute().catch((err) => {
-      console.error("Route generation failed:", err);
-    });
-  }, [generateRoute]);
+    const needsClarification = clarification.startClarification();
+    if (!needsClarification) {
+      generateRoute().catch((err) => {
+        console.error("Route generation failed:", err);
+      });
+    }
+  }, [clarification, generateRoute]);
 
   const handleEntitySelect = useCallback(
     (entity: EntityInfo) => {
@@ -71,21 +87,31 @@ export function RouteSmartInput({ numStopsSelector }: { numStopsSelector?: React
   );
 
   return (
-    <SmartInput
-      query={query}
-      onQueryChange={handleQueryChange}
-      onSubmit={handleSubmit}
-      detectedEntities={detectedEntities}
-      activeFilters={activeFilters}
-      suggestions={suggestions}
-      loading={generating}
-      onEntitySelect={handleEntitySelect}
-      onFetchSuggestions={fetchSuggestions}
-      onClearSuggestions={clearSuggestions}
-      placeholder="Describe la ruta que quieres explorar..."
-      submitLabel="Generar ruta"
-      icon={RouteIcon}
-      rightContent={numStopsSelector}
-    />
+    <div>
+      <SmartInput
+        query={query}
+        onQueryChange={handleQueryChange}
+        onSubmit={handleSubmit}
+        detectedEntities={detectedEntities}
+        activeFilters={activeFilters}
+        loading={generating}
+        onEntitySelect={handleEntitySelect}
+        onFetchSuggestions={fetchSuggestions}
+        onClearSuggestions={clearSuggestions}
+        placeholder="Describe la ruta que quieres explorar..."
+        icon={RouteIcon}
+        rightContent={numStopsSelector}
+      />
+      {clarification.active && (
+        <ClarificationPanel
+          groups={clarification.groups}
+          resolved={clarification.resolved}
+          onResolve={clarification.resolveGroup}
+          onSkipAll={clarification.skipAll}
+          onDismiss={clarification.dismiss}
+          executeLabel="Generar ruta"
+        />
+      )}
+    </div>
   );
 }
