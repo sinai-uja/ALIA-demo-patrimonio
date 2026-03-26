@@ -31,7 +31,7 @@ config/
 *.swo
 
 # Docker
-Dockerfile
+docker/
 
 # OS files
 .DS_Store

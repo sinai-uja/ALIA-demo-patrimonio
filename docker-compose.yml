@@ -79,7 +79,7 @@ services:
   api:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: uja-api
     ports:
       - "18080:8080"
