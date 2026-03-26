@@ -20,10 +20,14 @@ class HttpEmbeddingAdapter(EmbeddingPort):
             "Embed request (rag): %d texts, total_chars=%d, preview=%r",
             len(texts), sum(len(t) for t in texts), preview,
         )
+        headers = {}
+        if settings.embedding_api_key:
+            headers["Authorization"] = f"Bearer {settings.embedding_api_key}"
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
                 f"{self._base_url}/embed",
                 json={"texts": texts},
+                headers=headers,
             )
             response.raise_for_status()
             data = response.json()

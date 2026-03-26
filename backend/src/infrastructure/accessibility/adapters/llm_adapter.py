@@ -54,10 +54,14 @@ class AccessibilityLLMAdapter(LLMPort):
             "temperature": self._temperature,
         }
 
+        headers = {}
+        if settings.llm_api_key:
+            headers["Authorization"] = f"Bearer {settings.llm_api_key}"
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 f"{self._base_url}/chat/completions",
                 json=payload,
+                headers=headers,
             )
             response.raise_for_status()
             data = response.json()

@@ -12,7 +12,7 @@ import os
 from contextlib import asynccontextmanager
 
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from transformers import AutoModel, AutoTokenizer
 
@@ -23,6 +23,7 @@ MODEL_PATH = os.environ.get("MODEL_PATH", "/app/model")
 DEVICE = os.environ.get("DEVICE", "cpu")
 POOLING_STRATEGY = os.environ.get("POOLING_STRATEGY", "mean")
 MAX_LENGTH = int(os.environ.get("MAX_LENGTH", "8192"))
+API_KEY = os.environ.get("API_KEY", "")
 
 # Global references set during startup
 tokenizer = None
@@ -105,6 +106,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Embedding Service", lifespan=lifespan)
 
 
+def verify_api_key(authorization: str = Header(default="")):
+    """Validate Bearer token if API_KEY is configured. No-op when API_KEY is empty."""
+    if not API_KEY:
+        return
+    if authorization != f"Bearer {API_KEY}":
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
 class EmbedRequest(BaseModel):
     texts: list[str]
 
@@ -119,7 +128,7 @@ _POOLING_FN = {
 }
 
 
-@app.post("/embed", response_model=EmbedResponse)
+@app.post("/embed", response_model=EmbedResponse, dependencies=[Depends(verify_api_key)])
 async def embed(request: EmbedRequest):
     """Generate embeddings for a batch of texts."""
     if not request.texts:
