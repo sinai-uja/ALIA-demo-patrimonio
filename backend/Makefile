@@ -1,6 +1,6 @@
 .PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 help
 
-COMPOSE = docker compose -f ../docker-compose.yml
+COMPOSE = docker compose -f ../docker-compose.yml -f ../docker-compose.override.yml
 ENV_FILE = config/.env
 
 help:
