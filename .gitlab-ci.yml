@@ -10,9 +10,9 @@ stages:
 
 workflow:
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_COMMIT_BRANCH =~ /^release\/v\d+\.\d+/'
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
     - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
 
 # ---------------------------------------------------------------------------
@@ -23,6 +23,10 @@ build-backend:
   stage: build
   script:
     - docker build --tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA -f backend/docker/Dockerfile backend
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(\d+\.\d+\.\d+)$/'
+    - changes:
+        - backend/**/*
 
 push-backend-latest:
   stage: upload
@@ -31,8 +35,10 @@ push-backend-latest:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/backend:latest
     - docker push $CI_REGISTRY_IMAGE/backend:latest
-  only:
-    - master
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - backend/**/*
 
 push-backend-commit:
   stage: upload
@@ -42,7 +48,9 @@ push-backend-commit:
     - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA
   allow_failure: true
   rules:
-    - when: manual
+    - changes:
+        - backend/**/*
+      when: manual
 
 push-backend-release:
   stage: upload
@@ -72,6 +80,10 @@ build-frontend:
   stage: build
   script:
     - docker build --tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA -f frontend/docker/Dockerfile frontend
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(\d+\.\d+\.\d+)$/'
+    - changes:
+        - frontend/**/*
 
 push-frontend-latest:
   stage: upload
@@ -80,8 +92,10 @@ push-frontend-latest:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/frontend:latest
     - docker push $CI_REGISTRY_IMAGE/frontend:latest
-  only:
-    - master
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - frontend/**/*
 
 push-frontend-commit:
   stage: upload
@@ -91,7 +105,9 @@ push-frontend-commit:
     - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA
   allow_failure: true
   rules:
-    - when: manual
+    - changes:
+        - frontend/**/*
+      when: manual
 
 push-frontend-release:
   stage: upload
