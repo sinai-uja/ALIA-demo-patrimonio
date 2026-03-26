@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-stone-50 text-stone-900`}>
-        <div className="h-0.5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500" />
+        <div className="h-0.5 bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600" />
         <NavBar />
         <main>{children}</main>
       </body>

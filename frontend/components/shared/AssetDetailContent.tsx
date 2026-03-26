@@ -37,13 +37,13 @@ export const HERITAGE_LABELS: Record<string, string> = {
 };
 
 export const HERITAGE_COLORS: Record<string, string> = {
-  inmueble: "bg-amber-100 text-amber-800",
+  inmueble: "bg-green-100 text-green-800",
   mueble: "bg-violet-100 text-violet-800",
-  inmaterial: "bg-emerald-100 text-emerald-800",
+  inmaterial: "bg-teal-100 text-teal-800",
   paisaje: "bg-sky-100 text-sky-800",
-  patrimonio_inmueble: "bg-amber-100 text-amber-800",
+  patrimonio_inmueble: "bg-green-100 text-green-800",
   patrimonio_mueble: "bg-violet-100 text-violet-800",
-  patrimonio_inmaterial: "bg-emerald-100 text-emerald-800",
+  patrimonio_inmaterial: "bg-teal-100 text-teal-800",
   paisaje_cultural: "bg-sky-100 text-sky-800",
 };
 
@@ -226,7 +226,7 @@ function IaphLink({ asset }: { asset: HeritageAsset }) {
       href={`https://guiadigital.iaph.es/bien/${asset.heritage_type}/${asset.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm font-medium hover:bg-amber-100 transition-colors"
+      className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg border border-green-200 bg-green-50 text-green-800 text-sm font-medium hover:bg-green-100 transition-colors"
     >
       <svg
         className="w-4 h-4"
@@ -344,7 +344,7 @@ function PaisajePractical({
             href={d.pdf_url!}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-800 font-medium"
+            className="inline-flex items-center gap-1.5 text-xs text-green-700 hover:text-green-800 font-medium"
           >
             <svg
               className="w-4 h-4"
@@ -631,7 +631,7 @@ export function AssetDetailContent({
                   {HERITAGE_LABELS[asset.heritage_type] ?? asset.heritage_type}
                 </span>
                 {asset.protection && asset.protection.toUpperCase() !== "NO" && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-rose-50 text-rose-700">
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-teal-50 text-teal-700">
                     Protegido
                   </span>
                 )}
@@ -655,7 +655,7 @@ export function AssetDetailContent({
       {loading && (
         <div className="flex-1 flex items-center justify-center">
           <svg
-            className="w-6 h-6 animate-spin text-amber-500"
+            className="w-6 h-6 animate-spin text-green-600"
             fill="none"
             viewBox="0 0 24 24"
           >
