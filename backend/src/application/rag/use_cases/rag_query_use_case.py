@@ -1,6 +1,7 @@
 import logging
 
 from src.application.rag.dto.rag_dto import RAGQueryDTO, RAGResponseDTO, SourceDTO
+from src.config import settings
 from src.domain.rag.ports.embedding_port import EmbeddingPort
 from src.domain.rag.ports.llm_port import LLMPort
 from src.domain.rag.ports.text_search_port import TextSearchPort
@@ -8,6 +9,7 @@ from src.domain.rag.ports.vector_search_port import VectorSearchPort
 from src.domain.rag.prompts import SYSTEM_PROMPT, build_user_prompt
 from src.domain.rag.services.context_assembly_service import ContextAssemblyService
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
+from src.domain.rag.services.query_instruction_service import wrap_query_for_embedding
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
 
@@ -35,6 +37,8 @@ class RAGQueryUseCase:
         hybrid_search_service: HybridSearchService,
         reranking_service: RerankingService,
         retrieval_k: int = 20,
+        similarity_only: bool = False,
+        similarity_threshold: float = 0.25,
     ) -> None:
         self._embedding_port = embedding_port
         self._vector_search_port = vector_search_port
@@ -45,19 +49,23 @@ class RAGQueryUseCase:
         self._hybrid_search_service = hybrid_search_service
         self._reranking_service = reranking_service
         self._retrieval_k = retrieval_k
+        self._similarity_only = similarity_only
+        self._similarity_filter = RelevanceFilterService(
+            score_threshold=similarity_threshold,
+        )
 
     async def execute(self, dto: RAGQueryDTO) -> RAGResponseDTO:
         logger.info("RAG pipeline start: query=%s", dto.query[:80])
 
-        # 1. Embed the user query
-        embeddings = await self._embedding_port.embed([dto.query])
+        # 1. Embed the user query (with instruction prefix for Qwen3)
+        query_text = wrap_query_for_embedding(dto.query, settings.embedding_query_instruction)
+        embeddings = await self._embedding_port.embed([query_text])
         query_embedding = embeddings[0]
         logger.info(
             "Query embedded: %d chars → %d-dim vector", len(dto.query), len(query_embedding),
         )
 
-        # 2. Run vector search and full-text search sequentially
-        #    (both adapters share the same DB session, so parallel is not safe)
+        # 2. Retrieve chunks — pure similarity or full hybrid pipeline
         vector_chunks = await self._vector_search_port.search(
             query_embedding=query_embedding,
             top_k=self._retrieval_k,
@@ -65,55 +73,58 @@ class RAGQueryUseCase:
             province=dto.province_filter,
             municipality=dto.municipality_filter,
         )
-        text_chunks = await self._text_search_port.search(
-            query=dto.query,
-            top_k=self._retrieval_k,
-            heritage_type=dto.heritage_type_filter,
-            province=dto.province_filter,
-            municipality=dto.municipality_filter,
-        )
 
-        # 3. Fuse results via Reciprocal Rank Fusion
-        fused_chunks = self._hybrid_search_service.fuse(
-            vector_results=vector_chunks,
-            text_results=text_chunks,
-            top_k=self._retrieval_k,
-        )
-
-        # 4. Filter by relevance score threshold
-        filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
-
-        logger.info(
-            "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
-            len(vector_chunks), len(text_chunks), len(fused_chunks), len(filtered_chunks),
-        )
-
-        # 5. If no chunks pass the threshold, abstain
-        if not filtered_chunks:
-            logger.info("Abstaining: no chunks passed relevance threshold")
-            return RAGResponseDTO(
-                answer=ABSTENTION_ANSWER,
-                sources=[],
-                query=dto.query,
-                abstained=True,
+        if self._similarity_only:
+            # Pure similarity: vector search only, no fusion or reranking
+            filtered_chunks = self._similarity_filter.filter(vector_chunks)
+            logger.info(
+                "Search results (similarity-only): vector=%d, filtered=%d, threshold=%.3f",
+                len(vector_chunks), len(filtered_chunks),
+                self._similarity_filter._score_threshold,
             )
-
-        # 6. Re-rank using heuristic signals and keep top_k
-        final_chunks = self._reranking_service.rerank(
-            query=dto.query,
-            chunks=filtered_chunks,
-            top_k=dto.top_k,
-        )
-
-        # 6b. If reranking discarded all chunks (no lexical match), abstain
-        if not final_chunks:
-            logger.info("Abstaining: all chunks discarded by lexical filter")
-            return RAGResponseDTO(
-                answer=ABSTENTION_ANSWER,
-                sources=[],
+            if not filtered_chunks:
+                logger.info("Abstaining: no chunks passed similarity threshold")
+                return RAGResponseDTO(
+                    answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
+                )
+            final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
+            for i, chunk in enumerate(final_chunks, 1):
+                logger.info(
+                    "Similarity #%d: score=%.4f | title: %s | type: %s | province: %s",
+                    i, chunk.score, chunk.title[:60], chunk.heritage_type, chunk.province,
+                )
+        else:
+            # Full hybrid pipeline: text search + RRF fusion + reranking
+            text_chunks = await self._text_search_port.search(
                 query=dto.query,
-                abstained=True,
+                top_k=self._retrieval_k,
+                heritage_type=dto.heritage_type_filter,
+                province=dto.province_filter,
+                municipality=dto.municipality_filter,
             )
+            fused_chunks = self._hybrid_search_service.fuse(
+                vector_results=vector_chunks,
+                text_results=text_chunks,
+                top_k=self._retrieval_k,
+            )
+            filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
+            logger.info(
+                "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
+                len(vector_chunks), len(text_chunks), len(fused_chunks), len(filtered_chunks),
+            )
+            if not filtered_chunks:
+                logger.info("Abstaining: no chunks passed relevance threshold")
+                return RAGResponseDTO(
+                    answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
+                )
+            final_chunks = self._reranking_service.rerank(
+                query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+            )
+            if not final_chunks:
+                logger.info("Abstaining: all chunks discarded by lexical filter")
+                return RAGResponseDTO(
+                    answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
+                )
 
         # 7. Assemble context from retrieved chunks
         context = self._context_assembly_service.assemble(final_chunks)

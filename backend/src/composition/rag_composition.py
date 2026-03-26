@@ -40,6 +40,8 @@ def build_rag_application_service(db: AsyncSession) -> RAGApplicationService:
         hybrid_search_service=hybrid_search_service,
         reranking_service=reranking_service,
         retrieval_k=settings.rag_retrieval_k,
+        similarity_only=settings.rag_similarity_only,
+        similarity_threshold=settings.rag_similarity_threshold,
     )
 
     return RAGApplicationService(rag_query_use_case=use_case)

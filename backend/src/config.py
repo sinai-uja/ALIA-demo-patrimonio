@@ -25,12 +25,18 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model_name: str = "gemini-3.1-flash-lite-preview"
 
+    # Embedding query instruction (Qwen3 instruction-aware prefix)
+    # Set to empty string to disable (e.g. for MrBERT)
+    embedding_query_instruction: str = "Retrieve relevant heritage documents."
+
     # RAG
+    rag_similarity_only: bool = False
+    rag_similarity_threshold: float = 0.45
     rag_top_k: int = 5
     rag_retrieval_k: int = 20
     search_retrieval_k: int = 200
     search_score_threshold: float = 0.55
-    rag_score_threshold: float = 0.35
+    rag_score_threshold: float = 0.50
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64
     chunks_table_version: str = "v1"

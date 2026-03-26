@@ -74,6 +74,8 @@ def build_search_application_service(
         reranking_service=reranking_service,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
         retrieval_k=settings.search_retrieval_k,
+        similarity_only=settings.rag_similarity_only,
+        similarity_threshold=settings.rag_similarity_threshold,
     )
 
     suggestion_use_case = SuggestionUseCase(

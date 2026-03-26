@@ -7,13 +7,13 @@ from src.application.search.dto.search_dto import (
     SimilaritySearchDTO,
     SimilaritySearchResponseDTO,
 )
+from src.config import settings
 from src.domain.rag.ports.embedding_port import EmbeddingPort
 from src.domain.rag.ports.text_search_port import TextSearchPort
 from src.domain.rag.ports.vector_search_port import VectorSearchPort
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
-from src.domain.rag.services.relevance_filter_service import (
-    RelevanceFilterService,
-)
+from src.domain.rag.services.query_instruction_service import wrap_query_for_embedding
+from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
 from src.domain.search.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
@@ -36,6 +36,8 @@ class SimilaritySearchUseCase:
         reranking_service: RerankingService,
         heritage_asset_lookup_port: HeritageAssetLookupPort,
         retrieval_k: int = 20,
+        similarity_only: bool = False,
+        similarity_threshold: float = 0.25,
     ) -> None:
         self._embedding_port = embedding_port
         self._vector_search_port = vector_search_port
@@ -45,6 +47,10 @@ class SimilaritySearchUseCase:
         self._reranking_service = reranking_service
         self._heritage_asset_lookup_port = heritage_asset_lookup_port
         self._retrieval_k = retrieval_k
+        self._similarity_only = similarity_only
+        self._similarity_filter = RelevanceFilterService(
+            score_threshold=similarity_threshold,
+        )
 
     async def execute(
         self, dto: SimilaritySearchDTO,
@@ -53,8 +59,9 @@ class SimilaritySearchUseCase:
             "Similarity search start: query=%s", dto.query[:80],
         )
 
-        # 1. Embed the user query
-        embeddings = await self._embedding_port.embed([dto.query])
+        # 1. Embed the user query (with instruction prefix for Qwen3)
+        query_text = wrap_query_for_embedding(dto.query, settings.embedding_query_instruction)
+        embeddings = await self._embedding_port.embed([query_text])
         query_embedding = embeddings[0]
 
         # Over-fetch chunks so that after grouping by document we still
@@ -63,7 +70,7 @@ class SimilaritySearchUseCase:
         chunk_multiplier = 3
         retrieval_k = max(self._retrieval_k, max_docs) * chunk_multiplier
 
-        # 2. Vector search with filters
+        # 2. Retrieve and score chunks — pure similarity or full hybrid pipeline
         vector_chunks = await self._vector_search_port.search(
             query_embedding=query_embedding,
             top_k=retrieval_k,
@@ -72,41 +79,47 @@ class SimilaritySearchUseCase:
             municipality=dto.municipality_filter,
         )
 
-        # 3. Text search with same filters
-        text_chunks = await self._text_search_port.search(
-            query=dto.query,
-            top_k=retrieval_k,
-            heritage_type=dto.heritage_type_filter,
-            province=dto.province_filter,
-            municipality=dto.municipality_filter,
-        )
-
-        # 4. Fuse via Reciprocal Rank Fusion
-        fused_chunks = self._hybrid_search_service.fuse(
-            vector_results=vector_chunks,
-            text_results=text_chunks,
-            top_k=retrieval_k,
-        )
-
-        # 5. Filter by relevance score threshold
-        filtered_chunks = self._relevance_filter_service.filter(
-            fused_chunks,
-        )
-
-        logger.info(
-            "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
-            len(vector_chunks),
-            len(text_chunks),
-            len(fused_chunks),
-            len(filtered_chunks),
-        )
-
-        # 6. Rerank all filtered chunks (pagination happens after grouping)
-        final_chunks = self._reranking_service.rerank(
-            query=dto.query,
-            chunks=filtered_chunks,
-            top_k=len(filtered_chunks),
-        )
+        if self._similarity_only:
+            # Pure similarity: vector search only, no fusion or reranking
+            filtered_chunks = self._similarity_filter.filter(vector_chunks)
+            logger.info(
+                "Search results (similarity-only): vector=%d, filtered=%d, threshold=%.3f",
+                len(vector_chunks), len(filtered_chunks),
+                self._similarity_filter._score_threshold,
+            )
+            for i, chunk in enumerate(
+                sorted(filtered_chunks, key=lambda c: c.score)[:20], 1,
+            ):
+                logger.info(
+                    "Similarity #%d: score=%.4f | title: %s | type: %s | province: %s",
+                    i, chunk.score, chunk.title[:60], chunk.heritage_type, chunk.province,
+                )
+            final_chunks = sorted(filtered_chunks, key=lambda c: c.score)
+        else:
+            # Full hybrid pipeline: text search + RRF fusion + reranking
+            text_chunks = await self._text_search_port.search(
+                query=dto.query,
+                top_k=retrieval_k,
+                heritage_type=dto.heritage_type_filter,
+                province=dto.province_filter,
+                municipality=dto.municipality_filter,
+            )
+            fused_chunks = self._hybrid_search_service.fuse(
+                vector_results=vector_chunks,
+                text_results=text_chunks,
+                top_k=retrieval_k,
+            )
+            filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
+            logger.info(
+                "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
+                len(vector_chunks), len(text_chunks),
+                len(fused_chunks), len(filtered_chunks),
+            )
+            final_chunks = self._reranking_service.rerank(
+                query=dto.query,
+                chunks=filtered_chunks,
+                top_k=len(filtered_chunks),
+            )
 
         # 7. Enrich with heritage asset data
         unique_doc_ids = list({c.document_id for c in final_chunks})

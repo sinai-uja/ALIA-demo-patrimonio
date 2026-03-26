@@ -10,6 +10,8 @@ El pipeline RAG ha evolucionado sus medidas de similaridad, puntuacion y filtrad
 | v2 | `dd0f783` `96548d4` `d768726` | vector + FTS → RRF → filtro → rerank → contexto → LLM | Coseno + ts_rank_cd | RRF (k=60, text_weight=1.5) | score <= 0.35 | Heuristico (4 senales) | Si |
 | v3 | `da66796` | = v2 + pre-filtro lexico | = v2 | = v2 | = v2 | = v2 + pre-filtro lexico | Si |
 | v4 | `6d441e6` | = v3 (RAG sin cambios); search usa config separada | = v3 (RAG); search `retrieval_k=200` | = v3 | RAG 0.35; search 0.55 | RAG = v3; search: base 0.6, title 0.2, coverage 0.15, position 0.05 | Si |
+| v5 | pendiente | RAG: modo similarity-only configurable (`RAG_SIMILARITY_ONLY`) | Coseno puro (cuando activado) | — (bypass) | score <= 0.25 (`RAG_SIMILARITY_THRESHOLD`) | — (bypass) | Si |
+| v6 | pendiente | + instruccion Qwen3 en queries + recalibracion thresholds | = v5 | = v5 | similarity 0.45; RAG hibrido 0.50 | = v5 | Si |
 
 ## Versiones
 
@@ -163,28 +165,101 @@ El pipeline RAG (`rag_composition.py`) no se modifica — sigue usando los param
 
 ## Evolucion de parametros
 
-| Parametro | v1 (2026-03-11) | v2 (2026-03-13) | v3 (2026-03-16) | v4 (2026-03-19) |
-|---|---|---|---|---|
-| `rag_top_k` | 5 | 3 → 5 | 5 | 5 |
-| `rag_retrieval_k` | — | 20 | 20 | 20 |
-| `search_retrieval_k` | — | — | — | 200 |
-| `rag_score_threshold` | — | 0.35 | 0.35 | 0.35 |
-| `search_score_threshold` | — | — | — | 0.55 |
-| `llm_temperature` | 0.7 | 0.3 | 0.3 | 0.3 |
-| `llm_max_tokens` | 2048 → 512 | 512 | 512 | 512 |
-| `max_context_chars` | ∞ | 6000 | 6000 | 6000 |
-| RRF `k_param` | — | 60 | 60 | 60 |
-| RRF `text_weight` | — | 1.5 | 1.5 | 1.5 |
-| Rerank `weight_base` (RAG) | — | 0.4 | 0.4 | 0.4 |
-| Rerank `weight_title` (RAG) | — | 0.3 | 0.3 | 0.3 |
-| Rerank `weight_coverage` (RAG) | — | 0.2 | 0.2 | 0.2 |
-| Rerank `weight_position` (RAG) | — | 0.1 | 0.1 | 0.1 |
-| Rerank `weight_base` (search) | — | — | — | 0.6 |
-| Rerank `weight_title` (search) | — | — | — | 0.2 |
-| Rerank `weight_coverage` (search) | — | — | — | 0.15 |
-| Rerank `weight_position` (search) | — | — | — | 0.05 |
-| Pre-filtro lexico | — | — | Chunks con 0 match descartados | = v3 |
-| Abstencion | No | Si | Si | Si |
+| Parametro | v1 (2026-03-11) | v2 (2026-03-13) | v3 (2026-03-16) | v4 (2026-03-19) | v6 (2026-03-26) |
+|---|---|---|---|---|---|
+| `rag_top_k` | 5 | 3 → 5 | 5 | 5 | 5 |
+| `rag_retrieval_k` | — | 20 | 20 | 20 | 20 |
+| `search_retrieval_k` | — | — | — | 200 | 200 |
+| `rag_score_threshold` | — | 0.35 | 0.35 | 0.35 | **0.50** |
+| `rag_similarity_threshold` | — | — | — | — | **0.45** |
+| `search_score_threshold` | — | — | — | 0.55 | 0.55 |
+| `embedding_query_instruction` | — | — | — | — | **Retrieve relevant heritage documents.** |
+| `llm_temperature` | 0.7 | 0.3 | 0.3 | 0.3 | 0.3 |
+| `llm_max_tokens` | 2048 → 512 | 512 | 512 | 512 | 512 |
+| `max_context_chars` | ∞ | 6000 | 6000 | 6000 | 6000 |
+| RRF `k_param` | — | 60 | 60 | 60 | 60 |
+| RRF `text_weight` | — | 1.5 | 1.5 | 1.5 | 1.5 |
+| Rerank `weight_base` (RAG) | — | 0.4 | 0.4 | 0.4 | 0.4 |
+| Rerank `weight_title` (RAG) | — | 0.3 | 0.3 | 0.3 | 0.3 |
+| Rerank `weight_coverage` (RAG) | — | 0.2 | 0.2 | 0.2 | 0.2 |
+| Rerank `weight_position` (RAG) | — | 0.1 | 0.1 | 0.1 | 0.1 |
+| Rerank `weight_base` (search) | — | — | — | 0.6 | 0.6 |
+| Rerank `weight_title` (search) | — | — | — | 0.2 | 0.2 |
+| Rerank `weight_coverage` (search) | — | — | — | 0.15 | 0.15 |
+| Rerank `weight_position` (search) | — | — | — | 0.05 | 0.05 |
+| Pre-filtro lexico | — | — | Chunks con 0 match descartados | = v3 | = v3 |
+| Abstencion | No | Si | Si | Si | Si |
+
+### v5 — Modo similarity-only configurable (2026-03-25, actual)
+
+- **Commits**: pendiente
+
+**Cambios respecto a v4**:
+
+1. **Nuevo flag `RAG_SIMILARITY_ONLY`** (default `false`): cuando se activa, el pipeline RAG salta text search, fusion RRF y reranking heuristico
+2. **Pipeline simplificado**: `embed → vector search (coseno) → filtro relevancia → top-k → contexto → LLM`
+3. **Retrocompatible**: con `RAG_SIMILARITY_ONLY=false` el pipeline es identico a v4
+
+#### Pipeline con `RAG_SIMILARITY_ONLY=true`
+
+| Componente | Detalle |
+|---|---|
+| Busqueda | Solo coseno (`<=>` pgvector) |
+| Fusion | — (bypass) |
+| Filtro relevancia | `score <= RAG_SIMILARITY_THRESHOLD` (default 0.25) — threshold separado calibrado para distancia coseno cruda |
+| Reranking | — (bypass) |
+| Ordenacion | Por cosine distance ascendente → top_k |
+| Logging | Scores individuales por chunk (titulo, tipo, provincia) |
+| Abstencion | Si — si ningun chunk pasa el umbral |
+
+**Nota sobre escala de scores**: en modo hibrido, los scores estan normalizados a 0-1 via RRF. En similarity-only, los scores son distancia coseno cruda de pgvector (rango 0-2, donde 0=identico). Por eso se usa un threshold separado (`RAG_SIMILARITY_THRESHOLD=0.25`) en lugar de `RAG_SCORE_THRESHOLD=0.35` o `SEARCH_SCORE_THRESHOLD=0.55`, que estan calibrados para la escala RRF.
+
+#### Parametros nuevos
+
+| Parametro | Valor | Descripcion |
+|---|---|---|
+| `RAG_SIMILARITY_ONLY` | `false` | `true` = similaridad pura, `false` = pipeline hibrido completo |
+| `RAG_SIMILARITY_THRESHOLD` | `0.25` | Umbral de distancia coseno para similarity-only (escala pgvector 0-2) |
+
+El flag aplica a **todos los contextos**: RAG (chat), search (busqueda facetada) y routes (via RAG). Un solo flag controla los tres.
+
+### v6 — Instruccion Qwen3 para queries + recalibracion de thresholds (2026-03-26)
+
+- **Commits**: pendiente
+
+**Cambios respecto a v5**:
+
+1. **Prefijo de instruccion para queries**: las queries se envuelven con `Instruct: {instruction}\nQuery: {query}` antes de embedirlas. Los documentos NO llevan instruccion (asimetria query/document requerida por Qwen3).
+2. **Recalibracion de thresholds** basada en benchmark con 8 queries y ground truth manual.
+3. **Nueva variable de entorno `EMBEDDING_QUERY_INSTRUCTION`**: configurable, se desactiva con cadena vacia (para MrBERT u otros modelos simetricos).
+
+#### Causa raiz diagnosticada
+
+Qwen3-Embedding-0.6B es un modelo **instruction-aware** con arquitectura decoder-only. Sin el prefijo de instruccion, las queries caen en la "region de documentos" del espacio de embeddings, produciendo distancias coseno 17-60% mas altas que con instruccion. Ver `QWEN3_EMBEDDING_DIAGNOSTICO.md` para el analisis completo.
+
+#### Resultados del benchmark
+
+| Query | Sin instruccion (v5) | Con instruccion (v6) | Mejora | Resultado #1 |
+|-------|---------------------|---------------------|--------|-------------|
+| cuevas del sacromonte | 0.4261 (filtrado) | 0.3557 | **-17%** | Sector Valparaiso-Sacromonte |
+| alhambra granada | 0.3722 (filtrado) | 0.2456 | **-34%** | Vista de la Alhambra de Granada |
+| mezquita cordoba | 0.4991 (filtrado) | 0.1987 | **-60%** | Mezquita Catedral |
+
+MRR global: 0.442 (v5) → **0.875** (v6)
+
+#### Parametros modificados
+
+| Parametro | v5 | v6 | Motivo |
+|---|---|---|---|
+| `EMBEDDING_QUERY_INSTRUCTION` | — | `Retrieve relevant heritage documents.` | Nuevo — activa prefijo Qwen3 |
+| `RAG_SIMILARITY_THRESHOLD` | 0.25 | **0.45** | Recalibrado para Qwen3 con instrucciones |
+| `RAG_SCORE_THRESHOLD` | 0.35 | **0.50** | Recalibrado para modo hibrido con Qwen3 |
+
+#### Implementacion
+
+- Helper: `domain/rag/services/query_instruction_service.py` — `wrap_query_for_embedding(query, instruction)`
+- Aplicado en `RAGQueryUseCase.execute()` y `SimilaritySearchUseCase.execute()` antes de llamar a `embed()`
+- Retrocompatible: `EMBEDDING_QUERY_INSTRUCTION=` (vacio) desactiva el prefijo
 
 ## Como anadir una nueva version
 
