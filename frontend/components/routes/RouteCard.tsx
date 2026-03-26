@@ -113,7 +113,7 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
         </button>
 
         <div className="flex items-start justify-between gap-3 mb-3 pr-8">
-          <h3 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors line-clamp-2">
+          <h3 className="font-semibold text-stone-900 group-hover:text-green-700 transition-colors line-clamp-2">
             {route.title}
           </h3>
         </div>

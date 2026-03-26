@@ -12,9 +12,9 @@ const HERITAGE_LABELS: Record<string, string> = {
 };
 
 const HERITAGE_COLORS: Record<string, string> = {
-  patrimonio_inmueble: "bg-amber-100 text-amber-800",
+  patrimonio_inmueble: "bg-green-100 text-green-800",
   patrimonio_mueble: "bg-violet-100 text-violet-800",
-  patrimonio_inmaterial: "bg-emerald-100 text-emerald-800",
+  patrimonio_inmaterial: "bg-teal-100 text-teal-800",
   paisaje_cultural: "bg-sky-100 text-sky-800",
 };
 
@@ -67,7 +67,7 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
               {heritageLabel}
             </span>
             {result.protection && result.protection.toUpperCase() !== "NO" && (
-              <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-rose-50 text-rose-700">
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-teal-50 text-teal-700">
                 Protegido
               </span>
             )}
@@ -76,7 +76,7 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
           <h3 className="font-semibold text-stone-900 text-sm leading-snug mb-1.5 flex items-center gap-1.5">
             <button
               onClick={() => openDetail(result.document_id)}
-              className="text-left hover:text-amber-700 transition-colors cursor-pointer"
+              className="text-left hover:text-green-700 transition-colors cursor-pointer"
             >
               {displayName}
             </button>
@@ -86,7 +86,7 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 text-stone-300 hover:text-stone-500 transition-colors"
-                title="Ver ficha en IAPH"
+                title="Ver ficha en Guia Digital"
                 onClick={(e) => e.stopPropagation()}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -136,7 +136,7 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center text-xs font-bold"
             style={{
-              background: `conic-gradient(#f59e0b ${similarity}%, #f5f5f4 ${similarity}%)`,
+              background: `conic-gradient(#16a34a ${similarity}%, #f5f5f4 ${similarity}%)`,
             }}
           >
             <span className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-stone-700">
@@ -193,7 +193,7 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
               </div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs text-stone-600">Similitud:</span>
-                <span className="text-xs font-semibold text-amber-600">{similarity}%</span>
+                <span className="text-xs font-semibold text-green-700">{similarity}%</span>
                 <span className="text-[10px] text-stone-400">
                   (distancia: {chunk.score.toFixed(4)})
                 </span>

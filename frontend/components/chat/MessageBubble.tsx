@@ -10,9 +10,9 @@ function SourceCard({ index, source }: { index: number; source: RagSource }) {
       href={source.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs hover:border-amber-300 hover:bg-amber-50/50 transition-colors group"
+      className="flex items-start gap-2 rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-xs hover:border-green-300 hover:bg-green-50/50 transition-colors group"
     >
-      <span className="shrink-0 mt-0.5 flex items-center justify-center h-4 w-4 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">
+      <span className="shrink-0 mt-0.5 flex items-center justify-center h-4 w-4 rounded bg-green-100 text-green-700 text-[10px] font-bold">
         {index}
       </span>
       <div className="min-w-0">
@@ -41,7 +41,7 @@ function renderContentWithRefs(content: string, sources: RagSource[]): ReactNode
             href={source.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center h-4 min-w-[1rem] px-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold no-underline hover:bg-amber-200 transition-colors cursor-pointer align-baseline"
+            className="inline-flex items-center justify-center h-4 min-w-[1rem] px-0.5 rounded bg-green-100 text-green-700 text-[10px] font-bold no-underline hover:bg-green-200 transition-colors cursor-pointer align-baseline"
             title={source.title}
           >
             {idx}
@@ -61,16 +61,16 @@ export function MessageBubble({ message }: { message: Message }) {
       <div className={`max-w-[75%] ${isUser ? "order-2" : "order-1"}`}>
         {!isUser && (
           <div className="flex items-center gap-1.5 mb-1.5 ml-1">
-            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center">
               <span className="text-[10px] font-bold text-white">IA</span>
             </div>
-            <span className="text-xs font-medium text-stone-400">Asistente IAPH</span>
+            <span className="text-xs font-medium text-stone-400">Asistente Patrimonio</span>
           </div>
         )}
         <div
           className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
             isUser
-              ? "bg-gradient-to-br from-amber-600 to-orange-600 text-white rounded-br-md shadow-sm"
+              ? "bg-gradient-to-br from-green-700 to-emerald-700 text-white rounded-br-md shadow-sm"
               : "bg-white border border-stone-200 text-stone-700 rounded-bl-md shadow-sm"
           }`}
         >

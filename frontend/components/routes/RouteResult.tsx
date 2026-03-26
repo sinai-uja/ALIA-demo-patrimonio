@@ -5,10 +5,10 @@ import type { VirtualRoute } from "@/lib/api";
 import { RouteStopCard } from "./RouteStopCard";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
-  patrimonio_inmueble: "bg-amber-100 text-amber-700",
+  patrimonio_inmueble: "bg-green-100 text-green-700",
   patrimonio_mueble: "bg-purple-100 text-purple-700",
-  patrimonio_inmaterial: "bg-rose-100 text-rose-700",
-  paisaje_cultural: "bg-emerald-100 text-emerald-700",
+  patrimonio_inmaterial: "bg-teal-100 text-teal-700",
+  paisaje_cultural: "bg-sky-100 text-sky-700",
 };
 
 const HERITAGE_TYPE_LABELS: Record<string, string> = {
@@ -66,7 +66,7 @@ function LegacyLayout({ route }: { route: VirtualRoute }) {
               <div key={stop.order} className="flex gap-4">
                 {/* Timeline column */}
                 <div className="flex flex-col items-center">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white font-semibold text-sm shadow-sm">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-sm shadow-sm">
                     {stop.order}
                   </div>
                   {i < route.stops.length - 1 && (
@@ -82,7 +82,7 @@ function LegacyLayout({ route }: { route: VirtualRoute }) {
                         href={stop.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-semibold text-stone-900 hover:text-amber-700 transition-colors"
+                        className="font-semibold text-stone-900 hover:text-green-700 transition-colors"
                       >
                         {stop.title}
                       </a>
@@ -221,7 +221,7 @@ export function RouteResult({ route }: RouteResultProps) {
       <div className="pt-2 border-t border-stone-100">
         <Link
           href={`/routes/${route.id}`}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:text-green-800 transition-colors"
         >
           Ver detalle
           <svg

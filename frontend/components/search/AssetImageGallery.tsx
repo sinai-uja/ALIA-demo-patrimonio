@@ -86,7 +86,7 @@ export function AssetImageGallery({
               key={img.id}
               onClick={() => setActive(i)}
               className={`shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors ${
-                i === currentIdx ? "border-amber-500" : "border-transparent hover:border-stone-300"
+                i === currentIdx ? "border-green-600" : "border-transparent hover:border-stone-300"
               }`}
             >
               <img

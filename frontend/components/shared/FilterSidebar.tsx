@@ -50,7 +50,7 @@ function FilterCheckbox({
         onChange={(e) =>
           onToggle({ type, value, label, matchedText: "" }, e.target.checked)
         }
-        className="h-3.5 w-3.5 rounded border-stone-300 text-amber-600 focus:ring-amber-500"
+        className="h-3.5 w-3.5 rounded border-stone-300 text-green-700 focus:ring-green-600"
       />
       <span className="truncate">{label}</span>
     </label>
@@ -152,7 +152,7 @@ export function FilterSidebarBase({
         {activeFilters.length > 0 && (
           <button
             onClick={onClearAll}
-            className="text-xs text-amber-600 hover:text-amber-700 font-medium"
+            className="text-xs text-green-700 hover:text-green-800 font-medium"
           >
             Limpiar filtros
           </button>
@@ -166,7 +166,7 @@ export function FilterSidebarBase({
           className="flex w-full items-center gap-2 py-1.5 font-medium text-stone-700 hover:text-stone-900"
         >
           <ChevronIcon open={openSections.heritage} />
-          <ColorDot color="bg-amber-400" />
+          <ColorDot color="bg-green-500" />
           <span>Tipo de patrimonio</span>
         </button>
         {openSections.heritage && (
@@ -231,7 +231,7 @@ export function FilterSidebarBase({
                 placeholder="Buscar municipio..."
                 value={municipalitySearch}
                 onChange={(e) => setMunicipalitySearch(e.target.value)}
-                className="w-full rounded border border-stone-200 px-2 py-1 text-xs text-stone-700 placeholder:text-stone-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                className="w-full rounded border border-stone-200 px-2 py-1 text-xs text-stone-700 placeholder:text-stone-400 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
               />
               <div className="max-h-64 overflow-y-auto space-y-0.5">
                 {sortedMunicipalities.map((municipality) => (

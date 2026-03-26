@@ -63,7 +63,7 @@ export default function AccessibilityPage() {
                 <div
                   className={`rounded-xl border-2 p-4 transition-all ${
                     level === opt.value
-                      ? "border-amber-400 bg-amber-50/50 shadow-sm"
+                      ? "border-green-500 bg-green-50/50 shadow-sm"
                       : "border-stone-200 bg-white hover:border-stone-300"
                   }`}
                 >
@@ -82,14 +82,14 @@ export default function AccessibilityPage() {
             onChange={(e) => setText(e.target.value)}
             rows={8}
             placeholder="Pega aquí el texto patrimonial que quieres simplificar..."
-            className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none resize-y transition-all"
+            className="w-full rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none resize-y transition-all"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading || !text.trim()}
-          className="w-full rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-3 text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+          className="w-full rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 py-3 text-sm font-semibold text-white shadow-sm hover:shadow-md transition-all disabled:opacity-50"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -120,7 +120,7 @@ export default function AccessibilityPage() {
             <h2 className="font-semibold text-stone-900">Texto simplificado</h2>
             <button
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-amber-600 transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-green-700 transition-colors"
             >
               {copied ? (
                 <>

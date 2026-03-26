@@ -11,7 +11,7 @@ const features = [
     title: "Busqueda",
     description: "Encuentra bienes patrimoniales mediante busqueda semantica. Filtra por provincia, municipio y tipo de patrimonio.",
     cta: "Buscar patrimonio",
-    gradient: "from-amber-500 to-orange-500",
+    gradient: "from-green-600 to-emerald-600",
   },
   {
     href: "/routes",
@@ -32,18 +32,18 @@ export default function Home() {
     <div className="mx-auto max-w-6xl px-6">
       {/* Hero */}
       <div className="py-20 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200/60 px-4 py-1.5 text-sm text-amber-700 mb-6">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-          Universidad de Jaén · IAPH
+        <div className="inline-flex items-center gap-2 rounded-full bg-green-50 border border-green-200/60 px-4 py-1.5 text-sm text-green-700 mb-6">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+          Universidad de Jaén · Patrimonio de Andalucía
         </div>
         <h1 className="text-5xl font-bold tracking-tight text-stone-900 sm:text-6xl">
           Patrimonio Histórico
-          <span className="block bg-gradient-to-r from-amber-600 via-orange-500 to-rose-500 bg-clip-text text-transparent">
+          <span className="block bg-gradient-to-r from-green-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
             Andaluz
           </span>
         </h1>
         <p className="mt-6 text-lg text-stone-500 max-w-2xl mx-auto leading-relaxed">
-          Asistente inteligente del Instituto Andaluz de Patrimonio Histórico.
+          Asistente inteligente de Patrimonio de Andalucía.
           Explora, pregunta y descubre el rico patrimonio cultural de Andalucía.
         </p>
       </div>
@@ -65,7 +65,7 @@ export default function Home() {
             <p className="text-stone-500 text-sm leading-relaxed mb-6">
               {f.description}
             </p>
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 group-hover:gap-2.5 transition-all">
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 group-hover:gap-2.5 transition-all">
               {f.cta}
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />

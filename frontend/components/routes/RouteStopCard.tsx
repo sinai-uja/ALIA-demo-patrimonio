@@ -4,10 +4,10 @@ import type { RouteStop } from "@/lib/api";
 import { useRoutesStore } from "@/store/routes";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
-  patrimonio_inmueble: "bg-amber-100 text-amber-700",
+  patrimonio_inmueble: "bg-green-100 text-green-700",
   patrimonio_mueble: "bg-purple-100 text-purple-700",
-  patrimonio_inmaterial: "bg-rose-100 text-rose-700",
-  paisaje_cultural: "bg-emerald-100 text-emerald-700",
+  patrimonio_inmaterial: "bg-teal-100 text-teal-700",
+  paisaje_cultural: "bg-sky-100 text-sky-700",
 };
 
 const HERITAGE_TYPE_LABELS: Record<string, string> = {
@@ -49,7 +49,7 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
     <div
       className={`rounded-xl border border-stone-200/60 bg-white p-4 sm:p-5 shadow-sm transition-all ${
         isClickable
-          ? "hover:shadow-md hover:border-amber-200/60 cursor-pointer"
+          ? "hover:shadow-md hover:border-green-200/60 cursor-pointer"
           : ""
       }`}
       onClick={handleClick}
@@ -69,7 +69,7 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
       <div className="flex gap-4">
         {/* Order badge */}
         <div className="flex flex-col items-center shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white font-semibold text-sm shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-sm shadow-sm">
             {stop.order}
           </div>
         </div>
@@ -92,7 +92,7 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
               {/* Title */}
               <h4
                 className={`font-semibold text-stone-900 leading-snug ${
-                  isClickable ? "hover:text-amber-700 transition-colors" : ""
+                  isClickable ? "hover:text-green-700 transition-colors" : ""
                 }`}
               >
                 {stop.title}

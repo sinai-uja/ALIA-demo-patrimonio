@@ -45,7 +45,7 @@ export default function SearchPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
               </svg>
               {activeFilters.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">
                   {activeFilters.length}
                 </span>
               )}
@@ -53,7 +53,7 @@ export default function SearchPage() {
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-bold text-stone-900">Busqueda por Similaridad</h1>
               <p className="text-stone-500 mt-1">
-                Encuentra bienes patrimoniales mediante busqueda semantica en la base de datos del IAPH
+                Encuentra bienes patrimoniales mediante busqueda semantica en el catalogo de Patrimonio de Andalucia
               </p>
             </div>
           </div>

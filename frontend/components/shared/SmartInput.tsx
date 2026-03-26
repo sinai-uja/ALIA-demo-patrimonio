@@ -21,21 +21,21 @@ export const TYPE_LABELS: Record<string, string> = {
 export const TOOLTIP_COLORS: Record<string, string> = {
   province: "bg-blue-100 text-blue-800 hover:bg-blue-200",
   municipality: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200",
-  heritage_type: "bg-amber-100 text-amber-800 hover:bg-amber-200",
+  heritage_type: "bg-green-100 text-green-800 hover:bg-green-200",
 };
 
 // Raw color values for gradient construction
 export const ACTIVE_COLOR: Record<string, string> = {
   province: "rgb(191 219 254)",       // blue-200
   municipality: "rgb(167 243 208)",   // emerald-200
-  heritage_type: "rgb(253 230 138)",  // amber-200
+  heritage_type: "rgb(187 247 208)",  // green-200
 };
 
 // Tailwind classes for single-entity active highlights
 export const ACTIVE_BG: Record<string, string> = {
   province: "bg-blue-200/80",
   municipality: "bg-emerald-200/80",
-  heritage_type: "bg-amber-200/80",
+  heritage_type: "bg-green-200/80",
 };
 
 // Neutral highlight for fully-pending entities
@@ -417,7 +417,7 @@ export function SmartInput({
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full border border-stone-200 bg-white pl-12 ${rightContent ? "pr-36" : "pr-4"} py-4 rounded-2xl placeholder:text-stone-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none shadow-sm transition-all relative`}
+            className={`w-full border border-stone-200 bg-white pl-12 ${rightContent ? "pr-36" : "pr-4"} py-4 rounded-2xl placeholder:text-stone-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none shadow-sm transition-all relative`}
             style={{
               ...textStyle,
               background: hasEntities ? "transparent" : undefined,
@@ -435,7 +435,7 @@ export function SmartInput({
           )}
 
           {loading && !rightContent && (
-            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-amber-500 z-10" fill="none" viewBox="0 0 24 24">
+            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-green-600 z-10" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>

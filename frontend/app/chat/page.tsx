@@ -39,7 +39,7 @@ function SessionItem({
     <div
       className={`group flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer text-sm transition-all ${
         active
-          ? "bg-amber-50 text-amber-800 border border-amber-200/60"
+          ? "bg-green-50 text-green-800 border border-green-200/60"
           : "text-stone-600 hover:bg-stone-100 border border-transparent"
       }`}
       onClick={() => !editing && onSelect()}
@@ -68,7 +68,7 @@ function SessionItem({
       {!editing && (
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-0.5 text-stone-400 hover:text-amber-600 transition-colors"
+            className="p-0.5 text-stone-400 hover:text-green-700 transition-colors"
             onClick={(e) => { e.stopPropagation(); setEditing(true); }}
             title="Renombrar"
           >
@@ -116,7 +116,7 @@ export default function ChatPage() {
         <div className="p-3">
           <button
             onClick={() => createSession()}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 py-2.5 text-sm font-medium text-white shadow-sm hover:shadow-md transition-all"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-600 to-emerald-700 py-2.5 text-sm font-medium text-white shadow-sm hover:shadow-md transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -144,8 +144,8 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {!activeSessionId && !loading && (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-amber-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-700" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                 </svg>
               </div>
@@ -158,9 +158,9 @@ export default function ChatPage() {
           {loading && (
             <div className="flex h-full items-center justify-center">
               <div className="flex gap-1">
-                <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
-                <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
-                <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-green-500" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-green-500" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-green-500" />
               </div>
             </div>
           )}
@@ -168,10 +168,10 @@ export default function ChatPage() {
           {sending && (
             <div className="flex justify-start mb-5">
               <div className="flex items-center gap-1.5 ml-1">
-                <div className="h-5 w-5 rounded-md bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <div className="h-5 w-5 rounded-md bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center">
                   <span className="text-[10px] font-bold text-white">IA</span>
                 </div>
-                <span className="text-xs font-medium text-stone-400">Asistente IAPH</span>
+                <span className="text-xs font-medium text-stone-400">Asistente Patrimonio</span>
               </div>
             </div>
           )}

@@ -30,7 +30,7 @@ function NumStopsSelector() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
         </svg>
       </button>
-      <span className="w-5 text-center text-sm font-semibold text-amber-600 tabular-nums select-none">
+      <span className="w-5 text-center text-sm font-semibold text-green-700 tabular-nums select-none">
         {numStops}
       </span>
       <button
@@ -120,7 +120,7 @@ export default function RoutesPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
               </svg>
               {activeFilters.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">
                   {activeFilters.length}
                 </span>
               )}
@@ -139,7 +139,7 @@ export default function RoutesPage() {
           {/* Generation spinner */}
           {generating && (
             <div className="flex items-center justify-center gap-3 py-8">
-              <svg className="w-5 h-5 animate-spin text-amber-500" fill="none" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 animate-spin text-green-600" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
@@ -183,9 +183,9 @@ export default function RoutesPage() {
           {loading && !generating && (
             <div className="flex justify-center py-8">
               <div className="flex gap-1">
-                <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
-                <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
-                <span className="typing-dot h-2 w-2 rounded-full bg-amber-400" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-green-500" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-green-500" />
+                <span className="typing-dot h-2 w-2 rounded-full bg-green-500" />
               </div>
             </div>
           )}

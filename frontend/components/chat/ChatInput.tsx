@@ -35,7 +35,7 @@ export function ChatInput({ onSend, disabled, placeholder }: Props) {
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-2.5 shadow-sm focus-within:border-amber-400 focus-within:ring-2 focus-within:ring-amber-100 transition-all">
+    <div className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-2.5 shadow-sm focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100 transition-all">
       <textarea
         ref={textareaRef}
         value={value}
@@ -50,7 +50,7 @@ export function ChatInput({ onSend, disabled, placeholder }: Props) {
       <button
         onClick={handleSend}
         disabled={disabled || !value.trim()}
-        className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-sm transition hover:shadow-md disabled:opacity-30 disabled:shadow-none"
+        className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-600 to-emerald-700 text-white shadow-sm transition hover:shadow-md disabled:opacity-30 disabled:shadow-none"
       >
         {disabled ? (
           <div className="flex gap-0.5">

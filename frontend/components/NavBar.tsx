@@ -21,7 +21,7 @@ export function NavBar() {
             PA
           </div>
           <span className="font-semibold text-stone-800 group-hover:text-green-700 transition-colors">
-            IAPH Heritage
+            Patrimonio de Andalucía
           </span>
         </Link>
         <div className="flex items-center gap-1">
