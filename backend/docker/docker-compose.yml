@@ -1,3 +1,7 @@
+# DEPRECATED: Use the root-level docker-compose.yml instead.
+# Run from monorepo root: docker compose up
+# This file is kept for reference but may be removed in a future release.
+
 services:
   postgres:
     image: pgvector/pgvector:pg16

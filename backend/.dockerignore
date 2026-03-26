@@ -15,6 +15,7 @@ build/
 models/
 
 # Environment files with secrets
+config/
 .env
 .env.local
 .env.production

@@ -1,12 +1,13 @@
-.PHONY: dev infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 help
+.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 help
 
-COMPOSE = docker compose -f docker/docker-compose.yml
+COMPOSE = docker compose -f ../docker-compose.yml
 ENV_FILE = config/.env
 
 help:
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "  dev          Start infra services + FastAPI in dev mode (hot-reload)"
+	@echo "  dev-only     Start FastAPI in dev mode (without infra)"
 	@echo "  infra        Start postgres + embedding-service"
 	@echo "  infra-llm    Start all services including LLM (requires GPU)"
 	@echo "  infra-down   Stop all services"
@@ -21,6 +22,9 @@ help:
 	@echo "  download-qwen3 Download Qwen3-Embedding-0.6B model"
 
 dev: infra
+	uv run fastapi dev src/main.py --port 18080
+
+dev-only:
 	uv run fastapi dev src/main.py --port 18080
 
 infra:
