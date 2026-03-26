@@ -106,8 +106,9 @@ class PgTextSearchAdapter(TextSearchPort):
 
         rows = result.fetchall()
         logger.info(
-            "FTS: query=%r, heritage_type=%s, province=%s → %d results",
-            clean_query, heritage_type, province, len(rows),
+            "FTS: query=%r, heritage_type=%s, province=%s, "
+            "municipality=%s → %d results",
+            clean_query, heritage_type, province, municipality, len(rows),
         )
 
         return [

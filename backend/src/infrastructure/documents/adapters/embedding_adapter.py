@@ -15,9 +15,10 @@ class HttpEmbeddingAdapter(EmbeddingPort):
         self._base_url = settings.embedding_service_url
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
+        preview = texts[0][:120] if texts else ""
         logger.info(
-            "Embed request (documents): %d texts, total_chars=%d",
-            len(texts), sum(len(t) for t in texts),
+            "Embed request (documents): %d texts, total_chars=%d, preview=%r",
+            len(texts), sum(len(t) for t in texts), preview,
         )
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(

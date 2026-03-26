@@ -86,8 +86,9 @@ class PgVectorSearchAdapter(VectorSearchPort):
 
         rows = result.fetchall()
         logger.info(
-            "Vector search: top_k=%d, heritage_type=%s, province=%s → %d results",
-            top_k, heritage_type, province, len(rows),
+            "Vector search: top_k=%d, heritage_type=%s, province=%s, "
+            "municipality=%s → %d results",
+            top_k, heritage_type, province, municipality, len(rows),
         )
 
         return [
