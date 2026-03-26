@@ -30,8 +30,8 @@ config/
 *.swp
 *.swo
 
-# Docker (avoid recursive context)
-docker/
+# Docker
+Dockerfile
 
 # OS files
 .DS_Store

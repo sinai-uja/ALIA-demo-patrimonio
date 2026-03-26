@@ -21,7 +21,7 @@ services:
 
   embedding-service:
     build:
-      context: ./embedding-service
+      context: ./embedding
       dockerfile: Dockerfile
     container_name: uja-embedding-service
     restart: unless-stopped
@@ -30,7 +30,7 @@ services:
     volumes:
       - ./backend/models/${EMBEDDING_MODEL_DIR:-MrBERT}:/app/model:ro
     env_file:
-      - ./backend/docker/.env
+      - ./embedding/.env
     environment:
       MODEL_PATH: /app/model
       DEVICE: cuda
@@ -79,7 +79,7 @@ services:
   api:
     build:
       context: ./backend
-      dockerfile: docker/api/Dockerfile
+      dockerfile: Dockerfile
     container_name: uja-api
     ports:
       - "18080:8080"
@@ -103,7 +103,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: http://localhost:18080/api/v1
     container_name: uja-frontend
