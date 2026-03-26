@@ -6,6 +6,7 @@ import { loadEnvConfig } from "@next/env";
 const { combinedEnv } = loadEnvConfig(path.join(process.cwd(), "config"));
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   env: {
     NEXT_PUBLIC_API_URL: combinedEnv.NEXT_PUBLIC_API_URL ?? "http://localhost:18080/api/v1",
   },
