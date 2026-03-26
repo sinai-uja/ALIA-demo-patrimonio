@@ -49,6 +49,7 @@ services:
       DEVICE: cuda
       POOLING_STRATEGY: ${POOLING_STRATEGY}
       MAX_LENGTH: ${MAX_LENGTH}
+      API_KEY: ${EMBEDDING_API_KEY}
     deploy:
       resources:
         reservations:
@@ -82,6 +83,7 @@ services:
       --dtype bfloat16
       --max-model-len 4096
       --gpu-memory-utilization 0.9
+      --api-key ${LLM_API_KEY}
     deploy:
       resources:
         reservations:
@@ -136,6 +138,16 @@ services:
       PROJECT_NAME: ${PROJECT_NAME}
       DEBUG: ${DEBUG}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      # Service API keys
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY}
+      LLM_API_KEY: ${LLM_API_KEY}
+      # Auth
+      AUTH_USERNAME: ${AUTH_USERNAME}
+      AUTH_PASSWORD: ${AUTH_PASSWORD}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES}
+      JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS}
     volumes:
       - ./backend/src:/app/src:ro
     command: uv run fastapi dev src/main.py --host 0.0.0.0 --port 8080
