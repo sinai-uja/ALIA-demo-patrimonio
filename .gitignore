@@ -72,6 +72,9 @@ data/
 *.zip
 **/*.parquet
 
+# ===== Script results (generated, large) =====
+backend/scripts/results/
+
 # ===== Misc =====
 *.pem
 *.log
