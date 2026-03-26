@@ -1,22 +1,44 @@
-.PHONY: dev backend frontend infra infra-llm infra-down docker-up docker-up-llm docker-down migrate test lint help
+.PHONY: dev backend frontend infra infra-llm infra-down docker-up docker-up-llm docker-down \
+       build-backend build-frontend build-embedding build-all \
+       push-backend push-frontend push-embedding push-all \
+       migrate test lint help
 
 COMPOSE = docker compose
+VERSION = $(shell cat VERSION)
+REGISTRY ?= gitlab.innovasur.es:5005/uja/iaph-rag-monorepo
 
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "  dev           Start backend (infra + API) and frontend concurrently"
-	@echo "  backend       Start backend infra services + FastAPI dev server"
-	@echo "  frontend      Start Next.js dev server"
-	@echo "  infra         Start Docker infra only (postgres + embedding service)"
-	@echo "  infra-llm     Start all Docker services including LLM (requires GPU)"
-	@echo "  infra-down    Stop all Docker services"
-	@echo "  docker-up     Build and start all services (postgres, embedding, api, frontend)"
-	@echo "  docker-up-llm Build and start all services including LLM (requires GPU)"
-	@echo "  docker-down   Stop all Docker services"
-	@echo "  migrate       Apply pending Alembic migrations"
-	@echo "  test          Run backend test suite"
-	@echo "  lint          Run ruff linter on backend"
+	@echo "Development:"
+	@echo "  dev              Start backend (infra + API) and frontend concurrently"
+	@echo "  backend          Start backend infra services + FastAPI dev server"
+	@echo "  frontend         Start Next.js dev server"
+	@echo "  infra            Start Docker infra only (postgres + embedding service)"
+	@echo "  infra-llm        Start all Docker services including LLM (requires GPU)"
+	@echo "  infra-down       Stop all Docker services"
+	@echo ""
+	@echo "Docker Compose:"
+	@echo "  docker-up        Build and start all services"
+	@echo "  docker-up-llm    Build and start all services including LLM (requires GPU)"
+	@echo "  docker-down      Stop all Docker services"
+	@echo ""
+	@echo "Docker Build (uses VERSION file, current: $(VERSION)):"
+	@echo "  build-backend    Build backend image"
+	@echo "  build-frontend   Build frontend image"
+	@echo "  build-embedding  Build embedding image"
+	@echo "  build-all        Build all images"
+	@echo ""
+	@echo "Docker Push (REGISTRY=<registry>, current: $(REGISTRY)):"
+	@echo "  push-backend     Push backend image"
+	@echo "  push-frontend    Push frontend image"
+	@echo "  push-embedding   Push embedding image"
+	@echo "  push-all         Push all images"
+	@echo ""
+	@echo "Other:"
+	@echo "  migrate          Apply pending Alembic migrations"
+	@echo "  test             Run backend test suite"
+	@echo "  lint             Run ruff linter on backend"
 
 dev:
 	$(COMPOSE) up -d postgres embedding-service
@@ -51,6 +73,43 @@ docker-up-llm:
 
 docker-down:
 	$(COMPOSE) down
+
+# ---------------------------------------------------------------------------
+# Docker Build
+# ---------------------------------------------------------------------------
+
+build-backend:
+	docker build --tag $(REGISTRY)/backend:$(VERSION) --tag $(REGISTRY)/backend:latest -f backend/docker/Dockerfile backend
+
+build-frontend:
+	docker build --tag $(REGISTRY)/frontend:$(VERSION) --tag $(REGISTRY)/frontend:latest -f frontend/docker/Dockerfile frontend
+
+build-embedding:
+	docker build --tag $(REGISTRY)/embedding:$(VERSION) --tag $(REGISTRY)/embedding:latest -f embedding/Dockerfile embedding
+
+build-all: build-backend build-frontend build-embedding
+
+# ---------------------------------------------------------------------------
+# Docker Push
+# ---------------------------------------------------------------------------
+
+push-backend: build-backend
+	docker push $(REGISTRY)/backend:$(VERSION)
+	docker push $(REGISTRY)/backend:latest
+
+push-frontend: build-frontend
+	docker push $(REGISTRY)/frontend:$(VERSION)
+	docker push $(REGISTRY)/frontend:latest
+
+push-embedding: build-embedding
+	docker push $(REGISTRY)/embedding:$(VERSION)
+	docker push $(REGISTRY)/embedding:latest
+
+push-all: push-backend push-frontend push-embedding
+
+# ---------------------------------------------------------------------------
+# Other
+# ---------------------------------------------------------------------------
 
 migrate:
 	$(MAKE) -C backend migrate

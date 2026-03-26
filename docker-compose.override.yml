@@ -1,0 +1,22 @@
+# =============================================================================
+# Docker Compose Override — development ports
+#
+# Loaded automatically by `docker compose` alongside docker-compose.yml.
+# Exposes internal services to the host for local development (running the
+# backend/frontend outside Docker while infra runs inside Docker).
+#
+# Not needed in production — remove or rename this file to disable.
+# =============================================================================
+
+services:
+  postgres:
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+
+  embedding-service:
+    ports:
+      - "${EMBEDDING_PORT:-18001}:8001"
+
+  llm-service:
+    ports:
+      - "${LLM_PORT:-18000}:8000"

@@ -1,39 +1,54 @@
+# =============================================================================
+# Docker Compose — IAPH RAG Monorepo
+#
+# All configuration is injected from the root .env file (loaded automatically).
+# Service-to-service communication uses Docker network hostnames (not localhost).
+#
+# Usage:
+#   docker compose up -d                          # infra + api + frontend
+#   docker compose --profile llm up -d            # include LLM service
+#   docker compose up -d postgres embedding-service  # infra only (dev)
+# =============================================================================
+
 services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL + pgvector
+  # ---------------------------------------------------------------------------
   postgres:
     image: pgvector/pgvector:pg16
     container_name: uja-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: uja_iaph
-      POSTGRES_USER: uja
-      POSTGRES_PASSWORD: uja
-    ports:
-      - "15432:5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U uja -d uja_iaph"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - uja-net
 
+  # ---------------------------------------------------------------------------
+  # Embedding service (MrBERT / Qwen3)
+  # ---------------------------------------------------------------------------
   embedding-service:
     build:
       context: ./embedding
       dockerfile: Dockerfile
     container_name: uja-embedding-service
     restart: unless-stopped
-    ports:
-      - "18001:8001"
     volumes:
       - ./backend/models/${EMBEDDING_MODEL_DIR:-MrBERT}:/app/model:ro
-    env_file:
-      - ./embedding/.env
     environment:
       MODEL_PATH: /app/model
       DEVICE: cuda
+      POOLING_STRATEGY: ${POOLING_STRATEGY}
+      MAX_LENGTH: ${MAX_LENGTH}
     deploy:
       resources:
         reservations:
@@ -50,19 +65,20 @@ services:
     networks:
       - uja-net
 
+  # ---------------------------------------------------------------------------
+  # LLM service — vLLM (optional, requires GPU)
+  # ---------------------------------------------------------------------------
   llm-service:
     image: vllm/vllm-openai:latest
     container_name: uja-llm-service
     profiles:
       - llm
-    ports:
-      - "18000:8000"
     volumes:
       - hf_cache:/root/.cache/huggingface
     environment:
       HF_HUB_CACHE: /root/.cache/huggingface
     command: >
-      --model BSC-LT/salamandra-7b-instruct
+      --model ${LLM_MODEL_NAME}
       --dtype bfloat16
       --max-model-len 4096
       --gpu-memory-utilization 0.9
@@ -76,39 +92,68 @@ services:
     networks:
       - uja-net
 
+  # ---------------------------------------------------------------------------
+  # Backend API — FastAPI
+  # ---------------------------------------------------------------------------
   api:
     build:
       context: ./backend
       dockerfile: docker/Dockerfile
     container_name: uja-api
     ports:
-      - "18080:8080"
+      - "${API_PORT:-18080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
       embedding-service:
         condition: service_started
-    env_file:
-      - ./backend/config/.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://uja:uja@postgres:5432/uja_iaph
+      # Internal Docker network URLs (override any .env localhost values)
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       EMBEDDING_SERVICE_URL: http://embedding-service:8001
       LLM_SERVICE_URL: http://llm-service:8000/v1
+      # Pass through from .env
+      EMBEDDING_DIM: ${EMBEDDING_DIM}
+      EMBEDDING_QUERY_INSTRUCTION: ${EMBEDDING_QUERY_INSTRUCTION}
+      LLM_PROVIDER: ${LLM_PROVIDER}
+      LLM_MODEL_NAME: ${LLM_MODEL_NAME}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS}
+      LLM_ROUTE_NARRATIVE_MAX_TOKENS: ${LLM_ROUTE_NARRATIVE_MAX_TOKENS}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL_NAME: ${GEMINI_MODEL_NAME}
+      RAG_SIMILARITY_ONLY: ${RAG_SIMILARITY_ONLY}
+      RAG_SIMILARITY_THRESHOLD: ${RAG_SIMILARITY_THRESHOLD}
+      RAG_TOP_K: ${RAG_TOP_K}
+      RAG_RETRIEVAL_K: ${RAG_RETRIEVAL_K}
+      RAG_SCORE_THRESHOLD: ${RAG_SCORE_THRESHOLD}
+      RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE}
+      RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP}
+      CHUNKS_TABLE_VERSION: ${CHUNKS_TABLE_VERSION}
+      SEARCH_RETRIEVAL_K: ${SEARCH_RETRIEVAL_K}
+      SEARCH_SCORE_THRESHOLD: ${SEARCH_SCORE_THRESHOLD}
+      API_V1_PREFIX: ${API_V1_PREFIX}
+      PROJECT_NAME: ${PROJECT_NAME}
+      DEBUG: ${DEBUG}
+      CORS_ORIGINS: ${CORS_ORIGINS}
     volumes:
       - ./backend/src:/app/src:ro
     command: uv run fastapi dev src/main.py --host 0.0.0.0 --port 8080
     networks:
       - uja-net
 
+  # ---------------------------------------------------------------------------
+  # Frontend — Next.js (standalone)
+  # ---------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: docker/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:18080/api/v1
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: uja-frontend
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - api
     networks:
