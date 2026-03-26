@@ -1,0 +1,114 @@
+default:
+  image: docker:stable
+
+before_script:
+  - docker info
+
+stages:
+  - build
+  - upload
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH =~ /^release\/v\d+\.\d+/'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "master"'
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+
+# ---------------------------------------------------------------------------
+# Backend
+# ---------------------------------------------------------------------------
+
+build-backend:
+  stage: build
+  script:
+    - docker build --tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA -f backend/docker/Dockerfile backend
+
+push-backend-latest:
+  stage: upload
+  needs: ['build-backend']
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/backend:latest
+    - docker push $CI_REGISTRY_IMAGE/backend:latest
+  only:
+    - master
+
+push-backend-commit:
+  stage: upload
+  needs: ['build-backend']
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA
+  allow_failure: true
+  rules:
+    - when: manual
+
+push-backend-release:
+  stage: upload
+  needs: ['build-backend']
+  before_script:
+    - export version="${CI_COMMIT_TAG:1}"
+    - export minor_version="${version%.*}"
+    - export major_version="${minor_version%.*}"
+    - export next_minor_version="v${major_version}.$(expr ${minor_version#*.} + 1).0"
+    - export exists=$(git tag -l "$next_minor_version")
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/backend:$version
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/backend:$minor_version
+    - if [ ! ${exists} ]; then docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/backend:$major_version; fi
+    - docker push $CI_REGISTRY_IMAGE/backend:$version
+    - docker push $CI_REGISTRY_IMAGE/backend:$minor_version
+    - if [ ! ${exists} ]; then docker push $CI_REGISTRY_IMAGE/backend:$major_version; fi
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(\d+\.\d+\.\d+)$/'
+
+# ---------------------------------------------------------------------------
+# Frontend
+# ---------------------------------------------------------------------------
+
+build-frontend:
+  stage: build
+  script:
+    - docker build --tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA -f frontend/docker/Dockerfile frontend
+
+push-frontend-latest:
+  stage: upload
+  needs: ['build-frontend']
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/frontend:latest
+    - docker push $CI_REGISTRY_IMAGE/frontend:latest
+  only:
+    - master
+
+push-frontend-commit:
+  stage: upload
+  needs: ['build-frontend']
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA
+  allow_failure: true
+  rules:
+    - when: manual
+
+push-frontend-release:
+  stage: upload
+  needs: ['build-frontend']
+  before_script:
+    - export version="${CI_COMMIT_TAG:1}"
+    - export minor_version="${version%.*}"
+    - export major_version="${minor_version%.*}"
+    - export next_minor_version="v${major_version}.$(expr ${minor_version#*.} + 1).0"
+    - export exists=$(git tag -l "$next_minor_version")
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/frontend:$version
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/frontend:$minor_version
+    - if [ ! ${exists} ]; then docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE/frontend:$major_version; fi
+    - docker push $CI_REGISTRY_IMAGE/frontend:$version
+    - docker push $CI_REGISTRY_IMAGE/frontend:$minor_version
+    - if [ ! ${exists} ]; then docker push $CI_REGISTRY_IMAGE/frontend:$major_version; fi
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v(\d+\.\d+\.\d+)$/'
