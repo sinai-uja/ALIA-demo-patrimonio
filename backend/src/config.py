@@ -11,11 +11,13 @@ class Settings(BaseSettings):
 
     # Embedding service
     embedding_service_url: str = "http://localhost:8001"
+    embedding_api_key: str = ""
     embedding_dim: int = 768
 
     # LLM service
     llm_provider: str = "gemini"  # "vllm" or "gemini"
     llm_service_url: str = "http://localhost:8000/v1"
+    llm_api_key: str = ""
     llm_model_name: str = "BSC-LT/salamandra-7b-instruct"
     llm_max_tokens: int = 512
     llm_route_narrative_max_tokens: int = 2048
@@ -52,6 +54,14 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: str = "*"
+
+    # Auth
+    auth_username: str = "admin"
+    auth_password: str = "admin"
+    jwt_secret_key: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
 
     @property
     def cors_origins_list(self) -> list[str]:
