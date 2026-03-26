@@ -1,12 +1,12 @@
 import logging
 import os
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 
 LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+USECASES_LOG_DIR = os.path.join(LOG_DIR, "usecases")
 LOG_FORMAT = "%(asctime)s | %(levelname)-7s | %(name)s | %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-MAX_BYTES = 10 * 1024 * 1024  # 10 MB per file
-BACKUP_COUNT = 3
+BACKUP_COUNT = 30  # keep 30 days of daily rotated logs
 
 # ANSI color codes
 _CYAN = "\033[36m"
@@ -54,59 +54,115 @@ class _OnlyLoggerFilter(logging.Filter):
         return record.name.startswith(self._allowed)
 
 
+class _MultiLoggerFilter(logging.Filter):
+    """Allow logs from any of the listed loggers (prefix match)."""
+
+    def __init__(self, allowed: list[str]) -> None:
+        super().__init__()
+        self._allowed = tuple(allowed)
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return any(record.name.startswith(a) for a in self._allowed)
+
+
+def _daily_handler(
+    filepath: str,
+    level: int = logging.DEBUG,
+    formatter: logging.Formatter | None = None,
+    log_filter: logging.Filter | None = None,
+) -> TimedRotatingFileHandler:
+    """Create a TimedRotatingFileHandler that rotates daily at midnight,
+    keeping BACKUP_COUNT days."""
+    handler = TimedRotatingFileHandler(
+        filepath, when="midnight", interval=1, backupCount=BACKUP_COUNT, utc=False,
+    )
+    handler.suffix = "%Y-%m-%d"
+    handler.setLevel(level)
+    if formatter:
+        handler.setFormatter(formatter)
+    if log_filter:
+        handler.addFilter(log_filter)
+    return handler
+
+
 def setup_logging() -> None:
     """Configure the application logging system.
 
     Loggers:
-        iaph        — general info, lifecycle, execution flow
-        iaph.query  — API requests, search results, response summaries
-        iaph.llm    — intent classification, LLM calls, RAG pipeline, responses
+        iaph            — general info, lifecycle, execution flow
+        iaph.query      — API requests, search results, response summaries
+        iaph.llm        — intent classification, LLM calls, RAG pipeline, responses
+        iaph.embedding  — embedding service requests/responses
+        iaph.auth       — login, token refresh, auth failures
+        iaph.usecases.routes — route generation and guide queries
+        iaph.usecases.search — similarity search queries
 
-    File handlers (RotatingFileHandler):
-        info.log    ← iaph.* at INFO+
-        queries.log ← iaph.query at DEBUG+
-        llm.log     ← iaph.llm at DEBUG+
-        errors.log  ← root at WARNING+
+    File handlers (TimedRotatingFileHandler, daily rotation, 30 days):
+        logs/info.log       ← iaph.* at INFO+
+        logs/queries.log    ← iaph.query at DEBUG+
+        logs/llm.log        ← iaph.llm at DEBUG+
+        logs/embedding.log  ← iaph.embedding at DEBUG+
+        logs/auth.log       ← iaph.auth at DEBUG+
+        logs/errors.log     ← root at WARNING+
+        logs/usecases/routes.log  ← iaph.usecases.routes at DEBUG+
+        logs/usecases/search.log  ← iaph.usecases.search at DEBUG+
 
     Console:
-        iaph + iaph.llm at INFO+ (excludes iaph.query)
+        iaph + iaph.llm + iaph.embedding + iaph.auth at INFO+ (excludes iaph.query)
     """
     os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(USECASES_LOG_DIR, exist_ok=True)
     formatter = logging.Formatter(LOG_FORMAT, datefmt=DATE_FORMAT)
 
-    # --- File handlers ---
+    # --- File handlers (daily rotation, 30-day retention) ---
 
     # info.log — all iaph.* logs at INFO+
-    info_handler = RotatingFileHandler(
-        os.path.join(LOG_DIR, "info.log"), maxBytes=MAX_BYTES, backupCount=BACKUP_COUNT
+    info_handler = _daily_handler(
+        os.path.join(LOG_DIR, "info.log"), level=logging.INFO, formatter=formatter,
     )
-    info_handler.setLevel(logging.INFO)
-    info_handler.setFormatter(formatter)
 
     # queries.log — only iaph.query
-    query_handler = RotatingFileHandler(
-        os.path.join(LOG_DIR, "queries.log"), maxBytes=MAX_BYTES, backupCount=BACKUP_COUNT
+    query_handler = _daily_handler(
+        os.path.join(LOG_DIR, "queries.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.query"),
     )
-    query_handler.setLevel(logging.DEBUG)
-    query_handler.setFormatter(formatter)
-    query_handler.addFilter(_OnlyLoggerFilter("iaph.query"))
 
     # llm.log — only iaph.llm
-    llm_handler = RotatingFileHandler(
-        os.path.join(LOG_DIR, "llm.log"), maxBytes=MAX_BYTES, backupCount=BACKUP_COUNT
+    llm_handler = _daily_handler(
+        os.path.join(LOG_DIR, "llm.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.llm"),
     )
-    llm_handler.setLevel(logging.DEBUG)
-    llm_handler.setFormatter(formatter)
-    llm_handler.addFilter(_OnlyLoggerFilter("iaph.llm"))
+
+    # embedding.log — only iaph.embedding
+    embedding_handler = _daily_handler(
+        os.path.join(LOG_DIR, "embedding.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.embedding"),
+    )
+
+    # auth.log — only iaph.auth
+    auth_handler = _daily_handler(
+        os.path.join(LOG_DIR, "auth.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.auth"),
+    )
 
     # errors.log — WARNING+ from everything
-    error_handler = RotatingFileHandler(
-        os.path.join(LOG_DIR, "errors.log"), maxBytes=MAX_BYTES, backupCount=BACKUP_COUNT
+    error_handler = _daily_handler(
+        os.path.join(LOG_DIR, "errors.log"), level=logging.WARNING, formatter=formatter,
     )
-    error_handler.setLevel(logging.WARNING)
-    error_handler.setFormatter(formatter)
 
-    # --- Console handler (info + llm, NOT queries) ---
+    # usecases/routes.log — only iaph.usecases.routes
+    routes_uc_handler = _daily_handler(
+        os.path.join(USECASES_LOG_DIR, "routes.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.usecases.routes"),
+    )
+
+    # usecases/search.log — only iaph.usecases.search
+    search_uc_handler = _daily_handler(
+        os.path.join(USECASES_LOG_DIR, "search.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.usecases.search"),
+    )
+
+    # --- Console handler (info + llm + embedding + auth, NOT queries) ---
     color_formatter = _ColorConsoleFormatter(LOG_FORMAT, datefmt=DATE_FORMAT)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
@@ -128,6 +184,18 @@ def setup_logging() -> None:
 
     # iaph.llm — llm.log (inherits info.log + console from iaph parent)
     logging.getLogger("iaph.llm").addHandler(llm_handler)
+
+    # iaph.embedding — embedding.log (inherits info.log + console from iaph parent)
+    logging.getLogger("iaph.embedding").addHandler(embedding_handler)
+
+    # iaph.auth — auth.log (inherits info.log + console from iaph parent)
+    logging.getLogger("iaph.auth").addHandler(auth_handler)
+
+    # iaph.usecases.routes — usecases/routes.log (inherits info.log + console from iaph parent)
+    logging.getLogger("iaph.usecases.routes").addHandler(routes_uc_handler)
+
+    # iaph.usecases.search — usecases/search.log (inherits info.log + console from iaph parent)
+    logging.getLogger("iaph.usecases.search").addHandler(search_uc_handler)
 
     # Root logger — errors.log only (catches warnings from libraries)
     root = logging.getLogger()

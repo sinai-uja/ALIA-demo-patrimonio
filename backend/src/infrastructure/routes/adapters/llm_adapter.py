@@ -1,7 +1,11 @@
+import logging
+
 import httpx
 
 from src.config import settings
 from src.domain.routes.ports.llm_port import LLMPort
+
+logger = logging.getLogger("iaph.llm")
 
 
 class VLLMRoutesAdapter(LLMPort):
@@ -32,6 +36,11 @@ class VLLMRoutesAdapter(LLMPort):
             messages.extend(history)
         messages.append({"role": "user", "content": user_prompt})
 
+        logger.info(
+            "vLLM routes request: model=%s, max_tokens=%d, prompt=%d chars",
+            self._model_name, effective_max_tokens, len(user_prompt),
+        )
+
         payload = {
             "model": self._model_name,
             "messages": messages,
@@ -46,4 +55,6 @@ class VLLMRoutesAdapter(LLMPort):
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
+            logger.info("vLLM routes response: %d chars", len(content))
+            return content

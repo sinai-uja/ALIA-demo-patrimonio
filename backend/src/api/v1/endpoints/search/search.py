@@ -17,7 +17,7 @@ from src.application.search.services.search_application_service import (
     SearchApplicationService,
 )
 
-logger = logging.getLogger("iaph.search")
+logger = logging.getLogger("iaph.usecases.search")
 
 router = APIRouter()
 
@@ -47,11 +47,16 @@ async def similarity_search(
     try:
         result = await service.similarity_search(dto)
     except Exception as exc:
+        logger.error("Search pipeline failed: query=%r, error=%s", request.query[:80], exc)
         raise HTTPException(
             status_code=502,
             detail=f"Search pipeline error: {exc}",
         ) from exc
 
+    logger.info(
+        "Search response: query=%r, total_results=%d, page=%d/%d",
+        request.query[:80], result.total_results, result.page, result.total_pages,
+    )
     return SimilaritySearchResponse(
         results=[
             SearchResultSchema(

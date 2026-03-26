@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from src.api.v1.endpoints.routes.deps import get_routes_service
@@ -19,6 +21,8 @@ from src.application.routes.dto.routes_dto import (
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
+
+logger = logging.getLogger("iaph.usecases.routes")
 
 router = APIRouter()
 
@@ -100,6 +104,12 @@ async def generate_route(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
     """Generate a personalized virtual heritage route."""
+    logger.info(
+        "POST /routes/generate query=%r, num_stops=%d, "
+        "heritage_type=%s, province=%s, municipality=%s",
+        request.query[:80], request.num_stops or 5,
+        request.heritage_type_filter, request.province_filter, request.municipality_filter,
+    )
     dto = GenerateRouteDTO(
         query=request.query,
         num_stops=request.num_stops,
@@ -111,11 +121,16 @@ async def generate_route(
     try:
         result = await service.generate_route(dto)
     except Exception as exc:
+        logger.error("Route generation failed: query=%r, error=%s", request.query[:80], exc)
         raise HTTPException(
             status_code=502,
             detail=f"Route generation error: {exc}",
         ) from exc
 
+    logger.info(
+        "Route generated: id=%s, title=%r, stops=%d, duration=%d min",
+        result.id, result.title, len(result.stops), result.total_duration_minutes,
+    )
     return _dto_to_schema(result)
 
 
@@ -170,6 +185,10 @@ async def guide_query(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> GuideResponseSchema:
     """Ask the guide a question about a specific route."""
+    logger.info(
+        "POST /routes/%s/guide question=%r, history_len=%d",
+        route_id, request.question[:80], len(request.history),
+    )
     dto = GuideQueryDTO(
         route_id=route_id,
         question=request.question,
@@ -186,11 +205,16 @@ async def guide_query(
             status_code=404, detail=str(exc),
         ) from exc
     except Exception as exc:
+        logger.error("Guide query failed: route=%s, error=%s", route_id, exc)
         raise HTTPException(
             status_code=502,
             detail=f"Guide query error: {exc}",
         ) from exc
 
+    logger.info(
+        "Guide response: route=%s, answer=%d chars, sources=%d",
+        route_id, len(result.answer), len(result.sources),
+    )
     return GuideResponseSchema(
         answer=result.answer,
         sources=result.sources,

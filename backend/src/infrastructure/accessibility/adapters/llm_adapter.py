@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 
 from src.config import settings
@@ -8,6 +10,8 @@ from src.domain.accessibility.prompts import (
     build_simplification_prompt,
 )
 from src.domain.accessibility.value_objects.simplification_level import SimplificationLevel
+
+logger = logging.getLogger("iaph.llm")
 
 
 class AccessibilityLLMAdapter(LLMPort):
@@ -33,6 +37,11 @@ class AccessibilityLLMAdapter(LLMPort):
         )
         user_prompt = build_simplification_prompt(text)
 
+        logger.info(
+            "Accessibility LLM request: model=%s, level=%s, text=%d chars",
+            self._model_name, level.value, len(text),
+        )
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -52,4 +61,6 @@ class AccessibilityLLMAdapter(LLMPort):
             )
             response.raise_for_status()
             data = response.json()
-            return data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"]["content"]
+            logger.info("Accessibility LLM response: %d chars", len(content))
+            return content
