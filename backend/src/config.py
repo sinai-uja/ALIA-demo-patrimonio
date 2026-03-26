@@ -50,5 +50,14 @@ class Settings(BaseSettings):
     project_name: str = "IAPH Heritage RAG"
     debug: bool = False
 
+    # CORS
+    cors_origins: str = "*"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        if self.cors_origins == "*":
+            return ["*"]
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
 
 settings = Settings()
