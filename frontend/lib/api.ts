@@ -1,10 +1,32 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
+function getToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)token=([^;]*)/);
+  return match ? match[1] : null;
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    ...init,
-  });
+  const token = getToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(init?.headers as Record<string, string>),
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+
+  if (res.status === 401) {
+    if (typeof document !== "undefined") {
+      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+      localStorage.removeItem("refreshToken");
+      window.location.href = "/login";
+    }
+    throw new Error("Unauthorized");
+  }
+
   if (!res.ok) {
     const err = await res.text();
     throw new Error(err || res.statusText);
@@ -155,16 +177,7 @@ export const routes = {
 
   get: (id: string) => apiFetch<VirtualRoute>(`/routes/${id}`),
 
-  delete: async (id: string) => {
-    const res = await fetch(`${API_BASE}/routes/${id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err || res.statusText);
-    }
-  },
+  delete: (id: string) => apiFetch<void>(`/routes/${id}`, { method: "DELETE" }),
 
   guide: (
     routeId: string,
