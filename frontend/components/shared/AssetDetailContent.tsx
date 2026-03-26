@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { AssetImageGallery } from "@/components/search/AssetImageGallery";
 import type {
@@ -50,6 +51,8 @@ function hasValue(v: string | null | undefined): v is string {
   return v != null && v.trim().length > 0;
 }
 
+/* ── Shared helpers ───────────────────────────────────────────────── */
+
 function Section({
   title,
   children,
@@ -99,6 +102,23 @@ function LongField({
       </p>
     </div>
   );
+}
+
+function TruncatedDescription({
+  value,
+  maxLength = 200,
+}: {
+  value: string | null | undefined;
+  maxLength?: number;
+}) {
+  if (!hasValue(value)) return null;
+  const text = value.trim();
+  if (text.length <= maxLength) {
+    return <p className="text-sm text-stone-600 leading-relaxed">{text}</p>;
+  }
+  const cutoff = text.lastIndexOf(" ", maxLength);
+  const truncated = text.slice(0, cutoff > 0 ? cutoff : maxLength) + "...";
+  return <p className="text-sm text-stone-600 leading-relaxed">{truncated}</p>;
 }
 
 function Tags({ items }: { items: string[] }) {
@@ -198,35 +218,54 @@ function RelatedAssetsList({ assets }: { assets: RelatedAsset[] }) {
   );
 }
 
-function InmuebleContent({
+/* ── IAPH external link (promoted to button style) ────────────────── */
+
+function IaphLink({ asset }: { asset: HeritageAsset }) {
+  return (
+    <a
+      href={`https://guiadigital.iaph.es/bien/${asset.heritage_type}/${asset.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm font-medium hover:bg-amber-100 transition-colors"
+    >
+      <svg
+        className="w-4 h-4"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+        />
+      </svg>
+      Ver ficha completa en IAPH
+    </a>
+  );
+}
+
+/* ── Practical content (always visible) ───────────────────────────── */
+
+function InmueblePractical({
   d,
   mapSlot,
 }: {
   d: InmuebleDetails;
   mapSlot: React.ReactNode;
 }) {
-  const hasGeneral =
-    hasValue(d.code) ||
-    hasValue(d.other_denominations) ||
-    hasValue(d.characterisation) ||
-    hasValue(d.postal_address);
-  const hasDesc = hasValue(d.description) || hasValue(d.historical_data);
-
   return (
     <>
-      {hasGeneral && (
-        <Section title="Informacion general">
-          <Field label="Codigo" value={d.code} />
-          <Field label="Otras denominaciones" value={d.other_denominations} />
-          <Field label="Caracterizacion" value={d.characterisation} />
-          <Field label="Direccion postal" value={d.postal_address} />
+      {hasValue(d.postal_address) && (
+        <Section title="Ubicacion">
+          <Field label="Direccion" value={d.postal_address} />
         </Section>
       )}
       {mapSlot}
-      {hasDesc && (
+      {hasValue(d.description) && (
         <Section title="Descripcion">
-          <LongField label="Descripcion" value={d.description} />
-          <LongField label="Datos historicos" value={d.historical_data} />
+          <TruncatedDescription value={d.description} />
         </Section>
       )}
       {d.historical_periods.length > 0 && (
@@ -238,117 +277,58 @@ function InmuebleContent({
   );
 }
 
-function MuebleContent({
+function MueblePractical({
   d,
   mapSlot,
 }: {
   d: MuebleDetails;
   mapSlot: React.ReactNode;
 }) {
-  const hasGeneral =
-    hasValue(d.code) ||
-    hasValue(d.other_denominations) ||
-    hasValue(d.characterisation) ||
-    hasValue(d.measurements) ||
-    hasValue(d.chronology);
-
   return (
     <>
-      {hasGeneral && (
-        <Section title="Informacion general">
-          <Field label="Codigo" value={d.code} />
-          <Field label="Otras denominaciones" value={d.other_denominations} />
-          <Field label="Caracterizacion" value={d.characterisation} />
-          <Field label="Medidas" value={d.measurements} />
-          <Field label="Cronologia" value={d.chronology} />
+      {mapSlot}
+      {hasValue(d.chronology) && (
+        <Section title="Cronologia">
+          <p className="text-sm text-stone-600">{d.chronology!.trim()}</p>
         </Section>
       )}
-      {mapSlot}
       {hasValue(d.description) && (
         <Section title="Descripcion">
-          <LongField label="Descripcion" value={d.description} />
+          <TruncatedDescription value={d.description} />
         </Section>
       )}
     </>
   );
 }
 
-function InmaterialContent({
+function InmaterialPractical({
   d,
   mapSlot,
 }: {
   d: InmaterialDetails;
   mapSlot: React.ReactNode;
 }) {
-  const hasGeneral =
-    hasValue(d.code) ||
-    hasValue(d.other_denominations) ||
-    hasValue(d.scope) ||
-    hasValue(d.framework_activities) ||
-    hasValue(d.activity_dates) ||
-    hasValue(d.periodicity) ||
-    hasValue(d.typologies_text) ||
-    hasValue(d.district) ||
-    hasValue(d.local_entity);
-  const hasDesc =
-    hasValue(d.description) ||
-    hasValue(d.development) ||
-    hasValue(d.spatial_description) ||
-    hasValue(d.origins) ||
-    hasValue(d.evolution);
-  const hasPractice =
-    hasValue(d.preparations) ||
-    hasValue(d.clothing) ||
-    hasValue(d.instruments);
-  const hasAgents =
-    hasValue(d.agents_description) ||
-    hasValue(d.transmission_mode) ||
-    hasValue(d.transformations);
+  const hasDates = hasValue(d.activity_dates) || hasValue(d.periodicity);
 
   return (
     <>
-      {hasGeneral && (
-        <Section title="Informacion general">
-          <Field label="Codigo" value={d.code} />
-          <Field label="Otras denominaciones" value={d.other_denominations} />
-          <Field label="Ambito" value={d.scope} />
-          <Field label="Actividades marco" value={d.framework_activities} />
+      {hasDates && (
+        <Section title="Cuando">
           <Field label="Fechas" value={d.activity_dates} />
           <Field label="Periodicidad" value={d.periodicity} />
-          <Field label="Tipologias" value={d.typologies_text} />
-          <Field label="Comarca" value={d.district} />
-          <Field label="Entidad local" value={d.local_entity} />
         </Section>
       )}
       {mapSlot}
-      {hasDesc && (
+      {hasValue(d.description) && (
         <Section title="Descripcion">
-          <LongField label="Descripcion" value={d.description} />
-          <LongField label="Desarrollo" value={d.development} />
-          <LongField label="Espacio" value={d.spatial_description} />
-          <LongField label="Origenes" value={d.origins} />
-          <LongField label="Evolucion" value={d.evolution} />
-        </Section>
-      )}
-      {hasPractice && (
-        <Section title="Practica y elementos">
-          <LongField label="Preparativos" value={d.preparations} />
-          <LongField label="Indumentaria" value={d.clothing} />
-          <LongField label="Instrumentos" value={d.instruments} />
-        </Section>
-      )}
-      {hasAgents && (
-        <Section title="Agentes y transmision">
-          <LongField label="Agentes" value={d.agents_description} />
-          <LongField label="Modo de transmision" value={d.transmission_mode} />
-          <LongField label="Transformaciones" value={d.transformations} />
+          <TruncatedDescription value={d.description} />
         </Section>
       )}
     </>
   );
 }
 
-function PaisajeContent({
+function PaisajePractical({
   d,
   mapSlot,
 }: {
@@ -392,7 +372,7 @@ function PaisajeContent({
   );
 }
 
-function DetailContent({
+function PracticalContent({
   details,
   mapSlot,
 }: {
@@ -401,13 +381,145 @@ function DetailContent({
 }) {
   switch (details.type) {
     case "inmueble":
-      return <InmuebleContent d={details} mapSlot={mapSlot} />;
+      return <InmueblePractical d={details} mapSlot={mapSlot} />;
     case "mueble":
-      return <MuebleContent d={details} mapSlot={mapSlot} />;
+      return <MueblePractical d={details} mapSlot={mapSlot} />;
     case "inmaterial":
-      return <InmaterialContent d={details} mapSlot={mapSlot} />;
+      return <InmaterialPractical d={details} mapSlot={mapSlot} />;
     case "paisaje":
-      return <PaisajeContent d={details} mapSlot={mapSlot} />;
+      return <PaisajePractical d={details} mapSlot={mapSlot} />;
+  }
+}
+
+/* ── Extended content (collapsible) ───────────────────────────────── */
+
+function InmuebleExtended({ d }: { d: InmuebleDetails }) {
+  const hasGeneral =
+    hasValue(d.code) ||
+    hasValue(d.other_denominations) ||
+    hasValue(d.characterisation);
+  const hasFullDesc = hasValue(d.description) || hasValue(d.historical_data);
+
+  return (
+    <>
+      {hasGeneral && (
+        <Section title="Informacion general">
+          <Field label="Codigo" value={d.code} />
+          <Field label="Otras denominaciones" value={d.other_denominations} />
+          <Field label="Caracterizacion" value={d.characterisation} />
+        </Section>
+      )}
+      {hasFullDesc && (
+        <Section title="Descripcion completa">
+          <LongField label="Descripcion" value={d.description} />
+          <LongField label="Datos historicos" value={d.historical_data} />
+        </Section>
+      )}
+    </>
+  );
+}
+
+function MuebleExtended({ d }: { d: MuebleDetails }) {
+  const hasGeneral =
+    hasValue(d.code) ||
+    hasValue(d.other_denominations) ||
+    hasValue(d.characterisation) ||
+    hasValue(d.measurements);
+  const hasFullDesc = hasValue(d.description);
+
+  return (
+    <>
+      {hasGeneral && (
+        <Section title="Informacion general">
+          <Field label="Codigo" value={d.code} />
+          <Field label="Otras denominaciones" value={d.other_denominations} />
+          <Field label="Caracterizacion" value={d.characterisation} />
+          <Field label="Medidas" value={d.measurements} />
+        </Section>
+      )}
+      {hasFullDesc && (
+        <Section title="Descripcion completa">
+          <LongField label="Descripcion" value={d.description} />
+        </Section>
+      )}
+    </>
+  );
+}
+
+function InmaterialExtended({ d }: { d: InmaterialDetails }) {
+  const hasGeneral =
+    hasValue(d.code) ||
+    hasValue(d.other_denominations) ||
+    hasValue(d.scope) ||
+    hasValue(d.framework_activities) ||
+    hasValue(d.typologies_text) ||
+    hasValue(d.district) ||
+    hasValue(d.local_entity);
+  const hasDesc =
+    hasValue(d.description) ||
+    hasValue(d.development) ||
+    hasValue(d.spatial_description) ||
+    hasValue(d.origins) ||
+    hasValue(d.evolution);
+  const hasPractice =
+    hasValue(d.preparations) ||
+    hasValue(d.clothing) ||
+    hasValue(d.instruments);
+  const hasAgents =
+    hasValue(d.agents_description) ||
+    hasValue(d.transmission_mode) ||
+    hasValue(d.transformations);
+
+  return (
+    <>
+      {hasGeneral && (
+        <Section title="Informacion general">
+          <Field label="Codigo" value={d.code} />
+          <Field label="Otras denominaciones" value={d.other_denominations} />
+          <Field label="Ambito" value={d.scope} />
+          <Field label="Actividades marco" value={d.framework_activities} />
+          <Field label="Tipologias" value={d.typologies_text} />
+          <Field label="Comarca" value={d.district} />
+          <Field label="Entidad local" value={d.local_entity} />
+        </Section>
+      )}
+      {hasDesc && (
+        <Section title="Descripcion completa">
+          <LongField label="Descripcion" value={d.description} />
+          <LongField label="Desarrollo" value={d.development} />
+          <LongField label="Espacio" value={d.spatial_description} />
+          <LongField label="Origenes" value={d.origins} />
+          <LongField label="Evolucion" value={d.evolution} />
+        </Section>
+      )}
+      {hasPractice && (
+        <Section title="Practica y elementos">
+          <LongField label="Preparativos" value={d.preparations} />
+          <LongField label="Indumentaria" value={d.clothing} />
+          <LongField label="Instrumentos" value={d.instruments} />
+        </Section>
+      )}
+      {hasAgents && (
+        <Section title="Agentes y transmision">
+          <LongField label="Agentes" value={d.agents_description} />
+          <LongField label="Modo de transmision" value={d.transmission_mode} />
+          <LongField label="Transformaciones" value={d.transformations} />
+        </Section>
+      )}
+    </>
+  );
+}
+
+function ExtendedContent({ details }: { details: HeritageDetails }) {
+  switch (details.type) {
+    case "inmueble":
+      return <InmuebleExtended d={details} />;
+    case "mueble":
+      return <MuebleExtended d={details} />;
+    case "inmaterial":
+      return <InmaterialExtended d={details} />;
+    case "paisaje":
+      return null;
   }
 }
 
@@ -422,6 +534,47 @@ function SharedSections({ details }: { details: HeritageDetails }) {
   );
 }
 
+function hasExtendedContent(details: HeritageDetails): boolean {
+  if (details.type === "paisaje") return false;
+
+  if (details.type === "inmueble") {
+    const d = details;
+    return (
+      hasValue(d.code) ||
+      hasValue(d.other_denominations) ||
+      hasValue(d.characterisation) ||
+      hasValue(d.description) ||
+      hasValue(d.historical_data) ||
+      d.typologies.some(
+        (t) => hasValue(t.typology) || hasValue(t.style) || hasValue(t.period),
+      ) ||
+      d.bibliography.some((b) => hasValue(b.title) || hasValue(b.author)) ||
+      d.related_assets.some((a) => hasValue(a.denomination))
+    );
+  }
+
+  if (details.type === "mueble") {
+    const d = details;
+    return (
+      hasValue(d.code) ||
+      hasValue(d.other_denominations) ||
+      hasValue(d.characterisation) ||
+      hasValue(d.measurements) ||
+      hasValue(d.description) ||
+      d.typologies.some(
+        (t) => hasValue(t.typology) || hasValue(t.style) || hasValue(t.period),
+      ) ||
+      d.bibliography.some((b) => hasValue(b.title) || hasValue(b.author)) ||
+      d.related_assets.some((a) => hasValue(a.denomination))
+    );
+  }
+
+  // inmaterial — almost always has extended content
+  return true;
+}
+
+/* ── Main component ───────────────────────────────────────────────── */
+
 interface AssetDetailContentProps {
   asset: HeritageAsset | null;
   onClose: () => void;
@@ -433,6 +586,15 @@ export function AssetDetailContent({
   onClose,
   loading,
 }: AssetDetailContentProps) {
+  const [showExtended, setShowExtended] = useState(false);
+
+  useEffect(() => {
+    setShowExtended(false);
+  }, [asset?.id]);
+
+  const showExpandButton =
+    asset?.details && hasExtendedContent(asset.details);
+
   return (
     <aside className="h-full border-l border-stone-200/60 bg-white flex flex-col">
       {/* Header */}
@@ -515,7 +677,7 @@ export function AssetDetailContent({
       )}
 
       {!loading && asset && (
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Image gallery */}
           {asset.details &&
             asset.details.type !== "paisaje" &&
@@ -526,9 +688,9 @@ export function AssetDetailContent({
               />
             )}
 
-          {/* Type-specific content (map inserted after general info) */}
+          {/* Practical content */}
           {asset.details && (
-            <DetailContent
+            <PracticalContent
               details={asset.details}
               mapSlot={
                 <AssetLocationMap
@@ -541,33 +703,48 @@ export function AssetDetailContent({
             />
           )}
 
-          {/* Shared sections (typologies, bibliography, related assets) */}
-          {asset.details && <SharedSections details={asset.details} />}
+          {/* IAPH external link — prominent button */}
+          <IaphLink asset={asset} />
 
-          {/* External link */}
-          <div className="pt-2 border-t border-stone-100">
-            <a
-              href={`https://guiadigital.iaph.es/bien/${asset.heritage_type}/${asset.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-amber-700 hover:text-amber-800 font-medium"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
+          {/* Expandable extended section */}
+          {showExpandButton && (
+            <>
+              <div className="border-t border-stone-200 pt-3">
+                <button
+                  onClick={() => setShowExtended((v) => !v)}
+                  className="w-full flex items-center justify-between text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors"
+                >
+                  <span>Mas detalles</span>
+                  <svg
+                    className={`w-4 h-4 transition-transform duration-200 ${showExtended ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  showExtended
+                    ? "max-h-[5000px] opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-                />
-              </svg>
-              Ver ficha completa en IAPH
-            </a>
-          </div>
+                <div className="space-y-5 pt-2">
+                  <ExtendedContent details={asset.details!} />
+                  <SharedSections details={asset.details!} />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
     </aside>

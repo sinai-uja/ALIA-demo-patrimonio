@@ -32,7 +32,7 @@ export default function SearchPage() {
       <div
         className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
           drawerOpen ? "left-72" : "left-0"
-        } ${hasDetail ? "right-[480px]" : "right-0"}`}
+        } ${hasDetail ? "right-[560px]" : "right-0"}`}
       >
         <div className="max-w-4xl mx-auto px-6 pt-6 pb-3 space-y-6">
           <div className="flex items-start gap-4">
@@ -66,7 +66,7 @@ export default function SearchPage() {
 
       {/* Detail panel */}
       {hasDetail && (
-        <aside className="absolute right-0 top-0 bottom-0 w-[480px] z-10">
+        <aside className="absolute right-0 top-0 bottom-0 w-[560px] z-10">
           <AssetDetailPanel />
         </aside>
       )}

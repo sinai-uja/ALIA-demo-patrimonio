@@ -264,7 +264,7 @@ export default function RouteDetailPage() {
       <div
         className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
           guideOpen ? "left-80" : "left-0"
-        } ${hasDetail ? "right-[480px]" : "right-0"}`}
+        } ${hasDetail ? "right-[560px]" : "right-0"}`}
       >
         <div className="mx-auto max-w-3xl px-6 py-8 space-y-10">
           {/* Header */}
@@ -345,7 +345,7 @@ export default function RouteDetailPage() {
 
       {/* Detail panel — slides in from right */}
       {hasDetail && (
-        <aside className="absolute right-0 top-0 bottom-0 w-[480px] z-10 max-md:w-full">
+        <aside className="absolute right-0 top-0 bottom-0 w-[560px] z-10 max-md:w-full">
           <RouteDetailPanel />
         </aside>
       )}
