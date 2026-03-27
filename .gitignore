@@ -84,3 +84,6 @@ backend/logs/
 
 # ===== Dev logs =====
 WORKLOG.md
+
+# ===== Docker compose production override =====
+docker-compose.prod.yml
