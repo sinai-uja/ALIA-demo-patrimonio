@@ -196,7 +196,7 @@ async def main():
             GROUP BY variant
             ORDER BY variant
         """)
-        print(f"\n=== Summary ===")
+        print("\n=== Summary ===")
         print(f"  Total rows: {total}")
         for v in variants:
             print(f"  Variant '{v['variant']}': {v['cnt']} rows")

@@ -160,7 +160,7 @@ async def run_diagnostics():
                 if mode_name != "raw":
                     print(f"  Input: {wrapped[:100]}...")
                 print_score_stats(scores, mode_name)
-                print(f"  Top-10 results:")
+                print("  Top-10 results:")
                 print_top_results(results)
 
                 # Threshold sweep

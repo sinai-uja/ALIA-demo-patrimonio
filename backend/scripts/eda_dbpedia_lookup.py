@@ -17,7 +17,6 @@ import json
 import os
 import re
 import sys
-import time
 from collections import Counter, defaultdict
 from datetime import datetime
 
@@ -582,10 +581,7 @@ def generate_report(csv_rows: list[dict], stats: dict, sample_sizes: dict):
         # Check if any are "self" references
         self_cats = {"identificacion", "otro", "asociacion_dbpedia", "derivacion_dbpedia"}
         self_count = len({r["asset_id"] for r in csv_rows if r["category"] in self_cats})
-        aux_cats = {"municipio", "provincia", "tipologia_dbpedia", "periodo_dbpedia"}
-        aux_count = len({r["asset_id"] for r in csv_rows
-                        if r["category"] in aux_cats and r["asset_id"] not in
-                        {r2["asset_id"] for r2 in csv_rows if r2["category"] in self_cats}})
+        aux_cats = {"municipio", "provincia", "tipologia_dbpedia", "periodo_dbpedia"}  # noqa: F841
 
         lines.append("### Tipos de referencia:")
         lines.append("")
@@ -593,7 +589,7 @@ def generate_report(csv_rows: list[dict], stats: dict, sample_sizes: dict):
             lines.append(f"- **{self_count:,} assets** tienen URIs DBpedia que podrían "
                         "referenciar al propio activo patrimonial (categorías: identificación, "
                         "asociación, derivación, otro)")
-        lines.append(f"- Las URIs DBpedia más comunes son de **entidades auxiliares**: "
+        lines.append("- Las URIs DBpedia más comunes son de **entidades auxiliares**: "
                      "municipios, provincias, tipologías y periodos históricos")
         lines.append("")
         lines.append("### Valor para el corpus:")
@@ -605,8 +601,11 @@ def generate_report(csv_rows: list[dict], stats: dict, sample_sizes: dict):
         lines.append("3. **Enriquecimiento temporal**: URIs de periodos históricos vinculan "
                      "a la descripción en DBpedia del periodo")
         if self_count:
-            lines.append(f"4. **Enlace directo**: {self_count} activos tienen referencia DBpedia "
-                        "propia, permitiendo acceder a información complementaria en Wikipedia/DBpedia")
+            lines.append(
+                f"4. **Enlace directo**: {self_count} activos tienen referencia "
+                "DBpedia propia, permitiendo acceder a información "
+                "complementaria en Wikipedia/DBpedia"
+            )
 
     report = "\n".join(lines) + "\n"
     with open(REPORT_PATH, "w") as f:

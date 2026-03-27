@@ -197,7 +197,10 @@ async def benchmark_mode(conn):
     # Build configurations
     configs = []
     for mode_name in ["raw", "instruct_short", "instruct_heritage"]:
-        configs.append({"mode": mode_name, "table": PROD_TABLE, "variant": None, "label": f"prod_{mode_name}"})
+        configs.append({
+            "mode": mode_name, "table": PROD_TABLE,
+            "variant": None, "label": f"prod_{mode_name}",
+        })
 
     if test_exists:
         for mode_name in ["raw", "instruct_short"]:
@@ -209,7 +212,10 @@ async def benchmark_mode(conn):
 
     for threshold in THRESHOLDS:
         print(f"\n--- Threshold: {threshold:.2f} ---")
-        header = f"{'Config':<30} {'N':>4} {'R@5':>4} {'R@10':>5} {'R@20':>5} {'MRR':>6} {'Best':>7} {'Med':>7}"
+        header = (
+            f"{'Config':<30} {'N':>4} {'R@5':>4} {'R@10':>5} "
+            f"{'R@20':>5} {'MRR':>6} {'Best':>7} {'Med':>7}"
+        )
         print(header)
         print("-" * len(header))
 
@@ -239,8 +245,12 @@ async def benchmark_mode(conn):
             avg_r10 = np.mean([m["relevant@10"] for m in query_metrics])
             avg_r20 = np.mean([m["relevant@20"] for m in query_metrics])
             avg_mrr = np.mean([m["mrr"] for m in query_metrics])
-            avg_best = np.mean([m["best_score"] for m in query_metrics if m["best_score"] is not None])
-            avg_med = np.mean([m["median_score"] for m in query_metrics if m["median_score"] is not None])
+            avg_best = np.mean([
+                m["best_score"] for m in query_metrics if m["best_score"] is not None
+            ])
+            avg_med = np.mean([
+                m["median_score"] for m in query_metrics if m["median_score"] is not None
+            ])
 
             print(
                 f"{config['label']:<30} {avg_n:4.0f} {avg_r5:4.1f} {avg_r10:5.1f} "
@@ -285,7 +295,10 @@ async def benchmark_mode(conn):
                 best_cfg = cfg
 
         avg_n = np.mean([r["n_filtered"] for r in by_config.get(best_cfg, [])])
-        print(f"  threshold={threshold:.2f}: best={best_cfg} (MRR={best_mrr:.3f}, avg_results={avg_n:.0f})")
+        print(
+            f"  threshold={threshold:.2f}: best={best_cfg} "
+            f"(MRR={best_mrr:.3f}, avg_results={avg_n:.0f})"
+        )
 
 
 async def main():

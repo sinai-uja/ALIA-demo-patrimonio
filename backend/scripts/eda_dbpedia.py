@@ -150,7 +150,6 @@ async def main():
             for ref in refs:
                 cat = categorise_uri(ref["path"], ref["uri"])
                 # Generalise URI to pattern (strip specific resource name)
-                uri_base = ref["uri"].rsplit("/", 1)[0] + "/*"
                 dbpedia_by_category[cat][ref["uri"]] += 1
                 # Generalise path: remove array indices
                 gen_path = re.sub(r"\[\d+\]", "[*]", ref["path"])
@@ -191,14 +190,20 @@ async def main():
         if not unique_uris:
             lines.append("**No se encontraron URIs DBpedia en el raw_data almacenado.**")
             lines.append("")
-            lines.append("Esto confirma que los datos en `heritage_assets.raw_data` provienen del "
-                         "**endpoint Solr plano** de la API IAPH (`/api/1.0/busqueda/...`), que usa "
-                         "campos aplanados (`identifica.denominacion_s`, `tipologia.den_tipologia_smv`, etc.) "
-                         "sin objetos JSON-LD con `@id`/`@type`.")
+            lines.append(
+                "Esto confirma que los datos en `heritage_assets.raw_data` provienen del "
+                "**endpoint Solr plano** de la API IAPH (`/api/1.0/busqueda/...`), "
+                "que usa campos aplanados (`identifica.denominacion_s`, "
+                "`tipologia.den_tipologia_smv`, etc.) "
+                "sin objetos JSON-LD con `@id`/`@type`."
+            )
             lines.append("")
-            lines.append("El JSON con referencias DBpedia que se muestra en la documentacion proviene de un "
-                         "**endpoint diferente** (detalle individual del activo), que devuelve la estructura "
-                         "nested con linked data (`municipio.@id`, `provincia.@id`, etc.).")
+            lines.append(
+                "El JSON con referencias DBpedia que se muestra en la documentacion "
+                "proviene de un **endpoint diferente** (detalle individual del activo), "
+                "que devuelve la estructura nested con linked data "
+                "(`municipio.@id`, `provincia.@id`, etc.)."
+            )
         else:
             lines.append(f"**{len(unique_uris)} URIs DBpedia unicas encontradas.**")
             lines.append("")
