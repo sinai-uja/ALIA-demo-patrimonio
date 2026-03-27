@@ -1,4 +1,5 @@
 import logging
+import time
 from collections import defaultdict
 from uuid import uuid4
 
@@ -57,6 +58,7 @@ class SimilaritySearchUseCase:
         self, dto: SimilaritySearchDTO,
     ) -> SimilaritySearchResponseDTO:
         search_id = str(uuid4())
+        t0 = time.monotonic()
         logger.info(
             "Similarity search start: search_id=%s query=%s", search_id, dto.query[:80],
         )
@@ -125,6 +127,13 @@ class SimilaritySearchUseCase:
                 chunks=filtered_chunks,
                 top_k=len(filtered_chunks),
             )
+            for i, chunk in enumerate(final_chunks[:20], 1):
+                logger.info(
+                    "Hybrid #%d: search_id=%s score=%.4f | title: %s"
+                    " | type: %s | province: %s",
+                    i, search_id, chunk.score, chunk.title[:60],
+                    chunk.heritage_type, chunk.province,
+                )
 
         # 7. Enrich with heritage asset data
         unique_doc_ids = list({c.document_id for c in final_chunks})
@@ -188,13 +197,16 @@ class SimilaritySearchUseCase:
         start = (dto.page - 1) * dto.page_size
         page_results = results[start : start + dto.page_size]
 
+        elapsed_ms = (time.monotonic() - t0) * 1000
         logger.info(
-            "Similarity search complete: search_id=%s %d total, page %d/%d (%d chunks)",
+            "Similarity search complete: search_id=%s %d total, page %d/%d"
+            " (%d chunks) %.0fms",
             search_id,
             total_results,
             dto.page,
             total_pages,
             len(final_chunks),
+            elapsed_ms,
         )
 
         return SimilaritySearchResponseDTO(

@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
@@ -29,7 +30,7 @@ from src.infrastructure.routes.adapters.heritage_asset_lookup_adapter import (
     extract_asset_id,
 )
 
-logger = logging.getLogger("iaph.routes")
+logger = logging.getLogger("iaph.usecases.routes")
 
 
 class GenerateRouteUseCase:
@@ -52,6 +53,8 @@ class GenerateRouteUseCase:
         self._heritage_asset_lookup_port = heritage_asset_lookup_port
 
     async def execute(self, dto: GenerateRouteDTO) -> VirtualRouteDTO:
+        t0 = time.monotonic()
+
         # 1. Clean user text (remove geographic filter terms)
         cleaned_text = self._query_extraction_service.clean_query_text(
             user_text=dto.query,
@@ -72,6 +75,10 @@ class GenerateRouteUseCase:
         extracted_query = (
             extracted_query.strip().strip('"').strip("'")
         )
+        logger.info(
+            "Route generation: extracted_query=%r from user_query=%r",
+            extracted_query, dto.query[:80],
+        )
 
         # 3. Single RAG call with extracted query + filters
         _, chunks = await self._rag_port.query(
@@ -82,11 +89,23 @@ class GenerateRouteUseCase:
             municipality_filter=dto.municipality_filter,
         )
 
+        logger.info(
+            "Route generation: RAG returned %d chunks for query=%r",
+            len(chunks), extracted_query,
+        )
+
         # 4. SELECT STOPS FIRST (before narrative generation)
         selected_chunks = self._route_builder_service.select_diverse_stops(
             chunks=chunks,
             num_stops=dto.num_stops,
         )
+
+        for i, chunk in enumerate(selected_chunks, 1):
+            logger.info(
+                "Route stop #%d: title=%s | type=%s | province=%s",
+                i, chunk.get("title", "")[:60],
+                chunk.get("heritage_type", ""), chunk.get("province", ""),
+            )
 
         # 5. Resolve province label
         province_label = (
@@ -160,6 +179,11 @@ class GenerateRouteUseCase:
 
         # 12. Save and return
         saved_route = await self._route_repository.save_route(route)
+        elapsed_ms = (time.monotonic() - t0) * 1000
+        logger.info(
+            "Route generation complete: route_id=%s title=%r stops=%d %.0fms",
+            saved_route.id, title[:60], len(selected_chunks), elapsed_ms,
+        )
         return self._to_dto(saved_route)
 
     def _parse_narrative_json(
