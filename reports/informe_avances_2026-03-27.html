@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Avances &mdash; IAPH RAG Monorepo &mdash; 2026-03-27</title>
+<style>
+  :root {
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-400: #fbbf24; --amber-500: #f59e0b; --amber-600: #d97706;
+    --orange-400: #fb923c; --orange-500: #f97316; --orange-600: #ea580c;
+    --rose-400: #fb7185; --rose-500: #f43f5e; --rose-600: #e11d48;
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --green-100: #dcfce7; --green-500: #22c55e; --green-700: #15803d;
+    --red-100: #fee2e2; --red-500: #ef4444; --red-700: #b91c1c;
+    --blue-100: #dbeafe; --blue-500: #3b82f6; --blue-700: #1d4ed8;
+    --purple-100: #f3e8ff; --purple-500: #a855f7; --purple-700: #7e22ce;
+    --yellow-100: #fef9c3; --yellow-500: #eab308; --yellow-700: #a16207;
+    --teal-100: #ccfbf1; --teal-500: #14b8a6; --teal-700: #0f766e;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-800);
+    line-height: 1.6; font-size: 15px;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500), var(--rose-500));
+    padding: 0 2rem; box-shadow: var(--shadow-md);
+  }
+  nav .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  nav .nav-inner::-webkit-scrollbar { display: none; }
+  nav .brand {
+    font-weight: 800; font-size: 1.1rem; color: #fff;
+    padding: .85rem 0; text-decoration: none; flex-shrink: 0;
+  }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    font-size: .82rem; font-weight: 500; padding: .85rem .25rem;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    flex-shrink: 0;
+  }
+  nav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,.6); }
+  .hero {
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+    color: #fff; padding: 3rem 2rem 2.5rem; text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--amber-400), var(--orange-400), var(--rose-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--slate-400); margin-top: .5rem; font-size: .95rem; }
+  .hero .meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.2rem; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: var(--slate-300);
+  }
+  .hero .meta code {
+    background: rgba(255,255,255,.1); padding: .15rem .5rem;
+    border-radius: 6px; font-size: .78rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; }
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+    margin-bottom: 1.2rem; padding-bottom: .5rem;
+    border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--amber-500), var(--orange-500), var(--rose-500)) 1;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--slate-200);
+    padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; color: var(--slate-900); }
+  .card h4 { font-size: .9rem; font-weight: 600; margin: .8rem 0 .3rem; color: var(--slate-700); }
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; line-height: 1.4;
+  }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-orange { background: #fff7ed; color: var(--orange-600); }
+  .badge-rose { background: #fff1f2; color: var(--rose-600); }
+  .badge-green { background: var(--green-100); color: var(--green-700); }
+  .badge-blue { background: var(--blue-100); color: var(--blue-700); }
+  .badge-purple { background: var(--purple-100); color: var(--purple-700); }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-red { background: var(--red-100); color: var(--red-700); }
+  .badge-yellow { background: var(--yellow-100); color: var(--yellow-700); }
+  .badge-slate { background: var(--slate-100); color: var(--slate-600); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    text-align: left; padding: .65rem .8rem;
+    background: var(--slate-800); color: #fff;
+    font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: .6rem .8rem; border-bottom: 1px solid var(--slate-100); }
+  tr:nth-child(even) td { background: var(--slate-50); }
+  tr:hover td { background: var(--amber-50); }
+  .pbar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .pbar {
+    flex: 1; height: 8px; background: var(--slate-200);
+    border-radius: 999px; overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+  }
+  .pbar-label { font-size: .78rem; color: var(--slate-500); min-width: 3.5rem; text-align: right; }
+  pre {
+    background: var(--slate-900); color: #e2e8f0;
+    padding: 1.2rem 1.4rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: .82rem; line-height: 1.55;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    margin: .8rem 0;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .85em;
+  }
+  :not(pre) > code {
+    background: var(--slate-100); padding: .15rem .4rem;
+    border-radius: 4px; color: var(--orange-600); font-size: .83em;
+  }
+  .kw { color: #c084fc; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm { color: #64748b; font-style: italic; }
+  .fn { color: #67e8f9; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid; text-align: center;
+  }
+  .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+  .stat-card .stat-label { font-size: .78rem; color: var(--slate-500); margin-top: .2rem; }
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .flow-step {
+    background: #fff; border: 2px solid var(--slate-200); border-radius: var(--radius);
+    padding: 1rem 1.5rem; width: 100%; max-width: 600px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .flow-step .step-num {
+    position: absolute; top: -.7rem; left: 1rem;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .flow-step h4 { font-size: .9rem; font-weight: 700; color: var(--slate-800); margin-bottom: .25rem; }
+  .flow-step p { font-size: .8rem; color: var(--slate-500); }
+  .flow-arrow {
+    width: 2px; height: 24px;
+    background: linear-gradient(180deg, var(--amber-400), var(--orange-400));
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--orange-400);
+  }
+  .gap-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid;
+    margin-bottom: .8rem;
+  }
+  .gap-card.high { border-left-color: var(--red-500); }
+  .gap-card.medium { border-left-color: var(--yellow-500); }
+  .gap-card.resolved { border-left-color: var(--green-500); }
+  .gap-card.mitigated { border-left-color: var(--blue-500); }
+  .gap-card .gap-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .gap-card p { font-size: .85rem; color: var(--slate-600); margin-top: .3rem; }
+  .kv { display: grid; grid-template-columns: 180px 1fr; gap: .3rem .8rem; font-size: .88rem; }
+  .kv dt { color: var(--slate-500); font-weight: 500; }
+  .kv dd { color: var(--slate-800); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .todo-done { color: var(--green-700); }
+  .todo-done::before { content: '\2713 '; font-weight: 700; }
+  .todo-item { padding: .6rem 0; border-bottom: 1px solid var(--slate-100); display: flex; align-items: flex-start; gap: .6rem; }
+  .todo-check { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .todo-check.done { background: var(--green-100); color: var(--green-700); }
+  .todo-check.pending { background: var(--red-100); color: var(--red-700); }
+  .todo-check.progress { background: var(--yellow-100); color: var(--yellow-700); }
+  .todo-check.cancelled { background: var(--slate-100); color: var(--slate-500); }
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    nav .nav-inner { gap: .8rem; }
+    .container { padding: 1rem; }
+    .kv { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav { position: static; }
+    .hero { padding: 1.5rem; }
+    .card, .flow-step, .gap-card, .stat-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">IAPH RAG</a>
+    <a href="#resumen">Resumen</a>
+    <a href="#todos">TODOs</a>
+    <a href="#chunks">Chunks v4</a>
+    <a href="#qwen3">Qwen3</a>
+    <a href="#clarificacion">Clarificaci&oacute;n</a>
+    <a href="#docker">Docker</a>
+    <a href="#auth">Auth</a>
+    <a href="#deploy">Deploy</a>
+    <a href="#gaps">Gaps</a>
+    <a href="#config">Config</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Informe de Avances</h1>
+  <p>Agente conversacional RAG &mdash; Instituto Andaluz de Patrimonio Hist&oacute;rico (IAPH)</p>
+  <p style="color: var(--slate-500); font-size: .82rem; margin-top: .3rem;">Comisionado por la Universidad de Ja&eacute;n</p>
+  <div class="meta">
+    <span>&#128197; <code>2026-03-27</code></span>
+    <span>&#127795; Rama: <code>main</code></span>
+    <span>&#128640; Commit: <code>8388f1a</code></span>
+    <span>&#128203; Baseline: <code>8279b86</code> (20-mar)</span>
+    <span>&#127991; Versi&oacute;n: <code>0.1.5</code></span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 1. RESUMEN ===================== -->
+<section id="resumen">
+  <h2 class="section-title"><span class="icon">&#128200;</span> Resumen Ejecutivo</h2>
+
+  <p style="margin-bottom: 1.2rem; font-size: .92rem; color: var(--slate-600);">
+    Desde el &uacute;ltimo punto de control (2026-03-20, commit <code>8279b86</code>) se han realizado
+    <strong>46 commits</strong> con avances en 7 &aacute;reas principales: reindexado con encoder Qwen3,
+    enriquecimiento de chunks con plantillas de contexto, clarificaci&oacute;n conversacional de entidades,
+    infraestructura Docker centralizada, CI/CD para GitLab, autenticaci&oacute;n JWT y despliegue del demostrador en producci&oacute;n.
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">46</div>
+      <div class="stat-label">Commits</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--orange-500);">
+      <div class="stat-value" style="color: var(--orange-600);">125</div>
+      <div class="stat-label">Archivos modificados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">9/12</div>
+      <div class="stat-label">TODOs completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--rose-500);">
+      <div class="stat-value" style="color: var(--rose-600);">8</div>
+      <div class="stat-label">Bounded Contexts (+1)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">v4</div>
+      <div class="stat-label">Chunks (reindexado)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple-500);">
+      <div class="stat-value" style="color: var(--purple-700);">0.1.5</div>
+      <div class="stat-label">Versi&oacute;n actual</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>M&eacute;tricas comparativas</h3>
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>20-mar</th><th>27-mar</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Bounded contexts</td><td>7</td><td><strong>8</strong></td><td><span class="badge badge-green">+1 (Auth)</span></td></tr>
+        <tr><td>Tabla de chunks activa</td><td>v3</td><td><strong>v4</strong></td><td><span class="badge badge-green">Reindexado</span></td></tr>
+        <tr><td>Encoder activo</td><td>MrBERT (768d)</td><td><strong>Qwen3 (1024d)</strong></td><td><span class="badge badge-green">Upgrade</span></td></tr>
+        <tr><td>Migraciones Alembic</td><td>7</td><td><strong>8</strong></td><td><span class="badge badge-green">+1</span></td></tr>
+        <tr><td>Tests (funciones)</td><td>78</td><td>78</td><td><span class="badge badge-slate">Sin cambios</span></td></tr>
+        <tr><td>CI/CD</td><td>Ninguno</td><td><strong>GitLab CI</strong></td><td><span class="badge badge-green">Nuevo</span></td></tr>
+        <tr><td>Autenticaci&oacute;n</td><td>Ninguna</td><td><strong>JWT</strong></td><td><span class="badge badge-green">Nuevo</span></td></tr>
+        <tr><td>Demostrador p&uacute;blico</td><td>No</td><td><strong>S&iacute;</strong></td><td><span class="badge badge-green">Desplegado</span></td></tr>
+        <tr><td>Versi&oacute;n</td><td>&mdash;</td><td><strong>0.1.5</strong></td><td><span class="badge badge-blue">Semver</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 2. TODOs ===================== -->
+<section id="todos">
+  <h2 class="section-title"><span class="icon">&#9989;</span> TODO Compuesto &mdash; Estado Actual</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Listado de tareas acordadas en la reuni&oacute;n de seguimiento. Se han completado <strong>9 de 12 tareas</strong>,
+    1 est&aacute; en progreso y 2 permanecen pendientes.
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Responsable</th><th>TODO</th><th>Estado</th><th>Fecha</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Arturo</td>
+          <td>Consultar a Jos&eacute; Luis (IAPH) sobre enriquecimiento de Wikidata para inmuebles</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>UJA (Samuel)</td>
+          <td>Indicar qu&eacute; modelo de Qwen usar para el reindexado</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-24</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>UJA (Samuel/Arturo)</td>
+          <td>Dise&ntilde;ar plantilla de contexto para los chunks</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-24</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>Juan Isern</td>
+          <td>Enriquecer activos inmuebles con geolocalizaci&oacute;n de Wikidata &rarr; <strong>Sustituido por EDA de DBpedia</strong></td>
+          <td><span class="badge badge-slate">DESCARTADO</span></td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td>4b</td>
+          <td>Juan Isern</td>
+          <td>EDA describiendo los datos que hay en DBpedia (sustituye TODO #4)</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-26</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>Juan Isern</td>
+          <td>Estimar coste y horas de inferencia de modelo LLM 40B dentro del presupuesto &rarr; CloudRun</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-26</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Juan Isern</td>
+          <td>Subir en repo GitHub/Gitlab de ALIA el c&oacute;digo del proyecto</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-26</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Juan Isern</td>
+          <td>Reindexar con encoder Qwen una vez definida la plantilla de contexto</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-25</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>Juan Isern</td>
+          <td>Simplificar fichas de resultados (resumen pr&aacute;ctico para ciudadano)</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-27</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>Juan Isern</td>
+          <td>A&ntilde;adir preguntas tipo agente para el filtrado geogr&aacute;fico y por tipo de activo</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-25</td>
+        </tr>
+        <tr style="background: var(--yellow-100);">
+          <td>10</td>
+          <td>Juan Isern</td>
+          <td><strong>Publicar demostrador accesible desde exterior antes de Semana Santa</strong></td>
+          <td><span class="badge badge-amber">EN PROGRESO</span></td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td>10a</td>
+          <td></td>
+          <td>&emsp;&#8627; Front: <code>uja-ai-chat.innovasur.com</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-27</td>
+        </tr>
+        <tr>
+          <td>10b</td>
+          <td></td>
+          <td>&emsp;&#8627; Backend: <code>uja-ai-chat-backend.innovasur.com</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td>2026-03-27</td>
+        </tr>
+        <tr>
+          <td>10c</td>
+          <td></td>
+          <td>&emsp;&#8627; Embedder y LLM: CloudRun</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td>&mdash;</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TODO distribution visual -->
+  <div class="stat-grid" style="margin-top: 1rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">9</div>
+      <div class="stat-label">Completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--yellow-500);">
+      <div class="stat-value" style="color: var(--yellow-700);">1</div>
+      <div class="stat-label">En progreso</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">2</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--slate-400);">
+      <div class="stat-value" style="color: var(--slate-500);">1</div>
+      <div class="stat-label">Descartados</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 3. COMMITS ===================== -->
+<section id="commits">
+  <h2 class="section-title"><span class="icon">&#128221;</span> Tabla de Commits (46)</h2>
+
+  <div class="card" style="overflow-x: auto; max-height: 500px; overflow-y: auto;">
+    <table>
+      <thead><tr><th>Hash</th><th>Fecha</th><th>Mensaje</th></tr></thead>
+      <tbody>
+        <tr><td><code>59da139</code></td><td>2026-03-24</td><td>feat: add chunk v4 with natural language templates and dual encoder support</td></tr>
+        <tr><td><code>a96203b</code></td><td>2026-03-24</td><td>docs: update documentation for v4 chunk and dual encoder feature</td></tr>
+        <tr><td><code>c490fae</code></td><td>2026-03-25</td><td>feat: enrich LLM context with type-specific metadata from JSONB column</td></tr>
+        <tr><td><code>ad2b99e</code></td><td>2026-03-25</td><td>feat: store enriched metadata in chunk content and add --reingest flag</td></tr>
+        <tr><td><code>71ef29c</code></td><td>2026-03-25</td><td>docs: update documentation for enriched chunk content and reingest command</td></tr>
+        <tr><td><code>56f279e</code></td><td>2026-03-25</td><td>feat: upgrade embedding service to Qwen3 with CUDA/GPU support</td></tr>
+        <tr><td><code>ca0a122</code></td><td>2026-03-25</td><td>feat: add conversational entity clarification flow</td></tr>
+        <tr><td><code>381a592</code></td><td>2026-03-26</td><td>fix: add Qwen3 instruction prefix and recalibrate thresholds</td></tr>
+        <tr><td><code>3b8b2b8</code></td><td>2026-03-26</td><td>chore: add backend/scripts/results/ to gitignore</td></tr>
+        <tr><td><code>8b9d650</code></td><td>2026-03-26</td><td>feat: add EDA scripts for DBpedia reference analysis</td></tr>
+        <tr><td><code>33a4b47</code></td><td>2026-03-26</td><td>docs: add EDA report on DBpedia references in IAPH data</td></tr>
+        <tr><td><code>7f7f9ec</code></td><td>2026-03-26</td><td>feat: add embedding diagnostic and benchmark scripts</td></tr>
+        <tr><td><code>9c9c94b</code></td><td>2026-03-26</td><td>docs: add Qwen3 embedding diagnostic report</td></tr>
+        <tr><td><code>bba6bb9</code></td><td>2026-03-26</td><td>chore: add MIT license</td></tr>
+        <tr><td><code>ce25544</code></td><td>2026-03-26</td><td>feat: split asset detail panel into practical and extended sections</td></tr>
+        <tr><td><code>c688f03</code></td><td>2026-03-26</td><td>refactor: move embedding-service to root level</td></tr>
+        <tr><td><code>2ae8793</code></td><td>2026-03-26</td><td>feat: add root docker-compose.yml and frontend Dockerfile</td></tr>
+        <tr><td><code>445b946</code></td><td>2026-03-26</td><td>chore: update Makefiles to use root compose</td></tr>
+        <tr><td><code>795e0cc</code></td><td>2026-03-26</td><td>refactor: reorganize Docker files</td></tr>
+        <tr><td><code>10e9e60</code></td><td>2026-03-26</td><td>refactor: move backend Dockerfile into backend/docker/</td></tr>
+        <tr><td><code>a3252c2</code></td><td>2026-03-26</td><td>ci: add GitLab CI/CD pipeline for Docker image builds</td></tr>
+        <tr><td><code>c6549cc</code></td><td>2026-03-26</td><td>ci: update GitLab CI with change filters and main branch target</td></tr>
+        <tr><td><code>ad9b916</code></td><td>2026-03-26</td><td>chore: improve Dockerfile comments and documentation</td></tr>
+        <tr><td><code>aa48a3b</code></td><td>2026-03-26</td><td>chore: centralize Docker Compose config with root .env</td></tr>
+        <tr><td><code>3c7806f</code></td><td>2026-03-26</td><td>feat: add configurable CORS origins via settings</td></tr>
+        <tr><td><code>8f16c52</code></td><td>2026-03-26</td><td>chore: add standalone output to Next.js config</td></tr>
+        <tr><td><code>f9f6883</code></td><td>2026-03-26</td><td>docs: update README for centralized Docker Compose</td></tr>
+        <tr><td><code>6c737e3</code></td><td>2026-03-26</td><td>feat: add daily-rotating log handlers</td></tr>
+        <tr><td><code>165c2e7</code></td><td>2026-03-26</td><td>fix: add preview and municipality fields to log messages</td></tr>
+        <tr><td><code>4319157</code></td><td>2026-03-26</td><td>feat: add JWT auth context with hexagonal architecture</td></tr>
+        <tr><td><code>0879bfe</code></td><td>2026-03-26</td><td>feat: add login page, auth store, and route protection</td></tr>
+        <tr><td><code>1f338d5</code></td><td>2026-03-26</td><td>feat: add API key auth to embedding and LLM adapters</td></tr>
+        <tr><td><code>e13278b</code></td><td>2026-03-26</td><td>chore: add auth and API key env vars to Docker</td></tr>
+        <tr><td><code>a3a0426</code></td><td>2026-03-26</td><td>fix: include docker-compose.override.yml in backend Makefile</td></tr>
+        <tr><td><code>b145ada</code></td><td>2026-03-26</td><td>refactor: update UI color scheme from amber to green</td></tr>
+        <tr><td><code>dd77bd9</code></td><td>2026-03-26</td><td>feat: rebrand UI to Patrimonio de Andalucia</td></tr>
+        <tr><td><code>18713c0</code></td><td>2026-03-27</td><td>fix: make Alembic respect DATABASE_URL env var for Docker</td></tr>
+        <tr><td><code>fd66f49</code></td><td>2026-03-27</td><td>chore: add docker-compose.prod.yml to gitignore</td></tr>
+        <tr><td><code>8f56791</code></td><td>2026-03-27</td><td>chore: change backend port to 20000 for Traefik</td></tr>
+        <tr><td><code>111ed55</code></td><td>2026-03-27</td><td>chore: bump version to 0.1.1</td></tr>
+        <tr><td><code>745cfbe</code></td><td>2026-03-27</td><td>feat: make Docker ports configurable via PORT env var</td></tr>
+        <tr><td><code>f1d4a09</code></td><td>2026-03-27</td><td>chore: bump version to 0.1.2</td></tr>
+        <tr><td><code>20ab882</code></td><td>2026-03-27</td><td>refactor: read NEXT_PUBLIC_API_URL from API_URL file</td></tr>
+        <tr><td><code>4ce0295</code></td><td>2026-03-27</td><td>chore: bump version to 0.1.3</td></tr>
+        <tr><td><code>c9e3504</code></td><td>2026-03-27</td><td>chore: set production API URL and bump to 0.1.4</td></tr>
+        <tr><td><code>d7430bb</code></td><td>2026-03-27</td><td>fix: use full page navigation on login redirect</td></tr>
+        <tr><td><code>8388f1a</code></td><td>2026-03-27</td><td>chore: bump version to 0.1.5</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 4. CHUNKS V4 ===================== -->
+<section id="chunks">
+  <h2 class="section-title"><span class="icon">&#128196;</span> Avance 1 &mdash; Chunks v4 con Plantillas de Lenguaje Natural</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Nueva versi&oacute;n de chunks que transforma la informaci&oacute;n estructurada de cada bien patrimonial en
+    <strong>texto narrativo en lenguaje natural</strong>, siguiendo las plantillas de contexto dise&ntilde;adas por la UJA.
+    Resuelve los TODOs #2, #3 y #7.
+  </p>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>&#128221; Plantillas de contexto por tipo</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Cada tipo de patrimonio tiene una plantilla espec&iacute;fica que convierte metadata JSONB en prosa.
+        Los campos como estilos, periodos, actividades y protecciones se integran de forma natural en el texto del chunk.
+      </p>
+      <h4>Tipos soportados:</h4>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem;">
+        <li>Patrimonio Inmueble (estilos, periodos, tipolog&iacute;a constructiva)</li>
+        <li>Patrimonio Mueble (t&eacute;cnicas, materiales, clasificaci&oacute;n)</li>
+        <li>Patrimonio Inmaterial (actividades, &aacute;mbitos, agentes)</li>
+        <li>Paisaje Cultural (descripci&oacute;n territorial, valores)</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--orange-500);">
+      <h3>&#128736; Cambios t&eacute;cnicos</h3>
+      <dl class="kv" style="margin-top: .6rem;">
+        <dt>Migraci&oacute;n</dt><dd><code>d4e5f6a7b8c9</code> &mdash; tabla <code>document_chunks_v4</code></dd>
+        <dt>Embeddings</dt><dd>1024 dimensiones (Qwen3) en lugar de 768 (MrBERT)</dd>
+        <dt>Metadata</dt><dd>Enriquecimiento desde columna JSONB de <code>heritage_assets</code></dd>
+        <dt>Re-ingesti&oacute;n</dt><dd>Flag <code>--reingest</code> para borrado limpio antes de ingestar</dd>
+        <dt>Config</dt><dd><code>CHUNKS_TABLE_VERSION=v4</code>, <code>EMBEDDING_DIM=1024</code></dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5. QWEN3 ===================== -->
+<section id="qwen3">
+  <h2 class="section-title"><span class="icon">&#129302;</span> Avance 2 &mdash; Upgrade a Encoder Qwen3</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    El servicio de embeddings ha sido actualizado de MrBERT (768 dimensiones) a
+    <strong>Qwen3-Embedding-0.6B</strong> (1024 dimensiones) con soporte CUDA/GPU.
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>Comparativa de encoders</h3>
+    <table>
+      <thead><tr><th>Par&aacute;metro</th><th>MrBERT (anterior)</th><th>Qwen3 (actual)</th></tr></thead>
+      <tbody>
+        <tr><td>Dimensi&oacute;n embedding</td><td>768</td><td><strong>1024</strong></td></tr>
+        <tr><td>Contexto m&aacute;ximo</td><td>8.192 tokens</td><td><strong>32.768 tokens</strong></td></tr>
+        <tr><td>Pooling</td><td>Mean (todos los tokens)</td><td><strong>Last-token</strong> (left-padding)</td></tr>
+        <tr><td>Par&aacute;metros</td><td>308M</td><td><strong>600M</strong></td></tr>
+        <tr><td>Idiomas</td><td>35</td><td><strong>100+</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Recalibraci&oacute;n de umbrales</h3>
+    <p style="font-size: .85rem; color: var(--slate-600); margin-bottom: .8rem;">
+      Los umbrales de relevancia han sido recalibrados para el nuevo encoder, que produce distribuciones de similaridad diferentes.
+    </p>
+    <table>
+      <thead><tr><th>Par&aacute;metro</th><th>Valor anterior</th><th>Valor actual</th></tr></thead>
+      <tbody>
+        <tr><td><code>rag_score_threshold</code></td><td>0.35</td><td><strong>0.50</strong> <span class="badge badge-amber">+0.15</span></td></tr>
+        <tr><td><code>rag_similarity_threshold</code></td><td>&mdash;</td><td><strong>0.45</strong> <span class="badge badge-green">Nuevo</span></td></tr>
+        <tr><td><code>rag_similarity_only</code></td><td>&mdash;</td><td><strong>False</strong> <span class="badge badge-green">Nuevo</span></td></tr>
+        <tr><td><code>embedding_query_instruction</code></td><td>&mdash;</td><td><strong>"Retrieve relevant heritage documents."</strong> <span class="badge badge-green">Nuevo</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 6. CLARIFICACION ===================== -->
+<section id="clarificacion">
+  <h2 class="section-title"><span class="icon">&#128172;</span> Avance 3 &mdash; Clarificaci&oacute;n Conversacional de Entidades</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Reemplaza el men&uacute; dropdown de filtros por un <strong>flujo conversacional</strong> donde el sistema
+    detecta entidades ambiguas en la query y pregunta al usuario para clarificar antes de ejecutar la b&uacute;squeda.
+    Resuelve el TODO #9.
+  </p>
+
+  <div class="card-grid">
+    <div class="card">
+      <h3>&#127381; Nuevos componentes frontend</h3>
+      <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.8;">
+        <li><code>ClarificationPanel.tsx</code> &mdash; panel UI para preguntas de clarificaci&oacute;n (240 l&iacute;neas)</li>
+        <li><code>useClarification.ts</code> &mdash; hook para gestionar el flujo (139 l&iacute;neas)</li>
+        <li>Integrado en stores de Search y Routes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>&#128260; Flujo de interacci&oacute;n</h3>
+      <ol style="font-size: .85rem; color: var(--slate-600); padding-left: 1.2rem; line-height: 1.8;">
+        <li>Usuario escribe query con entidades ambiguas</li>
+        <li>Sistema detecta m&uacute;ltiples opciones (ej. provincia o municipio)</li>
+        <li>Panel de clarificaci&oacute;n muestra opciones</li>
+        <li>Usuario selecciona y la b&uacute;squeda se ejecuta con filtros aplicados</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 7. FICHAS ===================== -->
+<section id="fichas">
+  <h2 class="section-title"><span class="icon">&#128203;</span> Avance 4 &mdash; Fichas Simplificadas para Ciudadano</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    El panel de detalle de assets se ha redise&ntilde;ado para separar informaci&oacute;n <strong>pr&aacute;ctica</strong>
+    (resumen para ciudadano) de informaci&oacute;n <strong>extendida</strong> (datos t&eacute;cnicos completos).
+    La secci&oacute;n pr&aacute;ctica se muestra por defecto y la extendida es colapsable. Resuelve TODO #8.
+  </p>
+
+  <div class="card">
+    <h3>Cambios en <code>AssetDetailContent.tsx</code></h3>
+    <p style="font-size: .85rem; color: var(--slate-600);">
+      +303 l&iacute;neas / -126 l&iacute;neas. 4 archivos modificados en total.
+      La informaci&oacute;n se organiza en dos bloques: un resumen visual con datos clave (ubicaci&oacute;n, tipo, protecci&oacute;n,
+      imagen) y una secci&oacute;n expandible con el raw data completo del IAPH.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 8. DBPEDIA ===================== -->
+<section id="dbpedia">
+  <h2 class="section-title"><span class="icon">&#128202;</span> Avance 5 &mdash; EDA de Referencias DBpedia</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    En lugar de enriquecer directamente con Wikidata (pendiente confirmaci&oacute;n de Arturo con el IAPH),
+    se ha realizado un <strong>an&aacute;lisis exploratorio de datos</strong> sobre las referencias a DBpedia
+    presentes en el endpoint enriquecido de la API IAPH (<code>/bien/{tipo}/enriquecido/{id}</code>).
+    Sustituye el TODO #4 original.
+  </p>
+
+  <div class="card">
+    <dl class="kv">
+      <dt>Scripts</dt><dd><code>eda_dbpedia.py</code>, <code>eda_dbpedia_lookup.py</code> (979 l&iacute;neas total)</dd>
+      <dt>Informe completo</dt><dd><code>backend/docs/EDA_DBPEDIA_IAPH.md</code></dd>
+      <dt>Muestra</dt><dd>500 assets (estratificada proporcional desde <code>heritage_assets</code>)</dd>
+    </dl>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Disponibilidad del endpoint enriquecido</h3>
+    <table>
+      <thead><tr><th>Tipo</th><th>Consultados</th><th>Con respuesta</th><th>Con DBpedia</th><th>Sin respuesta (500)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>inmueble</strong></td><td>81</td><td>58 (71,6%)</td><td style="color: var(--green-700); font-weight: 600;">58 (71,6%)</td><td>23 (28,4%)</td></tr>
+        <tr><td><strong>mueble</strong></td><td>296</td><td>296 (100%)</td><td style="color: var(--rose-600);">0 (0%)</td><td>0 (0%)</td></tr>
+        <tr><td><strong>inmaterial</strong></td><td>5</td><td>5 (100%)</td><td style="color: var(--rose-600);">0 (0%)</td><td>0 (0%)</td></tr>
+        <tr><td><strong>paisaje</strong></td><td>118</td><td>118 (100%)</td><td style="color: var(--rose-600);">0 (0%)</td><td>0 (0%)</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: .82rem; color: var(--slate-500); margin-top: .5rem;">
+      <strong>Solo patrimonio inmueble contiene URIs DBpedia.</strong> Mueble, inmaterial y paisaje no aportan ning&uacute;n enlace.
+    </p>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Tipos de URIs encontradas (628 totales, 512 &uacute;tiles)</h3>
+    <table>
+      <thead><tr><th>Categor&iacute;a</th><th>Ocurrencias</th><th>URIs &uacute;nicas</th><th>Qu&eacute; referencia</th></tr></thead>
+      <tbody>
+        <tr><td><code>tipologia_dbpedia</code></td><td>148</td><td>49</td><td>Conceptos tipol&oacute;gicos v&iacute;a <code>prov:wasAssociatedWith</code></td></tr>
+        <tr><td><code>provincia</code></td><td>116</td><td>8</td><td>Provincia del bien</td></tr>
+        <tr><td><code>entidad_descripcion</code></td><td>113</td><td>38</td><td>Entidades NER en texto descriptivo</td></tr>
+        <tr><td><code>municipio</code></td><td>112</td><td>43</td><td>Municipio del bien</td></tr>
+        <tr><td><code>asociacion_dbpedia</code></td><td>12</td><td>2</td><td>Roles profesionales</td></tr>
+        <tr><td><code>etnia_dbpedia</code></td><td>11</td><td>5</td><td>Grupos culturales/&eacute;tnicos</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Problemas de calidad detectados</h3>
+    <table>
+      <thead><tr><th>Problema</th><th>Ejemplo</th><th>Impacto</th></tr></thead>
+      <tbody>
+        <tr><td>Desambiguaci&oacute;n incorrecta</td><td><code>Linares_(Salas)</code> en vez de <code>Linares_(Ja&eacute;n)</code></td><td>Municipio apunta a localidad asturiana</td></tr>
+        <tr><td>Desambiguaci&oacute;n incorrecta</td><td><code>Carmona_(Cantabria)</code> en vez de <code>Carmona_(Sevilla)</code></td><td>&Iacute;dem</td></tr>
+        <tr><td>NER ruidoso</td><td><code>2005</code>, <code>Derby</code>, <code>Palisandro</code></td><td>Falsos positivos</td></tr>
+        <tr><td>URIs vac&iacute;as</td><td><code>prov:wasAssociatedWith[{"@id":""}]</code></td><td>Sin enlace</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top: 1rem; border-left: 4px solid var(--orange-400);">
+    <h3>Conclusiones clave</h3>
+    <ol style="font-size: .85rem; color: var(--slate-600); line-height: 1.8; padding-left: 1.2rem;">
+      <li><strong>No existen enlaces DBpedia al propio activo patrimonial.</strong> Los bienes del IAPH no tienen correspondencia en DBpedia/Wikipedia como entidades individuales.</li>
+      <li>Las URIs son <strong>auxiliares</strong> (geograf&iacute;a, tipolog&iacute;a, periodos, etnias): &uacute;tiles para contexto pero no para identificaci&oacute;n.</li>
+      <li><strong>Recomendaci&oacute;n: no invertir en integraci&oacute;n DBpedia para el RAG actual.</strong> El enriquecimiento m&aacute;s valioso (tipolog&iacute;as y periodos) ya est&aacute; disponible directamente en los datos IAPH. Para geocodificaci&oacute;n, usar Nominatim en vez de las URIs DBpedia mal desambiguadas.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===================== 9. DOCKER ===================== -->
+<section id="docker">
+  <h2 class="section-title"><span class="icon">&#128230;</span> Avance 6 &mdash; Infraestructura Docker Centralizada</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Reorganizaci&oacute;n completa de la infraestructura Docker con un <code>docker-compose.yml</code> centralizado en la ra&iacute;z del monorepo.
+    7 commits dedicados a esta reestructuraci&oacute;n.
+  </p>
+
+  <div class="card">
+    <h3>Nueva estructura Docker</h3>
+    <!-- Inline SVG diagram -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 0; margin: 1.5rem 0;">
+      <div style="background: var(--slate-800); color: #fff; padding: .8rem 1.5rem; border-radius: 8px; font-weight: 700; font-size: .9rem;">docker-compose.yml (ra&iacute;z)</div>
+      <div style="width: 2px; height: 20px; background: var(--orange-400);"></div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; width: 100%; max-width: 600px;">
+        <div style="background: #fff; border: 2px solid var(--amber-400); border-radius: 8px; padding: .6rem; text-align: center; font-size: .8rem; font-weight: 600;">postgres + pgvector</div>
+        <div style="background: #fff; border: 2px solid var(--orange-400); border-radius: 8px; padding: .6rem; text-align: center; font-size: .8rem; font-weight: 600;">embedding service</div>
+        <div style="background: #fff; border: 2px solid var(--rose-400); border-radius: 8px; padding: .6rem; text-align: center; font-size: .8rem; font-weight: 600;">backend API</div>
+        <div style="background: #fff; border: 2px solid var(--blue-500); border-radius: 8px; padding: .6rem; text-align: center; font-size: .8rem; font-weight: 600;">frontend</div>
+      </div>
+      <div style="margin-top: .8rem; display: flex; gap: 1rem;">
+        <span class="badge badge-slate">docker-compose.override.yml (dev ports)</span>
+        <span class="badge badge-slate">.env ra&iacute;z (variables compartidas)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Cambios principales</h3>
+    <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.8;">
+      <li>Embedding service movido de <code>backend/docker/</code> a <code>embedding/</code> (ra&iacute;z)</li>
+      <li>Frontend Dockerfile con build multi-stage (standalone output)</li>
+      <li>Backend Dockerfile en <code>backend/docker/</code></li>
+      <li><code>.env</code> centralizado en la ra&iacute;z para variables compartidas</li>
+      <li>Makefiles actualizados para usar el compose ra&iacute;z</li>
+      <li>Puertos configurables via variable <code>PORT</code> en cada contenedor</li>
+    </ul>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>GitLab CI/CD</h3>
+    <p style="font-size: .85rem; color: var(--slate-600);">
+      Nuevo fichero <code>.gitlab-ci.yml</code> (114 l&iacute;neas) con pipeline para build de im&aacute;genes Docker,
+      tagging semver + commit hash, filtros de cambios por directorio y target rama <code>main</code>.
+      Resuelve TODO #6 (subir c&oacute;digo a repo ALIA).
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 10. AUTH ===================== -->
+<section id="auth">
+  <h2 class="section-title"><span class="icon">&#128274;</span> Avance 7 &mdash; Autenticaci&oacute;n JWT</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Nuevo bounded context <strong>Auth</strong> con arquitectura hexagonal completa, login page en frontend,
+    protecci&oacute;n de rutas con middleware y API keys para servicios de inferencia.
+  </p>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>&#128230; Backend: Bounded Context Auth</h3>
+      <dl class="kv" style="margin-top: .6rem;">
+        <dt>Domain</dt><dd><code>User</code> entity, <code>AuthPort</code>, <code>TokenPort</code></dd>
+        <dt>Application</dt><dd><code>LoginUseCase</code>, <code>RefreshTokenUseCase</code>, <code>ValidateTokenUseCase</code></dd>
+        <dt>Infrastructure</dt><dd><code>HardcodedAuthAdapter</code>, <code>JwtTokenAdapter</code></dd>
+        <dt>API</dt><dd><code>/auth/login</code>, <code>/auth/refresh</code>, dependency <code>get_current_user</code></dd>
+        <dt>Ficheros nuevos</dt><dd>28 archivos, +333 l&iacute;neas</dd>
+      </dl>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>&#127912; Frontend: Login + Protecci&oacute;n</h3>
+      <dl class="kv" style="margin-top: .6rem;">
+        <dt>Login page</dt><dd><code>/login</code> con formulario de credenciales</dd>
+        <dt>Auth store</dt><dd><code>useAuthStore</code> (Zustand) con token refresh</dd>
+        <dt>Middleware</dt><dd>Protecci&oacute;n de rutas, redireccion a login</dd>
+        <dt>API client</dt><dd>Headers <code>Authorization: Bearer</code> en todas las peticiones</dd>
+        <dt>Ficheros nuevos</dt><dd>4 archivos, +256 l&iacute;neas</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>API Keys para servicios de inferencia</h3>
+    <p style="font-size: .85rem; color: var(--slate-600);">
+      Los adaptadores de embedding y LLM ahora env&iacute;an un header <code>X-API-Key</code> configurable via
+      <code>embedding_api_key</code> y <code>llm_api_key</code> en settings, evitando acceso no autenticado
+      a los servicios de inferencia.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 11. DEPLOY ===================== -->
+<section id="deploy">
+  <h2 class="section-title"><span class="icon">&#128640;</span> Avance 8 &mdash; Despliegue en Producci&oacute;n</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    M&uacute;ltiples iteraciones de ajustes para el despliegue del demostrador en producci&oacute;n.
+    <strong>5 version bumps</strong> (0.1.1 &rarr; 0.1.5) durante el proceso. Resuelve parcialmente TODO #10.
+  </p>
+
+  <div class="card">
+    <h3>Estado del demostrador</h3>
+    <table>
+      <thead><tr><th>Componente</th><th>URL / Estado</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Frontend</td>
+          <td><code>uja-ai-chat.innovasur.com</code></td>
+          <td><span class="badge badge-green">DESPLEGADO</span></td>
+        </tr>
+        <tr>
+          <td>Backend API</td>
+          <td><code>uja-ai-chat-backend.innovasur.com</code></td>
+          <td><span class="badge badge-green">DESPLEGADO</span></td>
+        </tr>
+        <tr>
+          <td>Embedding service</td>
+          <td>CloudRun (pendiente)</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+        </tr>
+        <tr>
+          <td>LLM service</td>
+          <td>CloudRun (pendiente)</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Ajustes de despliegue realizados</h3>
+    <ul style="font-size: .85rem; color: var(--slate-600); list-style: disc; padding-left: 1.2rem; line-height: 1.8;">
+      <li>Alembic corregido para respetar <code>DATABASE_URL</code> del entorno en Docker</li>
+      <li>Backend port cambiado de 8080 a 20000 para compatibilidad con Traefik</li>
+      <li>Puertos configurables via variable <code>PORT</code> en cada contenedor</li>
+      <li><code>NEXT_PUBLIC_API_URL</code> leido desde fichero <code>API_URL</code> (permite cambiar en runtime)</li>
+      <li>Fix login: navegaci&oacute;n completa en redirect para que la cookie de auth llegue al middleware</li>
+      <li>Rebrand UI a &ldquo;Patrimonio de Andaluc&iacute;a&rdquo; con paleta oficial de la Junta</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== 11b. OTROS ===================== -->
+<section id="otros">
+  <h2 class="section-title"><span class="icon">&#128295;</span> Otros Cambios</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Commit</th><th>Tipo</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td><code>3c7806f</code></td><td><span class="badge badge-amber">feat</span></td><td>CORS configurable via <code>cors_origins</code> en settings</td></tr>
+        <tr><td><code>6c737e3</code></td><td><span class="badge badge-amber">feat</span></td><td>Log handlers con rotaci&oacute;n diaria para embedding, auth, routes y search</td></tr>
+        <tr><td><code>165c2e7</code></td><td><span class="badge badge-blue">fix</span></td><td>Campos preview y municipality en logs de infraestructura</td></tr>
+        <tr><td><code>bba6bb9</code></td><td><span class="badge badge-slate">chore</span></td><td>Licencia MIT a&ntilde;adida al repositorio</td></tr>
+        <tr><td><code>7f7f9ec</code></td><td><span class="badge badge-amber">feat</span></td><td>Scripts de diagn&oacute;stico de embeddings y benchmark de retrieval Qwen3</td></tr>
+        <tr><td><code>9c9c94b</code></td><td><span class="badge badge-teal">docs</span></td><td>Informe de diagn&oacute;stico Qwen3 con an&aacute;lisis de umbrales</td></tr>
+        <tr><td><code>8f16c52</code></td><td><span class="badge badge-slate">chore</span></td><td>Next.js standalone output + <code>allowedDevOrigins</code> configurables</td></tr>
+        <tr><td><code>f9f6883</code></td><td><span class="badge badge-teal">docs</span></td><td>README actualizado con nueva estructura Docker</td></tr>
+        <tr><td><code>b145ada</code></td><td><span class="badge badge-purple">refactor</span></td><td>Paleta de colores de amber a verde institucional + bot&oacute;n logout</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 12. GAPS ===================== -->
+<section id="gaps">
+  <h2 class="section-title"><span class="icon">&#9888;&#65039;</span> Estado de Gaps</h2>
+
+  <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--slate-700);">Gaps del informe anterior</h3>
+
+  <div class="gap-card high">
+    <div class="gap-title"><span class="badge badge-red">PENDIENTE</span> G3 &mdash; Datos sucios (~270 registros)</div>
+    <p>Sin cambios. No se ha abordado la limpieza de datos en este periodo.</p>
+  </div>
+
+  <div class="gap-card high">
+    <div class="gap-title"><span class="badge badge-red">PENDIENTE</span> G4 &mdash; Tests m&iacute;nimos</div>
+    <p>78 funciones de test en 7 archivos. Sin cambios en el periodo. Las nuevas funcionalidades (auth, chunks v4, clarificaci&oacute;n) no tienen cobertura de tests.</p>
+  </div>
+
+  <div class="gap-card mitigated">
+    <div class="gap-title"><span class="badge badge-blue">MITIGADO</span> G5 &mdash; LLM sin fine-tuning</div>
+    <p>Sigue con Gemini como alternativa temporal. Fine-tuning de Salamandra en progreso por la UJA.</p>
+  </div>
+
+  <div class="gap-card high">
+    <div class="gap-title"><span class="badge badge-red">PENDIENTE</span> G6 &mdash; 96,6% assets sin coordenadas</div>
+    <p>EDA de DBpedia realizado (scripts y documentaci&oacute;n), pero la geocodificaci&oacute;n masiva no se ha implementado a&uacute;n. Pendiente de confirmaci&oacute;n de Arturo con el IAPH sobre viabilidad de Wikidata.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title"><span class="badge badge-yellow">PENDIENTE</span> G7 &mdash; Paisaje Cultural sin contenido buscable</div>
+    <p>Sin cambios. Solo enlaces a PDF, sin texto extra&iacute;do.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title"><span class="badge badge-yellow">PENDIENTE</span> G8 &mdash; Chat y Accesibilidad desactivados en UI</div>
+    <p>Sin cambios. El backend sigue disponible pero no se expone en el frontend.</p>
+  </div>
+
+  <h3 style="font-size: 1.1rem; margin: 1.5rem 0 1rem; color: var(--slate-700);">Nuevos gaps identificados</h3>
+
+  <div class="gap-card high">
+    <div class="gap-title"><span class="badge badge-red">NUEVO</span> G9 &mdash; Autenticaci&oacute;n hardcoded</div>
+    <p>Las credenciales de autenticaci&oacute;n est&aacute;n en <code>config.py</code> (<code>auth_username=admin</code>, <code>auth_password=admin</code>). No hay almac&eacute;n de usuarios ni gesti&oacute;n de roles. El <code>jwt_secret_key</code> es un placeholder.</p>
+  </div>
+
+  <div class="gap-card high">
+    <div class="gap-title"><span class="badge badge-red">NUEVO</span> G10 &mdash; Embedder y LLM no desplegados en CloudRun</div>
+    <p>El demostrador p&uacute;blico solo tiene frontend y backend. Los servicios de embedding y LLM a&uacute;n no est&aacute;n desplegados en CloudRun, lo que limita la funcionalidad completa del demostrador.</p>
+  </div>
+
+  <div class="gap-card medium">
+    <div class="gap-title"><span class="badge badge-yellow">NUEVO</span> G11 &mdash; Sin tests para auth, chunks v4, clarificaci&oacute;n</div>
+    <p>Las tres funcionalidades principales de este periodo (autenticaci&oacute;n JWT, chunks v4 con plantillas, clarificaci&oacute;n conversacional) no tienen tests unitarios ni de integraci&oacute;n.</p>
+  </div>
+
+  <!-- Gap summary -->
+  <div class="stat-grid" style="margin-top: 1.5rem;">
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">7</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">1</div>
+      <div class="stat-label">Mitigados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">0</div>
+      <div class="stat-label">Resueltos</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--yellow-500);">
+      <div class="stat-value" style="color: var(--yellow-700);">3</div>
+      <div class="stat-label">Nuevos</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 13. CONFIG ===================== -->
+<section id="config">
+  <h2 class="section-title"><span class="icon">&#9881;&#65039;</span> Nuevos Par&aacute;metros de Configuraci&oacute;n</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Par&aacute;metro</th><th>Valor</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td><code>embedding_api_key</code></td><td><em>(vac&iacute;o)</em></td><td><span class="badge badge-green">Nuevo</span> API key para embedding service</td></tr>
+        <tr><td><code>llm_api_key</code></td><td><em>(vac&iacute;o)</em></td><td><span class="badge badge-green">Nuevo</span> API key para LLM service</td></tr>
+        <tr><td><code>embedding_query_instruction</code></td><td><code>"Retrieve relevant heritage documents."</code></td><td><span class="badge badge-green">Nuevo</span> Prefijo Qwen3 para queries</td></tr>
+        <tr><td><code>rag_similarity_only</code></td><td><code>False</code></td><td><span class="badge badge-green">Nuevo</span> Modo solo similaridad vectorial</td></tr>
+        <tr><td><code>rag_similarity_threshold</code></td><td><code>0.45</code></td><td><span class="badge badge-green">Nuevo</span> Umbral de similaridad coseno</td></tr>
+        <tr><td><code>rag_score_threshold</code></td><td><code>0.50</code></td><td><span class="badge badge-amber">Cambiado</span> (era 0.35) Recalibrado para Qwen3</td></tr>
+        <tr><td><code>cors_origins</code></td><td><code>"*"</code></td><td><span class="badge badge-green">Nuevo</span> Or&iacute;genes CORS configurables</td></tr>
+        <tr><td><code>auth_username</code></td><td><code>"admin"</code></td><td><span class="badge badge-green">Nuevo</span> Usuario de autenticaci&oacute;n</td></tr>
+        <tr><td><code>auth_password</code></td><td><code>"admin"</code></td><td><span class="badge badge-green">Nuevo</span> Contrase&ntilde;a de autenticaci&oacute;n</td></tr>
+        <tr><td><code>jwt_secret_key</code></td><td><code>"change-me-in-production"</code></td><td><span class="badge badge-green">Nuevo</span> Secreto JWT</td></tr>
+        <tr><td><code>jwt_algorithm</code></td><td><code>"HS256"</code></td><td><span class="badge badge-green">Nuevo</span> Algoritmo JWT</td></tr>
+        <tr><td><code>jwt_access_token_expire_minutes</code></td><td><code>30</code></td><td><span class="badge badge-green">Nuevo</span> Expiraci&oacute;n access token</td></tr>
+        <tr><td><code>jwt_refresh_token_expire_days</code></td><td><code>7</code></td><td><span class="badge badge-green">Nuevo</span> Expiraci&oacute;n refresh token</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 14. TESTS ===================== -->
+<section id="tests">
+  <h2 class="section-title"><span class="icon">&#129514;</span> Estado de Tests</h2>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>Baseline (20-mar)</th><th>Actual (27-mar)</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Archivos de test</td><td>7</td><td>7</td><td><span class="badge badge-slate">0</span></td></tr>
+        <tr><td>Funciones de test</td><td>78</td><td>78</td><td><span class="badge badge-slate">0</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: .8rem; font-size: .85rem; color: var(--red-700);">
+      &#9888; No se han a&ntilde;adido nuevos tests en este periodo. El gap G4 (tests m&iacute;nimos) persiste.
+      Se recomienda priorizar tests para autenticaci&oacute;n, chunks v4 y clarificaci&oacute;n conversacional.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 15. EXECUTIVE SUMMARY ===================== -->
+<section id="executive">
+  <h2 class="section-title"><span class="icon">&#128221;</span> Resumen Ejecutivo</h2>
+
+  <div class="card" style="border-top: 4px solid var(--amber-500);">
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-bottom: 1rem;">
+      El periodo 2026-03-24 al 2026-03-27 ha sido el de mayor avance en preparaci&oacute;n para producci&oacute;n del proyecto.
+      Se han completado <strong>9 de 12 TODOs</strong> del listado compuesto, incluyendo los m&aacute;s cr&iacute;ticos:
+      reindexado con Qwen3 sobre plantillas de contexto enriquecidas, clarificaci&oacute;n conversacional de entidades,
+      simplificaci&oacute;n de fichas para ciudadanos y despliegue del frontend y backend en dominios p&uacute;blicos.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-bottom: 1rem;">
+      La calidad de la recuperaci&oacute;n ha mejorado significativamente gracias al cambio de encoder
+      (MrBERT &rarr; Qwen3, de 768 a 1024 dimensiones) y a las plantillas de lenguaje natural que
+      transforman la metadata estructurada en texto narrativo. Los umbrales de relevancia han sido
+      recalibrados acorde al nuevo encoder.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7;">
+      Los puntos cr&iacute;ticos pendientes son: (1) despliegue del embedder y LLM en CloudRun para que
+      el demostrador sea completamente funcional desde exterior, (2) la consulta de Arturo al IAPH
+      sobre enriquecimiento con Wikidata, y (3) la cobertura de tests que no ha avanzado en este periodo.
+      Se recomienda priorizar el despliegue CloudRun antes de Semana Santa (semana del 30 de marzo).
+    </p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer style="background: var(--slate-900); color: var(--slate-400); padding: 2rem; text-align: center; font-size: .82rem;">
+  <p>Informe de avances generado autom&aacute;ticamente &mdash; Periodo: <code style="color: var(--amber-400);">2026-03-20</code> &rarr; <code style="color: var(--amber-400);">2026-03-27</code></p>
+  <p style="margin-top: .3rem;">Rama <code style="color: var(--amber-400);">main</code>, commit <code style="color: var(--amber-400);">8388f1a</code></p>
+  <p style="margin-top: .3rem;">IAPH RAG Monorepo &bull; Universidad de Ja&eacute;n &bull; 2026-03-27</p>
+</footer>
+
+<!-- Smooth scroll -->
+<script>
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
