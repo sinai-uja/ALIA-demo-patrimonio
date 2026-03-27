@@ -15,7 +15,9 @@ class SqlAlchemyRouteRepository(RouteRepository):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
-    async def save_route(self, route: VirtualRoute) -> VirtualRoute:
+    async def save_route(
+        self, route: VirtualRoute, user_id: UUID | None = None,
+    ) -> VirtualRoute:
         stops_json = [
             {
                 "order": stop.order,
@@ -46,6 +48,7 @@ class SqlAlchemyRouteRepository(RouteRepository):
             total_duration_minutes=route.total_duration_minutes,
             stops=stops_json,
             created_at=route.created_at,
+            user_id=user_id,
         )
 
         self._db.add(model)
@@ -54,8 +57,12 @@ class SqlAlchemyRouteRepository(RouteRepository):
 
         return self._to_entity(model)
 
-    async def get_route(self, route_id: UUID) -> VirtualRoute | None:
+    async def get_route(
+        self, route_id: UUID, user_id: UUID | None = None,
+    ) -> VirtualRoute | None:
         stmt = select(VirtualRouteModel).where(VirtualRouteModel.id == route_id)
+        if user_id is not None:
+            stmt = stmt.where(VirtualRouteModel.user_id == user_id)
         result = await self._db.execute(stmt)
         model = result.scalar_one_or_none()
 
@@ -64,19 +71,27 @@ class SqlAlchemyRouteRepository(RouteRepository):
 
         return self._to_entity(model)
 
-    async def list_routes(self, province: str | None = None) -> list[VirtualRoute]:
+    async def list_routes(
+        self, province: str | None = None, user_id: UUID | None = None,
+    ) -> list[VirtualRoute]:
         stmt = select(VirtualRouteModel).order_by(VirtualRouteModel.created_at.desc())
 
         if province is not None:
             stmt = stmt.where(VirtualRouteModel.province == province)
+        if user_id is not None:
+            stmt = stmt.where(VirtualRouteModel.user_id == user_id)
 
         result = await self._db.execute(stmt)
         models = result.scalars().all()
 
         return [self._to_entity(model) for model in models]
 
-    async def delete_route(self, route_id: UUID) -> bool:
+    async def delete_route(
+        self, route_id: UUID, user_id: UUID | None = None,
+    ) -> bool:
         stmt = select(VirtualRouteModel).where(VirtualRouteModel.id == route_id)
+        if user_id is not None:
+            stmt = stmt.where(VirtualRouteModel.user_id == user_id)
         result = await self._db.execute(stmt)
         model = result.scalar_one_or_none()
 

@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from uuid import UUID
 
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
@@ -54,6 +55,7 @@ class GenerateRouteUseCase:
 
     async def execute(self, dto: GenerateRouteDTO) -> VirtualRouteDTO:
         t0 = time.monotonic()
+        user_label = dto.username or "anonymous"
 
         # 1. Clean user text (remove geographic filter terms)
         cleaned_text = self._query_extraction_service.clean_query_text(
@@ -76,8 +78,8 @@ class GenerateRouteUseCase:
             extracted_query.strip().strip('"').strip("'")
         )
         logger.info(
-            "Route generation: extracted_query=%r from user_query=%r",
-            extracted_query, dto.query[:80],
+            "Route generation: user=%s extracted_query=%r from user_query=%r",
+            user_label, extracted_query, dto.query[:80],
         )
 
         # 3. Single RAG call with extracted query + filters
@@ -178,11 +180,12 @@ class GenerateRouteUseCase:
         )
 
         # 12. Save and return
-        saved_route = await self._route_repository.save_route(route)
+        user_uuid = UUID(dto.user_id) if dto.user_id else None
+        saved_route = await self._route_repository.save_route(route, user_id=user_uuid)
         elapsed_ms = (time.monotonic() - t0) * 1000
         logger.info(
-            "Route generation complete: route_id=%s title=%r stops=%d %.0fms",
-            saved_route.id, title[:60], len(selected_chunks), elapsed_ms,
+            "Route generation complete: route_id=%s user=%s title=%r stops=%d %.0fms",
+            saved_route.id, user_label, title[:60], len(selected_chunks), elapsed_ms,
         )
         return self._to_dto(saved_route)
 

@@ -10,8 +10,9 @@ class GetRouteUseCase:
     def __init__(self, route_repository: RouteRepository) -> None:
         self._route_repository = route_repository
 
-    async def execute(self, route_id: str) -> VirtualRouteDTO:
-        route = await self._route_repository.get_route(UUID(route_id))
+    async def execute(self, route_id: str, user_id: str | None = None) -> VirtualRouteDTO:
+        user_uuid = UUID(user_id) if user_id else None
+        route = await self._route_repository.get_route(UUID(route_id), user_id=user_uuid)
         if route is None:
             raise ValueError(f"Route not found: {route_id}")
 

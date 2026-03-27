@@ -55,15 +55,15 @@ class RoutesApplicationService:
         return await self._guide_query.execute(dto)
 
     async def list_routes(
-        self, province: str | None = None,
+        self, province: str | None = None, user_id: str | None = None,
     ) -> list[VirtualRouteDTO]:
-        return await self._list_routes.execute(province)
+        return await self._list_routes.execute(province, user_id=user_id)
 
-    async def get_route(self, route_id: str) -> VirtualRouteDTO:
-        return await self._get_route.execute(route_id)
+    async def get_route(self, route_id: str, user_id: str | None = None) -> VirtualRouteDTO:
+        return await self._get_route.execute(route_id, user_id=user_id)
 
-    async def delete_route(self, route_id: str) -> None:
-        return await self._delete_route.execute(route_id)
+    async def delete_route(self, route_id: str, user_id: str | None = None) -> None:
+        return await self._delete_route.execute(route_id, user_id=user_id)
 
     async def get_suggestions(
         self, query: str,

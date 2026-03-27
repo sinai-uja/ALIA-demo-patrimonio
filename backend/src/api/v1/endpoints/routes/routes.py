@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
+from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.routes.deps import get_routes_service
 from src.api.v1.endpoints.routes.schemas import (
     DetectedEntitySchema,
@@ -21,6 +22,7 @@ from src.application.routes.dto.routes_dto import (
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
+from src.domain.auth.entities.user import User
 
 logger = logging.getLogger("iaph.usecases.routes")
 
@@ -101,6 +103,7 @@ async def get_route_filters(
 @router.post("/generate", response_model=VirtualRouteSchema)
 async def generate_route(
     request: GenerateRouteRequest,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
     """Generate a personalized virtual heritage route."""
@@ -116,6 +119,8 @@ async def generate_route(
         heritage_type_filter=request.heritage_type_filter,
         province_filter=request.province_filter,
         municipality_filter=request.municipality_filter,
+        user_id=str(user.id),
+        username=user.username,
     )
 
     try:
@@ -137,21 +142,23 @@ async def generate_route(
 @router.get("", response_model=list[VirtualRouteSchema])
 async def list_routes(
     province: str | None = None,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> list[VirtualRouteSchema]:
     """List virtual routes, optionally filtered by province."""
-    results = await service.list_routes(province)
+    results = await service.list_routes(province, user_id=str(user.id))
     return [_dto_to_schema(r) for r in results]
 
 
 @router.delete("/{route_id}", status_code=204)
 async def delete_route(
     route_id: str,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> Response:
     """Delete a virtual route by ID."""
     try:
-        await service.delete_route(route_id)
+        await service.delete_route(route_id, user_id=str(user.id))
     except ValueError as exc:
         raise HTTPException(
             status_code=404, detail=str(exc),
@@ -163,11 +170,12 @@ async def delete_route(
 @router.get("/{route_id}", response_model=VirtualRouteSchema)
 async def get_route(
     route_id: str,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
     """Get a specific virtual route by ID."""
     try:
-        result = await service.get_route(route_id)
+        result = await service.get_route(route_id, user_id=str(user.id))
     except ValueError as exc:
         raise HTTPException(
             status_code=404, detail=str(exc),

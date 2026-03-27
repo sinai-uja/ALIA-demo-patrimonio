@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +18,11 @@ class VirtualRouteModel(Base):
     province: Mapped[str] = mapped_column(String, nullable=False)
     query_text: Mapped[str | None] = mapped_column(String, nullable=True)
     municipality: Mapped[str | None] = mapped_column(String, nullable=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id"),
+        nullable=True,
+    )
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
     introduction: Mapped[str | None] = mapped_column(Text, nullable=True)
     conclusion: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -30,4 +35,5 @@ class VirtualRouteModel(Base):
     __table_args__ = (
         Index("ix_virtual_routes_province", "province"),
         Index("ix_virtual_routes_municipality", "municipality"),
+        Index("ix_virtual_routes_user_id", "user_id"),
     )

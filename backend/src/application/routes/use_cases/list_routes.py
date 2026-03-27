@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from src.application.routes.dto.routes_dto import RouteStopDTO, VirtualRouteDTO
 from src.domain.routes.ports.route_repository import RouteRepository
 
@@ -8,8 +10,11 @@ class ListRoutesUseCase:
     def __init__(self, route_repository: RouteRepository) -> None:
         self._route_repository = route_repository
 
-    async def execute(self, province: str | None = None) -> list[VirtualRouteDTO]:
-        routes = await self._route_repository.list_routes(province)
+    async def execute(
+        self, province: str | None = None, user_id: str | None = None,
+    ) -> list[VirtualRouteDTO]:
+        user_uuid = UUID(user_id) if user_id else None
+        routes = await self._route_repository.list_routes(province, user_id=user_uuid)
         return [
             VirtualRouteDTO(
                 id=str(route.id),
