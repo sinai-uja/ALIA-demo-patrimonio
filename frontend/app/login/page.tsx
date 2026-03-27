@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useAuthStore } from "@/store/auth";
 
 export default function LoginPage() {
-  const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
   const [username, setUsername] = useState("");
@@ -13,14 +11,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
       await login(username, password);
-      router.push("/");
+      window.location.href = "/";
     } catch {
       setError("Credenciales incorrectas");
     } finally {
