@@ -1,4 +1,4 @@
-.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 analyze-feedback analyze-queries help
+.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 analyze-feedback analyze-queries manage-users help
 
 COMPOSE = docker compose -f ../docker-compose.yml -f ../docker-compose.override.yml
 ENV_FILE = config/.env
@@ -22,6 +22,7 @@ help:
 	@echo "  download-qwen3 Download Qwen3-Embedding-0.6B model"
 	@echo "  analyze-feedback Analyze feedback logs and generate CSV/JSON reports"
 	@echo "  analyze-queries  List all search/route queries with RAG results"
+	@echo "  manage-users     Manage users (ARGS='create-user --username x --password y')"
 
 dev: infra
 	uv run fastapi dev src/main.py --port 18080
@@ -70,3 +71,6 @@ analyze-feedback:
 
 analyze-queries:
 	uv run python -m scripts.analyze_queries
+
+manage-users:
+	uv run python -m scripts.manage_users $(ARGS)
