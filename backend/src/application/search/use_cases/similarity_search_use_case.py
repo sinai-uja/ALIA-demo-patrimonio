@@ -59,8 +59,18 @@ class SimilaritySearchUseCase:
     ) -> SimilaritySearchResponseDTO:
         search_id = str(uuid4())
         t0 = time.monotonic()
+        user_label = dto.user_id or "anonymous"
+        filters = []
+        if dto.heritage_type_filter:
+            filters.append(f"type={dto.heritage_type_filter}")
+        if dto.province_filter:
+            filters.append(f"province={dto.province_filter}")
+        if dto.municipality_filter:
+            filters.append(f"municipality={dto.municipality_filter}")
+        filter_str = " ".join(filters) if filters else "none"
         logger.info(
-            "Similarity search start: search_id=%s query=%s", search_id, dto.query[:80],
+            "Similarity search start: search_id=%s user=%s query=%s filters=%s",
+            search_id, user_label, dto.query[:80], filter_str,
         )
 
         # 1. Embed the user query (with instruction prefix for Qwen3)
@@ -199,9 +209,10 @@ class SimilaritySearchUseCase:
 
         elapsed_ms = (time.monotonic() - t0) * 1000
         logger.info(
-            "Similarity search complete: search_id=%s %d total, page %d/%d"
+            "Similarity search complete: search_id=%s user=%s %d total, page %d/%d"
             " (%d chunks) %.0fms",
             search_id,
+            user_label,
             total_results,
             dto.page,
             total_pages,

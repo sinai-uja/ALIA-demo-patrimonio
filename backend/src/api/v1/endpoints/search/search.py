@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.search.deps import get_search_service
 from src.api.v1.endpoints.search.schemas import (
     ChunkHitSchema,
@@ -16,6 +17,7 @@ from src.application.search.dto.search_dto import SimilaritySearchDTO
 from src.application.search.services.search_application_service import (
     SearchApplicationService,
 )
+from src.domain.auth.entities.user import User
 
 logger = logging.getLogger("iaph.usecases.search")
 
@@ -25,6 +27,7 @@ router = APIRouter()
 @router.post("/similarity", response_model=SimilaritySearchResponse)
 async def similarity_search(
     request: SimilaritySearchRequest,
+    user: User = Depends(get_current_user),
     service: SearchApplicationService = Depends(get_search_service),
 ) -> SimilaritySearchResponse:
     """Execute a similarity search: embed, search, fuse, filter, rerank."""
@@ -42,6 +45,7 @@ async def similarity_search(
         heritage_type_filter=request.heritage_type_filter,
         province_filter=request.province_filter,
         municipality_filter=request.municipality_filter,
+        user_id=user.username,
     )
 
     try:
