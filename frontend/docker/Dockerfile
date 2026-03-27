@@ -5,8 +5,8 @@
 # Multi-stage build: deps → builder → runner
 #
 # Produces a minimal standalone Node.js server (~50 MB) with all pages
-# pre-rendered. NEXT_PUBLIC_API_URL is baked in at build time (it runs in the
-# browser, so it must be known during `next build`).
+# pre-rendered. NEXT_PUBLIC_API_URL is read from the API_URL file at build
+# time. Edit frontend/API_URL before building for each environment.
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -25,13 +25,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# API URL is a build arg because NEXT_PUBLIC_* vars are inlined into the
-# client JS bundle during `next build`. Override for each environment:
-#   docker build --build-arg NEXT_PUBLIC_API_URL=https://api.prod.example.com ...
-ARG NEXT_PUBLIC_API_URL=http://localhost:18080/api/v1
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-
-RUN npm run build
+# Read API URL from API_URL file (edit this file before building for each environment)
+RUN export NEXT_PUBLIC_API_URL=$(cat API_URL | tr -d '\n') && npm run build
 
 # ---------------------------------------------------------------------------
 # Stage 3: runner — minimal production image
