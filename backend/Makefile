@@ -1,4 +1,4 @@
-.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 help
+.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 analyze-feedback analyze-queries help
 
 COMPOSE = docker compose -f ../docker-compose.yml -f ../docker-compose.override.yml
 ENV_FILE = config/.env
@@ -20,6 +20,8 @@ help:
 	@echo "  load-assets  Load IAPH API data from ZIP into heritage_assets"
 	@echo "  fetch-assets Fetch IAPH API data live (requires IAPH_API_TOKEN)"
 	@echo "  download-qwen3 Download Qwen3-Embedding-0.6B model"
+	@echo "  analyze-feedback Analyze feedback logs and generate CSV/JSON reports"
+	@echo "  analyze-queries  List all search/route queries with RAG results"
 
 dev: infra
 	uv run fastapi dev src/main.py --port 18080
@@ -62,3 +64,9 @@ fetch-assets:
 
 download-qwen3:
 	bash scripts/download_qwen3.sh
+
+analyze-feedback:
+	uv run python scripts/analyze_feedback.py
+
+analyze-queries:
+	uv run python -m scripts.analyze_queries
