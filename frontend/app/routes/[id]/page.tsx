@@ -9,6 +9,8 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { RouteStopCard } from "@/components/routes/RouteStopCard";
 import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
+import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
+import { useFeedbackStore } from "@/store/feedback";
 import ReactMarkdown from "react-markdown";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
@@ -131,7 +133,10 @@ export default function RouteDetailPage() {
   const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
-    if (id) selectRoute(id);
+    if (id) {
+      selectRoute(id);
+      useFeedbackStore.getState().loadFeedback("route", id);
+    }
   }, [id, selectRoute]);
 
   // Close detail panel on unmount
@@ -331,6 +336,7 @@ export default function RouteDetailPage() {
               </span>
               <span>{activeRoute.stops.length} paradas</span>
               <span>{formatDuration(activeRoute.total_duration_minutes)}</span>
+              <FeedbackButtons targetType="route" targetId={activeRoute.id} />
             </div>
           </div>
 

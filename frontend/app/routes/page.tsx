@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRoutesStore } from "@/store/routes";
+import { useFeedbackStore } from "@/store/feedback";
 import { RouteSmartInput } from "@/components/routes/RouteSmartInput";
 import { RouteResult } from "@/components/routes/RouteResult";
 import { RouteCard } from "@/components/routes/RouteCard";
@@ -95,6 +96,12 @@ export default function RoutesPage() {
     loadRoutes();
     loadFilterValues();
   }, [loadRoutes, loadFilterValues]);
+
+  useEffect(() => {
+    if (routes.length > 0) {
+      useFeedbackStore.getState().loadFeedbackBatch("route", routes.map((r) => r.id));
+    }
+  }, [routes]);
 
   return (
     <div className="relative h-[calc(100vh-3.625rem)] overflow-hidden">

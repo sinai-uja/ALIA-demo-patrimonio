@@ -31,6 +31,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     const err = await res.text();
     throw new Error(err || res.statusText);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -380,6 +381,7 @@ export interface SimilaritySearchResponse {
   page: number;
   page_size: number;
   total_pages: number;
+  search_id: string;
 }
 
 export interface DetectedEntity {
@@ -427,6 +429,45 @@ export const search = {
     }
     const qs = params.toString();
     return apiFetch<FilterValues>(`/search/filters${qs ? `?${qs}` : ""}`);
+  },
+};
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+export interface FeedbackResponse {
+  id: string;
+  target_type: string;
+  target_id: string;
+  value: number;
+  created_at: string;
+}
+
+export interface FeedbackBatchResponse {
+  feedbacks: Record<string, number>;
+}
+
+export const feedback = {
+  submit: (params: {
+    target_type: "route" | "search";
+    target_id: string;
+    value: 1 | -1;
+    metadata?: Record<string, unknown>;
+  }) =>
+    apiFetch<FeedbackResponse>("/feedback", {
+      method: "PUT",
+      body: JSON.stringify(params),
+    }),
+
+  delete: (targetType: string, targetId: string) =>
+    apiFetch<void>(`/feedback/${targetType}/${targetId}`, { method: "DELETE" }),
+
+  get: (targetType: string, targetId: string) =>
+    apiFetch<FeedbackResponse>(`/feedback/${targetType}/${targetId}`),
+
+  batch: (targetType: string, targetIds: string[]) => {
+    const params = new URLSearchParams();
+    params.set("target_type", targetType);
+    for (const id of targetIds) params.append("target_ids", id);
+    return apiFetch<FeedbackBatchResponse>(`/feedback/batch?${params}`);
   },
 };
 

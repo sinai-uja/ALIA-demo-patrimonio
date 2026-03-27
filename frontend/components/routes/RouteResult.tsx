@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { VirtualRoute } from "@/lib/api";
 import { RouteStopCard } from "./RouteStopCard";
+import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
   patrimonio_inmueble: "bg-green-100 text-green-700",
@@ -207,6 +208,7 @@ export function RouteResult({ route }: RouteResultProps) {
             </svg>
             {formatDuration(route.total_duration_minutes)}
           </span>
+          <FeedbackButtons targetType="route" targetId={route.id} />
         </div>
       </div>
 

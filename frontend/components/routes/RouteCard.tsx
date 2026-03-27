@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { VirtualRoute } from "@/lib/api";
 import { useRoutesStore } from "@/store/routes";
+import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 
 function DeleteConfirmModal({
   routeTitle,
@@ -128,6 +129,12 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
           </span>
           <span>{route.stops.length} paradas</span>
           <span>{duration}</span>
+          <div
+            className="ml-auto"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <FeedbackButtons targetType="route" targetId={route.id} size="sm" />
+          </div>
         </div>
       </Link>
 
