@@ -119,18 +119,20 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
           </h3>
         </div>
         <p className="text-xs text-stone-400 line-clamp-3 leading-relaxed">{route.narrative}</p>
-        <div className="mt-auto pt-4 border-t border-stone-100 flex items-center gap-4 text-xs text-stone-500">
-          <span className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-            </svg>
-            {route.province}
-          </span>
-          <span>{route.stops.length} paradas</span>
-          <span>{duration}</span>
+        <div className="mt-auto pt-4 border-t border-stone-100 text-xs text-stone-500">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+              </svg>
+              {route.province}
+            </span>
+            <span>{route.stops.length} paradas</span>
+            <span>{duration}</span>
+          </div>
           <div
-            className="ml-auto"
+            className="flex justify-center mt-2"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <FeedbackButtons targetType="route" targetId={route.id} size="sm" />

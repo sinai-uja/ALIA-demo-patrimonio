@@ -128,26 +128,28 @@ export function SearchResults() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-stone-400">
-        {totalResults} resultado{totalResults !== 1 ? "s" : ""} ordenados por similaridad
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-stone-400">
+          {totalResults} resultado{totalResults !== 1 ? "s" : ""} ordenados por similaridad
+        </p>
+        {searchId && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-stone-400">Valorar resultados</span>
+            <FeedbackButtons
+              targetType="search"
+              targetId={searchId}
+              metadata={{ query, filters: activeFilters }}
+              size="sm"
+            />
+          </div>
+        )}
+      </div>
       <div className="space-y-3">
         {results.map((r, i) => (
           <SearchResultCard key={r.document_id} result={r} rank={startRank + i + 1} />
         ))}
       </div>
       <Pagination />
-      {searchId && (
-        <div className="flex items-center justify-end gap-2 pt-1">
-          <span className="text-xs text-stone-400">Valorar resultados</span>
-          <FeedbackButtons
-            targetType="search"
-            targetId={searchId}
-            metadata={{ query, filters: activeFilters }}
-            size="sm"
-          />
-        </div>
-      )}
     </div>
   );
 }
