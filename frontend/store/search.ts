@@ -33,6 +33,9 @@ interface SearchState {
   suggestionsLoading: boolean;
   hasSearched: boolean;
 
+  // Search ID returned by backend
+  searchId: string | null;
+
   // Detail panel
   selectedAssetId: string | null;
   selectedAsset: HeritageAsset | null;
@@ -108,6 +111,9 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   suggestionsLoading: false,
   hasSearched: false,
 
+  // Search ID returned by backend
+  searchId: null,
+
   // Detail panel
   selectedAssetId: null,
   selectedAsset: null,
@@ -155,9 +161,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         totalResults: res.total_results,
         page: res.page,
         totalPages: res.total_pages,
+        searchId: res.search_id,
       });
     } catch {
-      set({ results: [], totalResults: 0, page: 1, totalPages: 0 });
+      set({ results: [], totalResults: 0, page: 1, totalPages: 0, searchId: null });
     } finally {
       set({ loading: false });
     }

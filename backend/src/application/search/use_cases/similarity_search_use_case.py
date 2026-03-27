@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from uuid import uuid4
 
 from src.application.search.dto.search_dto import (
     ChunkHitDTO,
@@ -19,7 +20,7 @@ from src.domain.search.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
 )
 
-logger = logging.getLogger("iaph.search")
+logger = logging.getLogger("iaph.usecases.search")
 
 
 class SimilaritySearchUseCase:
@@ -55,8 +56,9 @@ class SimilaritySearchUseCase:
     async def execute(
         self, dto: SimilaritySearchDTO,
     ) -> SimilaritySearchResponseDTO:
+        search_id = str(uuid4())
         logger.info(
-            "Similarity search start: query=%s", dto.query[:80],
+            "Similarity search start: search_id=%s query=%s", search_id, dto.query[:80],
         )
 
         # 1. Embed the user query (with instruction prefix for Qwen3)
@@ -83,16 +85,19 @@ class SimilaritySearchUseCase:
             # Pure similarity: vector search only, no fusion or reranking
             filtered_chunks = self._similarity_filter.filter(vector_chunks)
             logger.info(
-                "Search results (similarity-only): vector=%d, filtered=%d, threshold=%.3f",
-                len(vector_chunks), len(filtered_chunks),
+                "Search results (similarity-only): search_id=%s vector=%d, filtered=%d,"
+                " threshold=%.3f",
+                search_id, len(vector_chunks), len(filtered_chunks),
                 self._similarity_filter._score_threshold,
             )
             for i, chunk in enumerate(
                 sorted(filtered_chunks, key=lambda c: c.score)[:20], 1,
             ):
                 logger.info(
-                    "Similarity #%d: score=%.4f | title: %s | type: %s | province: %s",
-                    i, chunk.score, chunk.title[:60], chunk.heritage_type, chunk.province,
+                    "Similarity #%d: search_id=%s score=%.4f | title: %s"
+                    " | type: %s | province: %s",
+                    i, search_id, chunk.score, chunk.title[:60],
+                    chunk.heritage_type, chunk.province,
                 )
             final_chunks = sorted(filtered_chunks, key=lambda c: c.score)
         else:
@@ -111,8 +116,8 @@ class SimilaritySearchUseCase:
             )
             filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
             logger.info(
-                "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
-                len(vector_chunks), len(text_chunks),
+                "Search results: search_id=%s vector=%d, fts=%d, fused=%d, filtered=%d",
+                search_id, len(vector_chunks), len(text_chunks),
                 len(fused_chunks), len(filtered_chunks),
             )
             final_chunks = self._reranking_service.rerank(
@@ -184,7 +189,8 @@ class SimilaritySearchUseCase:
         page_results = results[start : start + dto.page_size]
 
         logger.info(
-            "Similarity search complete: %d total, page %d/%d (%d chunks)",
+            "Similarity search complete: search_id=%s %d total, page %d/%d (%d chunks)",
+            search_id,
             total_results,
             dto.page,
             total_pages,
@@ -198,4 +204,5 @@ class SimilaritySearchUseCase:
             page=dto.page,
             page_size=dto.page_size,
             total_pages=total_pages,
+            search_id=search_id,
         )

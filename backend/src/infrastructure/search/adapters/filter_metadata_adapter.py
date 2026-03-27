@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.domain.search.ports.filter_metadata_port import FilterMetadataPort
 
-logger = logging.getLogger("iaph.search")
+logger = logging.getLogger("iaph.usecases.search")
 
 
 class PgFilterMetadataAdapter(FilterMetadataPort):

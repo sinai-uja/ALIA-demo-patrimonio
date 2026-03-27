@@ -103,6 +103,7 @@ def setup_logging() -> None:
         logs/llm.log        ← iaph.llm at DEBUG+
         logs/embedding.log  ← iaph.embedding at DEBUG+
         logs/auth.log       ← iaph.auth at DEBUG+
+        logs/feedback.log   ← iaph.feedback at DEBUG+
         logs/errors.log     ← root at WARNING+
         logs/usecases/routes.log  ← iaph.usecases.routes at DEBUG+
         logs/usecases/search.log  ← iaph.usecases.search at DEBUG+
@@ -143,6 +144,12 @@ def setup_logging() -> None:
     auth_handler = _daily_handler(
         os.path.join(LOG_DIR, "auth.log"), formatter=formatter,
         log_filter=_OnlyLoggerFilter("iaph.auth"),
+    )
+
+    # feedback.log — only iaph.feedback
+    feedback_handler = _daily_handler(
+        os.path.join(LOG_DIR, "feedback.log"), formatter=formatter,
+        log_filter=_OnlyLoggerFilter("iaph.feedback"),
     )
 
     # errors.log — WARNING+ from everything
@@ -190,6 +197,9 @@ def setup_logging() -> None:
 
     # iaph.auth — auth.log (inherits info.log + console from iaph parent)
     logging.getLogger("iaph.auth").addHandler(auth_handler)
+
+    # iaph.feedback — feedback.log (inherits info.log + console from iaph parent)
+    logging.getLogger("iaph.feedback").addHandler(feedback_handler)
 
     # iaph.usecases.routes — usecases/routes.log (inherits info.log + console from iaph parent)
     logging.getLogger("iaph.usecases.routes").addHandler(routes_uc_handler)

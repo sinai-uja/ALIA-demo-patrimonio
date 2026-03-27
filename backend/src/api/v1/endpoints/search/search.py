@@ -54,8 +54,9 @@ async def similarity_search(
         ) from exc
 
     logger.info(
-        "Search response: query=%r, total_results=%d, page=%d/%d",
-        request.query[:80], result.total_results, result.page, result.total_pages,
+        "Search response: search_id=%s query=%r, total_results=%d, page=%d/%d",
+        result.search_id, request.query[:80], result.total_results,
+        result.page, result.total_pages,
     )
     return SimilaritySearchResponse(
         results=[
@@ -89,6 +90,7 @@ async def similarity_search(
         page=result.page,
         page_size=result.page_size,
         total_pages=result.total_pages,
+        search_id=result.search_id,
     )
 
 
