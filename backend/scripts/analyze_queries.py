@@ -23,6 +23,8 @@ from datetime import datetime
 from scripts.analyze_feedback import (
     ANALYSIS_DIR,
     LOG_DIR,
+    UserLookup,
+    build_user_lookup,
     parse_feedback,
     parse_route_logs,
     parse_search_logs,
@@ -34,8 +36,11 @@ from scripts.analyze_feedback import (
 class SearchQueryRow:
     """One row per search execution."""
     timestamp: str
+    user_id: str
+    profile_type: str
     search_id: str
     query: str
+    filters: str
     mode: str
     vector_count: int
     fts_count: int
@@ -56,6 +61,8 @@ class SearchQueryRow:
 class RouteQueryRow:
     """One row per route generation."""
     timestamp: str
+    user_id: str
+    profile_type: str
     route_id: str
     user_query: str
     extracted_query: str
@@ -71,16 +78,23 @@ class RouteQueryRow:
 # ── Report builders ───────────────────────────────────────────────────────────
 
 def build_search_query_rows(
-    searches: dict, feedback_map: dict[str, int],
+    searches: dict,
+    feedback_map: dict[str, int],
+    user_lookup: UserLookup | None = None,
 ) -> list[SearchQueryRow]:
     rows = []
+    _lu = user_lookup or UserLookup({}, {})
     for sid, ex in sorted(searches.items(), key=lambda kv: kv[1].timestamp):
         scores = [c.score for c in ex.chunks] if ex.chunks else []
         fb = feedback_map.get(sid)
+        username = _lu.resolve_username(ex.user)
         rows.append(SearchQueryRow(
             timestamp=ex.timestamp,
+            user_id=username,
+            profile_type=_lu.resolve_profile(username),
             search_id=sid,
             query=ex.query,
+            filters=ex.filters,
             mode=ex.mode,
             vector_count=ex.vector_count,
             fts_count=ex.fts_count,
@@ -105,13 +119,19 @@ def build_search_query_rows(
 
 
 def build_route_query_rows(
-    routes: dict, feedback_map: dict[str, int],
+    routes: dict,
+    feedback_map: dict[str, int],
+    user_lookup: UserLookup | None = None,
 ) -> list[RouteQueryRow]:
     rows = []
+    _lu = user_lookup or UserLookup({}, {})
     for rid, ex in sorted(routes.items(), key=lambda kv: kv[1].timestamp):
         fb = feedback_map.get(rid)
+        username = _lu.resolve_username(ex.user)
         rows.append(RouteQueryRow(
             timestamp=ex.timestamp,
+            user_id=username,
+            profile_type=_lu.resolve_profile(username),
             route_id=rid,
             user_query=ex.user_query,
             extracted_query=ex.extracted_query,
@@ -196,13 +216,16 @@ def main() -> None:
     feedbacks = parse_feedback(since=args.since)
     feedback_map = {fb.target_id: fb.value for fb in feedbacks}
 
+    # Build user profile lookup from DB
+    user_lookup = build_user_lookup()
+
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     search_rows: list[SearchQueryRow] = []
     route_rows: list[RouteQueryRow] = []
 
     if args.type in (None, "search"):
         searches = parse_search_logs(since=args.since)
-        search_rows = build_search_query_rows(searches, feedback_map)
+        search_rows = build_search_query_rows(searches, feedback_map, user_lookup)
         if search_rows:
             write_csv(
                 search_rows,
@@ -212,7 +235,7 @@ def main() -> None:
 
     if args.type in (None, "route"):
         routes = parse_route_logs(since=args.since)
-        route_rows = build_route_query_rows(routes, feedback_map)
+        route_rows = build_route_query_rows(routes, feedback_map, user_lookup)
         if route_rows:
             write_csv(
                 route_rows,

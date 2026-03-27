@@ -21,12 +21,61 @@ import re
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
+from sqlalchemy import create_engine, text
+
 # ── Log directory resolution ──────────────────────────────────────────────────
 # Docker: LOG_DIR=/app/logs  |  Local: ../logs relative to this script
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_LOG_DIR = os.path.join(SCRIPT_DIR, "..", "logs")
 LOG_DIR = os.environ.get("LOG_DIR", DEFAULT_LOG_DIR)
 ANALYSIS_DIR = os.path.join(LOG_DIR, "analysis")
+
+# ── DB URL resolution ────────────────────────────────────────────────────────
+# Read from DATABASE_URL env var (same as backend config). Strip asyncpg driver
+# so we can use synchronous psycopg2.
+_DEFAULT_DB_URL = "postgresql+asyncpg://uja:uja@localhost:15432/uja_iaph"
+_DB_URL = os.environ.get("DATABASE_URL", _DEFAULT_DB_URL).replace("+asyncpg", "")
+
+
+# ── User profile lookup ──────────────────────────────────────────────────────
+
+@dataclass
+class UserLookup:
+    """Bidirectional user lookup: username↔profile_type and uuid→username."""
+    profile_by_username: dict[str, str]  # username → profile_type_name
+    username_by_uuid: dict[str, str]     # str(uuid) → username
+
+    def resolve_username(self, user_field: str) -> str:
+        """Resolve a user field (may be UUID or username) to username."""
+        if not user_field:
+            return ""
+        # If it looks like a UUID, resolve it
+        return self.username_by_uuid.get(user_field, user_field)
+
+    def resolve_profile(self, username: str) -> str:
+        """Get profile type for a username."""
+        return self.profile_by_username.get(username, "")
+
+
+def build_user_lookup() -> UserLookup:
+    """Query the DB for user resolution mappings."""
+    engine = create_engine(_DB_URL)
+    profile_by_username: dict[str, str] = {}
+    username_by_uuid: dict[str, str] = {}
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text(
+                "SELECT u.id, u.username, pt.name "
+                "FROM users u "
+                "LEFT JOIN user_profile_types pt ON u.profile_type_id = pt.id"
+            ))
+            for uid, username, profile_name in rows:
+                profile_by_username[username] = profile_name or ""
+                username_by_uuid[str(uid)] = username
+    finally:
+        engine.dispose()
+    return UserLookup(profile_by_username, username_by_uuid)
+
 
 # ── Regex patterns ────────────────────────────────────────────────────────────
 
@@ -48,7 +97,9 @@ RE_FEEDBACK = re.compile(
 # usecases/search.log patterns
 RE_SEARCH_START = re.compile(
     r"Similarity search start: search_id=(?P<search_id>[0-9a-f-]+)"
-    r" query=(?P<query>.+)$"
+    r"(?: user=(?P<user>\S+))?"
+    r" query=(?P<query>.+?)"
+    r"(?: filters=(?P<filters>.+))?$"
 )
 
 RE_SEARCH_RESULTS_SIM = re.compile(
@@ -71,6 +122,7 @@ RE_SEARCH_CHUNK = re.compile(
 
 RE_SEARCH_COMPLETE = re.compile(
     r"Similarity search complete: search_id=(?P<search_id>[0-9a-f-]+)"
+    r"(?: user=\S+)?"
     r" (?P<total>\d+) total, page (?P<page>\d+)/(?P<total_pages>\d+)"
     r" \((?P<chunks>\d+) chunks\)"
     r"(?: (?P<elapsed_ms>\d+)ms)?"
@@ -78,7 +130,9 @@ RE_SEARCH_COMPLETE = re.compile(
 
 # usecases/routes.log patterns
 RE_ROUTE_EXTRACTED = re.compile(
-    r"Route generation: extracted_query=(?P<extracted_query>.+?)"
+    r"Route generation:"
+    r"(?: user=(?P<user>\S+))?"
+    r" extracted_query=(?P<extracted_query>.+?)"
     r" from user_query=(?P<user_query>.+)$"
 )
 
@@ -94,6 +148,7 @@ RE_ROUTE_STOP = re.compile(
 
 RE_ROUTE_COMPLETE = re.compile(
     r"Route generation complete: route_id=(?P<route_id>\S+)"
+    r"(?: user=(?P<user>\S+))?"
     r" title=(?P<title>.+?) stops=(?P<stops>\d+)"
     r"(?: (?P<elapsed_ms>\d+)ms)?"
 )
@@ -120,7 +175,9 @@ class ChunkResult:
 class SearchExecution:
     search_id: str
     timestamp: str = ""
+    user: str = ""
     query: str = ""
+    filters: str = ""
     mode: str = ""  # "similarity-only" or "hybrid"
     vector_count: int = 0
     fts_count: int = 0
@@ -137,6 +194,7 @@ class SearchExecution:
 class RouteExecution:
     route_id: str
     timestamp: str = ""
+    user: str = ""
     user_query: str = ""
     extracted_query: str = ""
     rag_chunks: int = 0
@@ -224,7 +282,11 @@ def parse_search_logs(since: str | None = None) -> dict[str, SearchExecution]:
         if m:
             sid = m.group("search_id")
             executions[sid] = SearchExecution(
-                search_id=sid, timestamp=ts, query=m.group("query"),
+                search_id=sid,
+                timestamp=ts,
+                user=m.group("user") or "",
+                query=m.group("query").strip(),
+                filters=m.group("filters") or "none",
             )
             continue
 
@@ -300,6 +362,7 @@ def parse_route_logs(since: str | None = None) -> dict[str, RouteExecution]:
         if m:
             current = {
                 "timestamp": ts,
+                "user": m.group("user") or "",
                 "user_query": m.group("user_query").strip().strip("'"),
                 "extracted_query": m.group("extracted_query").strip().strip("'"),
                 "stops": [],
@@ -331,6 +394,7 @@ def parse_route_logs(since: str | None = None) -> dict[str, RouteExecution]:
             route = RouteExecution(
                 route_id=rid,
                 timestamp=current.get("timestamp", ts),
+                user=current.get("user", ""),
                 user_query=current.get("user_query", ""),
                 extracted_query=current.get("extracted_query", ""),
                 rag_chunks=current.get("rag_chunks", 0),
@@ -369,6 +433,7 @@ class SearchReport:
     """One row per feedback entry for a search."""
     timestamp: str
     user: str
+    profile_type: str
     value: int
     search_id: str
     query: str
@@ -409,6 +474,7 @@ class RouteReport:
     """One row per feedback entry for a route."""
     timestamp: str
     user: str
+    profile_type: str
     value: int
     route_id: str
     user_query: str
@@ -426,9 +492,11 @@ class RouteReport:
 def build_search_reports(
     feedbacks: list[FeedbackEntry],
     searches: dict[str, SearchExecution],
+    user_lookup: UserLookup | None = None,
 ) -> tuple[list[SearchReport], list[SearchChunkReport]]:
     summary_rows: list[SearchReport] = []
     chunk_rows: list[SearchChunkReport] = []
+    _lu = user_lookup or UserLookup({}, {})
 
     for fb in feedbacks:
         if fb.target_type != "search":
@@ -440,6 +508,7 @@ def build_search_reports(
             summary_rows.append(SearchReport(
                 timestamp=fb.timestamp,
                 user=fb.user,
+                profile_type=_lu.resolve_profile(fb.user),
                 value=fb.value,
                 search_id=fb.target_id,
                 query=ex.query,
@@ -484,6 +553,7 @@ def build_search_reports(
             summary_rows.append(SearchReport(
                 timestamp=fb.timestamp,
                 user=fb.user,
+                profile_type=_lu.resolve_profile(fb.user),
                 value=fb.value,
                 search_id=fb.target_id,
                 query="",
@@ -504,8 +574,10 @@ def build_search_reports(
 def build_route_reports(
     feedbacks: list[FeedbackEntry],
     routes: dict[str, RouteExecution],
+    user_lookup: UserLookup | None = None,
 ) -> list[RouteReport]:
     rows: list[RouteReport] = []
+    _lu = user_lookup or UserLookup({}, {})
     for fb in feedbacks:
         if fb.target_type != "route":
             continue
@@ -514,6 +586,7 @@ def build_route_reports(
             rows.append(RouteReport(
                 timestamp=fb.timestamp,
                 user=fb.user,
+                profile_type=_lu.resolve_profile(fb.user),
                 value=fb.value,
                 route_id=fb.target_id,
                 user_query=ex.user_query,
@@ -531,6 +604,7 @@ def build_route_reports(
             rows.append(RouteReport(
                 timestamp=fb.timestamp,
                 user=fb.user,
+                profile_type=_lu.resolve_profile(fb.user),
                 value=fb.value,
                 route_id=fb.target_id,
                 user_query="", extracted_query="", title="",
@@ -644,9 +718,14 @@ def main() -> None:
 
     print(f"Parsed: {len(feedbacks)} feedback, {len(searches)} searches, {len(routes)} routes")
 
+    # Build user lookup from DB
+    user_lookup = build_user_lookup()
+
     # Build reports
-    search_reports, chunk_reports = build_search_reports(feedbacks, searches)
-    route_reports = build_route_reports(feedbacks, routes)
+    search_reports, chunk_reports = build_search_reports(
+        feedbacks, searches, user_lookup,
+    )
+    route_reports = build_route_reports(feedbacks, routes, user_lookup)
 
     # Write outputs
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
