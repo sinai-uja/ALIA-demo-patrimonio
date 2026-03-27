@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.chat.deps import get_chat_service
 from src.api.v1.endpoints.chat.schemas import (
     CreateSessionRequest,
@@ -12,6 +13,7 @@ from src.api.v1.endpoints.chat.schemas import (
 )
 from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO, UpdateSessionDTO
 from src.application.chat.services.chat_application_service import ChatApplicationService
+from src.domain.auth.entities.user import User
 
 logger = logging.getLogger("iaph.query")
 
@@ -21,10 +23,11 @@ router = APIRouter()
 @router.post("/sessions", response_model=SessionResponse, status_code=201)
 async def create_session(
     request: CreateSessionRequest,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> SessionResponse:
     """Create a new chat session."""
-    dto = CreateSessionDTO(title=request.title)
+    dto = CreateSessionDTO(title=request.title, user_id=str(user.id))
     result = await service.create_session(dto)
     return SessionResponse(
         id=result.id,
@@ -36,10 +39,11 @@ async def create_session(
 
 @router.get("/sessions", response_model=list[SessionResponse])
 async def list_sessions(
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> list[SessionResponse]:
     """List all chat sessions ordered by most recently updated."""
-    results = await service.list_sessions()
+    results = await service.list_sessions(user_id=str(user.id))
     return [
         SessionResponse(
             id=s.id,
@@ -54,20 +58,22 @@ async def list_sessions(
 @router.delete("/sessions/{session_id}", status_code=204)
 async def delete_session(
     session_id: str,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> None:
     """Delete a chat session and all its messages."""
-    await service.delete_session(session_id)
+    await service.delete_session(session_id, user_id=str(user.id))
 
 
 @router.patch("/sessions/{session_id}", response_model=SessionResponse)
 async def update_session(
     session_id: str,
     request: UpdateSessionRequest,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> SessionResponse:
     """Update a chat session title."""
-    dto = UpdateSessionDTO(session_id=session_id, title=request.title)
+    dto = UpdateSessionDTO(session_id=session_id, title=request.title, user_id=str(user.id))
     try:
         result = await service.update_session_title(dto)
     except ValueError as exc:

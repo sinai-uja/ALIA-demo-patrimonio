@@ -6,6 +6,7 @@ class CreateSessionDTO:
     """Input DTO for creating a new chat session."""
 
     title: str = "Nueva conversación"
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class UpdateSessionDTO:
 
     session_id: str
     title: str
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)

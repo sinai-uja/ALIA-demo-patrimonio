@@ -17,44 +17,60 @@ class ChatRepositoryImpl(ChatRepository):
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
-    async def create_session(self, title: str) -> ChatSession:
-        model = ChatSessionModel(id=uuid.uuid4(), title=title)
+    async def create_session(
+        self, title: str, user_id: uuid.UUID | None = None,
+    ) -> ChatSession:
+        model = ChatSessionModel(id=uuid.uuid4(), title=title, user_id=user_id)
         self._db.add(model)
         await self._db.commit()
         await self._db.refresh(model)
         return self._to_session_entity(model)
 
-    async def get_session(self, session_id: uuid.UUID) -> ChatSession | None:
-        result = await self._db.execute(
-            select(ChatSessionModel).where(ChatSessionModel.id == session_id)
-        )
+    async def get_session(
+        self, session_id: uuid.UUID, user_id: uuid.UUID | None = None,
+    ) -> ChatSession | None:
+        stmt = select(ChatSessionModel).where(ChatSessionModel.id == session_id)
+        if user_id is not None:
+            stmt = stmt.where(ChatSessionModel.user_id == user_id)
+        result = await self._db.execute(stmt)
         model = result.scalar_one_or_none()
         if model is None:
             return None
         return self._to_session_entity(model)
 
-    async def list_sessions(self) -> list[ChatSession]:
-        result = await self._db.execute(
-            select(ChatSessionModel).order_by(ChatSessionModel.updated_at.desc())
-        )
+    async def list_sessions(self, user_id: uuid.UUID | None = None) -> list[ChatSession]:
+        stmt = select(ChatSessionModel).order_by(ChatSessionModel.updated_at.desc())
+        if user_id is not None:
+            stmt = stmt.where(ChatSessionModel.user_id == user_id)
+        result = await self._db.execute(stmt)
         return [self._to_session_entity(m) for m in result.scalars().all()]
 
-    async def delete_session(self, session_id: uuid.UUID) -> None:
-        await self._db.execute(
-            delete(ChatSessionModel).where(ChatSessionModel.id == session_id)
-        )
+    async def delete_session(
+        self, session_id: uuid.UUID, user_id: uuid.UUID | None = None,
+    ) -> None:
+        stmt = delete(ChatSessionModel).where(ChatSessionModel.id == session_id)
+        if user_id is not None:
+            stmt = stmt.where(ChatSessionModel.user_id == user_id)
+        await self._db.execute(stmt)
         await self._db.commit()
 
-    async def update_session_title(self, session_id: uuid.UUID, title: str) -> ChatSession:
-        await self._db.execute(
+    async def update_session_title(
+        self, session_id: uuid.UUID, title: str, user_id: uuid.UUID | None = None,
+    ) -> ChatSession:
+        stmt = (
             update(ChatSessionModel)
             .where(ChatSessionModel.id == session_id)
             .values(title=title)
         )
+        if user_id is not None:
+            stmt = stmt.where(ChatSessionModel.user_id == user_id)
+        await self._db.execute(stmt)
         await self._db.commit()
-        result = await self._db.execute(
-            select(ChatSessionModel).where(ChatSessionModel.id == session_id)
-        )
+
+        get_stmt = select(ChatSessionModel).where(ChatSessionModel.id == session_id)
+        if user_id is not None:
+            get_stmt = get_stmt.where(ChatSessionModel.user_id == user_id)
+        result = await self._db.execute(get_stmt)
         model = result.scalar_one_or_none()
         if model is None:
             raise ValueError(f"Session {session_id} not found")

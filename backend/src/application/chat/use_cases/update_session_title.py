@@ -11,9 +11,11 @@ class UpdateSessionTitleUseCase:
         self._chat_repository = chat_repository
 
     async def execute(self, dto: UpdateSessionDTO) -> SessionDTO:
+        user_uuid = uuid.UUID(dto.user_id) if dto.user_id else None
         session = await self._chat_repository.update_session_title(
             session_id=uuid.UUID(dto.session_id),
             title=dto.title,
+            user_id=user_uuid,
         )
         return SessionDTO(
             id=str(session.id),
