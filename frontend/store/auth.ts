@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { auth as authApi } from "@/lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
@@ -27,16 +28,22 @@ interface AuthState {
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  username: string | null;
+  profileType: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<boolean>;
   hydrate: () => void;
+  fetchUser: () => Promise<void>;
+  setProfileType: (type: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
   isAuthenticated: false,
+  username: null,
+  profileType: null,
 
   login: async (username: string, password: string) => {
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -58,12 +65,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       refreshToken: data.refresh_token,
       isAuthenticated: true,
     });
+
+    await get().fetchUser();
   },
 
   logout: () => {
     removeCookie("token");
     localStorage.removeItem("refreshToken");
-    set({ token: null, refreshToken: null, isAuthenticated: false });
+    set({
+      token: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      username: null,
+      profileType: null,
+    });
     window.location.href = "/login";
   },
 
@@ -102,6 +117,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : null;
     if (token) {
       set({ token, refreshToken, isAuthenticated: true });
+      get().fetchUser();
     }
+  },
+
+  fetchUser: async () => {
+    try {
+      const user = await authApi.getMe();
+      set({ username: user.username, profileType: user.profile_type });
+    } catch {
+      // If fetching user fails, keep existing auth state
+    }
+  },
+
+  setProfileType: async (type: string) => {
+    const user = await authApi.updateProfileType(type);
+    set({ profileType: user.profile_type });
   },
 }));

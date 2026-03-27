@@ -471,6 +471,29 @@ export const feedback = {
   },
 };
 
+// ── Auth ──────────────────────────────────────────────────────────────────────
+export interface UserInfo {
+  id: string;
+  username: string;
+  profile_type: string | null;
+}
+
+export interface ProfileType {
+  name: string;
+}
+
+export const auth = {
+  getMe: () => apiFetch<UserInfo>("/auth/me"),
+
+  updateProfileType: (profileType: string) =>
+    apiFetch<UserInfo>("/auth/profile-type", {
+      method: "PUT",
+      body: JSON.stringify({ profile_type: profileType }),
+    }),
+
+  getProfileTypes: () => apiFetch<ProfileType[]>("/auth/profile-types"),
+};
+
 // ── Accessibility ─────────────────────────────────────────────────────────────
 export interface SimplifyResponse {
   original_text: string;

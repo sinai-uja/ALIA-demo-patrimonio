@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth";
+import { auth as authApi } from "@/lib/api";
+import type { ProfileType } from "@/lib/api";
 
 const links = [
   { href: "/search", label: "Busqueda" },
@@ -12,10 +15,29 @@ const links = [
 export function NavBar() {
   const pathname = usePathname();
   const logout = useAuthStore((s) => s.logout);
+  const username = useAuthStore((s) => s.username);
+  const profileType = useAuthStore((s) => s.profileType);
+  const setProfileType = useAuthStore((s) => s.setProfileType);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const [profileTypes, setProfileTypes] = useState<ProfileType[]>([]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    authApi.getProfileTypes().then(setProfileTypes).catch(() => {});
+  }, [isAuthenticated]);
+
+  const handleProfileChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value) {
+      setProfileType(value);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-stone-200/60 bg-white/80 backdrop-blur-lg">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        {/* Left: logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-600 to-emerald-700 text-white text-sm font-bold shadow-sm">
             PA
@@ -24,28 +46,65 @@ export function NavBar() {
             Patrimonio de Andalucía
           </span>
         </Link>
-        <div className="flex items-center gap-1">
-          <nav className="flex items-center gap-1">
-            {links.map((l) => {
-              const active = pathname.startsWith(l.href);
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all ${
-                    active
-                      ? "bg-green-50 text-green-800"
-                      : "text-stone-500 hover:text-stone-800 hover:bg-stone-100"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
-          </nav>
+
+        {/* Center: nav links */}
+        <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
+          {links.map((l) => {
+            const active = pathname.startsWith(l.href);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all ${
+                  active
+                    ? "bg-green-50 text-green-800"
+                    : "text-stone-500 hover:text-stone-800 hover:bg-stone-100"
+                }`}
+              >
+                {l.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right: profile + logout */}
+        <div className="flex items-center gap-3">
+          {isAuthenticated && username && (
+            <>
+              <span className="text-sm text-stone-500">{username}</span>
+              {profileTypes.length > 0 && (
+                <div className="relative">
+                  <select
+                    value={profileType ?? ""}
+                    onChange={handleProfileChange}
+                    className="appearance-none rounded-full border border-stone-200 bg-stone-50 pl-3 pr-7 py-1 text-xs font-medium text-stone-600 shadow-sm outline-none hover:bg-white hover:border-stone-300 focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all cursor-pointer capitalize"
+                  >
+                    <option value="" disabled>
+                      Perfil
+                    </option>
+                    {profileTypes.map((pt) => (
+                      <option key={pt.name} value={pt.name} className="capitalize">
+                        {pt.name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              )}
+            </>
+          )}
+          <div className="h-4 w-px bg-stone-200" />
           <button
             onClick={logout}
-            className="ml-4 rounded-lg px-3.5 py-1.5 text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-500 hover:text-red-600 hover:bg-red-50 transition-all"
           >
             Cerrar sesión
           </button>
