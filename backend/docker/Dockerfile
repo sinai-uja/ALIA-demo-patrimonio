@@ -29,10 +29,11 @@ COPY pyproject.toml uv.lock ./
 # Install production dependencies only (skip dev group: pytest, ruff, etc.)
 RUN uv sync --frozen --no-dev
 
-# Copy application source and migration files
+# Copy application source, migration files, and analysis scripts
 COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY alembic.ini* ./
+COPY scripts/ ./scripts/
 
 ENV PORT=20000
 EXPOSE ${PORT}
