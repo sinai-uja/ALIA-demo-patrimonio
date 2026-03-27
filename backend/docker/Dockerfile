@@ -34,7 +34,8 @@ COPY src/ ./src/
 COPY alembic/ ./alembic/
 COPY alembic.ini* ./
 
-EXPOSE 20000
+ENV PORT=20000
+EXPOSE ${PORT}
 
 # Production server (fastapi run = uvicorn with auto-workers)
-CMD ["uv", "run", "fastapi", "run", "src/main.py", "--host", "0.0.0.0", "--port", "20000"]
+CMD uv run fastapi run src/main.py --host 0.0.0.0 --port ${PORT}
