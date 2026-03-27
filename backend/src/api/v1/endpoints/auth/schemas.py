@@ -14,3 +14,17 @@ class TokenResponse(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class UserInfoResponse(BaseModel):
+    id: str
+    username: str
+    profile_type: str | None = None
+
+
+class UpdateProfileTypeRequest(BaseModel):
+    profile_type: str
+
+
+class ProfileTypeResponse(BaseModel):
+    name: str

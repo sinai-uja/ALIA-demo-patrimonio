@@ -1,4 +1,6 @@
-from src.application.auth.dto.auth_dto import LoginDTO, TokenPairDTO
+import uuid
+
+from src.application.auth.dto.auth_dto import LoginDTO, TokenPairDTO, UserInfoDTO
 from src.application.auth.use_cases.login_use_case import LoginUseCase
 from src.application.auth.use_cases.refresh_token_use_case import (
     RefreshTokenUseCase,
@@ -7,6 +9,7 @@ from src.application.auth.use_cases.validate_token_use_case import (
     ValidateTokenUseCase,
 )
 from src.domain.auth.entities.user import User
+from src.domain.auth.ports.auth_port import AuthPort
 
 
 class AuthApplicationService:
@@ -15,10 +18,12 @@ class AuthApplicationService:
         login_use_case: LoginUseCase,
         validate_token_use_case: ValidateTokenUseCase,
         refresh_token_use_case: RefreshTokenUseCase,
+        auth_port: AuthPort,
     ) -> None:
         self._login_use_case = login_use_case
         self._validate_token_use_case = validate_token_use_case
         self._refresh_token_use_case = refresh_token_use_case
+        self._auth_port = auth_port
 
     def login(self, dto: LoginDTO) -> TokenPairDTO:
         return self._login_use_case.execute(dto)
@@ -28,3 +33,17 @@ class AuthApplicationService:
 
     def refresh(self, refresh_token: str) -> TokenPairDTO:
         return self._refresh_token_use_case.execute(refresh_token)
+
+    def get_user_info(self, user: User) -> UserInfoDTO:
+        return UserInfoDTO(
+            id=str(user.id),
+            username=user.username,
+            profile_type=user.profile_type.name if user.profile_type else None,
+        )
+
+    def update_profile_type(self, user_id: uuid.UUID, profile_type_name: str) -> UserInfoDTO:
+        user = self._auth_port.update_profile_type(user_id, profile_type_name)
+        return self.get_user_info(user)
+
+    def list_profile_types(self) -> list[str]:
+        return [pt.name for pt in self._auth_port.list_profile_types()]
