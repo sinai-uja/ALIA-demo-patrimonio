@@ -2,6 +2,7 @@ import asyncio
 import os
 from logging.config import fileConfig
 
+import src.infrastructure.auth.models  # noqa: F401
 import src.infrastructure.chat.models  # noqa: F401
 
 # Import all models so their tables appear in Base.metadata

@@ -56,12 +56,14 @@ class Settings(BaseSettings):
     cors_origins: str = "*"
 
     # Auth
-    auth_username: str = "admin"
-    auth_password: str = "admin"
     jwt_secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
+
+    @property
+    def database_url_sync(self) -> str:
+        return self.database_url.replace("+asyncpg", "")
 
     @property
     def cors_origins_list(self) -> list[str]:
