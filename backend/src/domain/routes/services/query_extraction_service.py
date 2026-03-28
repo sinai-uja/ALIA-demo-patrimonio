@@ -2,7 +2,7 @@ import re
 
 
 class QueryExtractionService:
-    """Cleans user text by removing geographic filter terms."""
+    """Cleans user text for query extraction."""
 
     def clean_query_text(
         self,
@@ -10,24 +10,7 @@ class QueryExtractionService:
         province_filters: list[str] | None = None,
         municipality_filters: list[str] | None = None,
     ) -> str:
-        clean = user_text
-        for terms in (province_filters, municipality_filters):
-            if not terms:
-                continue
-            for term in terms:
-                pattern = re.compile(re.escape(term), re.IGNORECASE)
-                clean = pattern.sub("", clean)
-        clean = re.sub(r"\s{2,}", " ", clean).strip()
-        clean = re.sub(
-            r"\b(de|del|en|por|a)\s*$",
-            "",
-            clean,
-            flags=re.IGNORECASE,
-        ).strip()
-        clean = re.sub(
-            r"\b(de|del|en|por|a)\s+(de|del|en|por|a)\b",
-            lambda m: m.group(1),
-            clean,
-            flags=re.IGNORECASE,
-        ).strip()
+        """Normalize whitespace. Geographic terms are kept in the query
+        because they carry semantic value for embedding search."""
+        clean = re.sub(r"\s{2,}", " ", user_text).strip()
         return clean
