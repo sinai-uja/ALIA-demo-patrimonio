@@ -3,8 +3,9 @@ import unicodedata
 
 from src.domain.search.entities.search_suggestion import DetectedEntity
 
-# Mapping from keywords to heritage type identifiers
+# Mapping from keywords to heritage type identifiers (singular forms; plural matched via regex)
 HERITAGE_TYPE_KEYWORDS: dict[str, str] = {
+    # Patrimonio Inmueble
     "inmueble": "patrimonio_inmueble",
     "arquitectura": "patrimonio_inmueble",
     "edificio": "patrimonio_inmueble",
@@ -12,17 +13,96 @@ HERITAGE_TYPE_KEYWORDS: dict[str, str] = {
     "iglesia": "patrimonio_inmueble",
     "castillo": "patrimonio_inmueble",
     "palacio": "patrimonio_inmueble",
+    "cueva": "patrimonio_inmueble",
+    "gruta": "patrimonio_inmueble",
+    "yacimiento": "patrimonio_inmueble",
+    "alcazar": "patrimonio_inmueble",
+    "alcazaba": "patrimonio_inmueble",
+    "mezquita": "patrimonio_inmueble",
+    "muralla": "patrimonio_inmueble",
+    "torre": "patrimonio_inmueble",
+    "acueducto": "patrimonio_inmueble",
+    "puente": "patrimonio_inmueble",
+    "convento": "patrimonio_inmueble",
+    "ermita": "patrimonio_inmueble",
+    "palacete": "patrimonio_inmueble",
+    "teatro": "patrimonio_inmueble",
+    "anfiteatro": "patrimonio_inmueble",
+    "terma": "patrimonio_inmueble",
+    "villa": "patrimonio_inmueble",
+    "dolmen": "patrimonio_inmueble",
+    "menhir": "patrimonio_inmueble",
+    "tumulo": "patrimonio_inmueble",
+    "necropolis": "patrimonio_inmueble",
+    "cortijo": "patrimonio_inmueble",
+    "hacienda": "patrimonio_inmueble",
+    "molino": "patrimonio_inmueble",
+    "noria": "patrimonio_inmueble",
+    "aljibe": "patrimonio_inmueble",
+    "conjunto": "patrimonio_inmueble",
+    "recinto": "patrimonio_inmueble",
+    "ruina": "patrimonio_inmueble",
+    "templo": "patrimonio_inmueble",
+    "catedral": "patrimonio_inmueble",
+    "basilica": "patrimonio_inmueble",
+    "abadia": "patrimonio_inmueble",
+    # Patrimonio Mueble
     "mueble": "patrimonio_mueble",
     "objeto": "patrimonio_mueble",
     "escultura": "patrimonio_mueble",
     "pintura": "patrimonio_mueble",
     "retablo": "patrimonio_mueble",
+    "talla": "patrimonio_mueble",
+    "imagen": "patrimonio_mueble",
+    "joya": "patrimonio_mueble",
+    "alhaja": "patrimonio_mueble",
+    "orfebreria": "patrimonio_mueble",
+    "ceramica": "patrimonio_mueble",
+    "azulejo": "patrimonio_mueble",
+    "tapiz": "patrimonio_mueble",
+    "tejido": "patrimonio_mueble",
+    "bordado": "patrimonio_mueble",
+    "documento": "patrimonio_mueble",
+    "manuscrito": "patrimonio_mueble",
+    "libro": "patrimonio_mueble",
+    "codice": "patrimonio_mueble",
+    "numismatica": "patrimonio_mueble",
+    "moneda": "patrimonio_mueble",
+    "medalla": "patrimonio_mueble",
+    "fotografia": "patrimonio_mueble",
+    "grabado": "patrimonio_mueble",
+    "dibujo": "patrimonio_mueble",
+    "cuadro": "patrimonio_mueble",
+    "lamina": "patrimonio_mueble",
+    # Patrimonio Inmaterial
     "inmaterial": "patrimonio_inmaterial",
     "fiesta": "patrimonio_inmaterial",
     "tradicion": "patrimonio_inmaterial",
     "rito": "patrimonio_inmaterial",
+    "flamenco": "patrimonio_inmaterial",
+    "cante": "patrimonio_inmaterial",
+    "baile": "patrimonio_inmaterial",
+    "danza": "patrimonio_inmaterial",
+    "musica": "patrimonio_inmaterial",
+    "artesania": "patrimonio_inmaterial",
+    "oficio": "patrimonio_inmaterial",
+    "gastronomia": "patrimonio_inmaterial",
+    "cocina": "patrimonio_inmaterial",
+    "receta": "patrimonio_inmaterial",
+    "feria": "patrimonio_inmaterial",
+    "romeria": "patrimonio_inmaterial",
+    "cofradia": "patrimonio_inmaterial",
+    "folklore": "patrimonio_inmaterial",
+    "procesion": "patrimonio_inmaterial",
+    # Paisaje Cultural
     "paisaje cultural": "paisaje_cultural",
     "paisaje": "paisaje_cultural",
+    "dehesa": "paisaje_cultural",
+    "sierra": "paisaje_cultural",
+    "vega": "paisaje_cultural",
+    "serrania": "paisaje_cultural",
+    "huerta": "paisaje_cultural",
+    "paraje": "paisaje_cultural",
 }
 
 HERITAGE_TYPE_LABELS: dict[str, str] = {
@@ -55,7 +135,7 @@ def _accent_insensitive_pattern(needle: str) -> str:
     parts: list[str] = []
     for ch in needle.lower():
         parts.append(_ACCENT_MAP.get(ch, re.escape(ch)))
-    return r"\b" + "".join(parts) + r"\b"
+    return r"\b" + "".join(parts) + r"(?:e?s)?\b"
 
 
 def _find_match_in_query(needle_normalized: str, query: str) -> str | None:
