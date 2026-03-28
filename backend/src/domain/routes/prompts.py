@@ -8,6 +8,8 @@ QUERY_EXTRACTION_SYSTEM_PROMPT = (
     "- NO inventes ni anadas tipos patrimoniales (etnologico, inmueble, "
     "mueble, etc.) si el usuario no los menciono.\n"
     "- NO anadas ubicaciones si el usuario no las menciono.\n"
+    "- MANTÉN los nombres geograficos (provincias, municipios) que el "
+    "usuario haya escrito, ya que aportan valor semantico.\n"
     "- Si la consulta del usuario ya es clara y corta, devuelvela TAL CUAL.\n"
     "- Responde SOLO con la consulta, sin explicaciones ni formato adicional."
 )
@@ -31,11 +33,9 @@ def build_query_extraction_prompt(
         "\n".join(filter_lines) if filter_lines else "- Ninguno"
     )
     location_note = (
-        "La ubicacion YA esta en los filtros, NO la incluyas en la "
-        "consulta."
-        if province_filter or municipality_filter
-        else "No hay filtro de ubicacion. Incluye la ubicacion en la "
-        "consulta si el usuario la menciona."
+        "IMPORTANTE: Mantén los nombres geograficos (provincias, "
+        "municipios) en la consulta tal como el usuario los escribio, "
+        "ya que aportan valor semantico a la busqueda por embeddings."
     )
     return (
         f"Texto del usuario: {cleaned_text}\n\n"
