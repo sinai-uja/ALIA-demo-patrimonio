@@ -12,6 +12,7 @@ El pipeline RAG ha evolucionado sus medidas de similaridad, puntuacion y filtrad
 | v4 | `6d441e6` | = v3 (RAG sin cambios); search usa config separada | = v3 (RAG); search `retrieval_k=200` | = v3 | RAG 0.35; search 0.55 | RAG = v3; search: base 0.6, title 0.2, coverage 0.15, position 0.05 | Si |
 | v5 | pendiente | RAG: modo similarity-only configurable (`RAG_SIMILARITY_ONLY`) | Coseno puro (cuando activado) | — (bypass) | score <= 0.25 (`RAG_SIMILARITY_THRESHOLD`) | — (bypass) | Si |
 | v6 | pendiente | + instruccion Qwen3 en queries + recalibracion thresholds | = v5 | = v5 | similarity 0.45; RAG hibrido 0.50 | = v5 | Si |
+| v7 | pendiente | + reranking neuronal opcional (Qwen3-Reranker-0.6B) | = v6 | = v6 | = v6 | Neural cross-encoder (cuando `RERANKER_ENABLED=true`); heuristico como fallback | Si |
 
 ## Versiones
 
@@ -165,30 +166,25 @@ El pipeline RAG (`rag_composition.py`) no se modifica — sigue usando los param
 
 ## Evolucion de parametros
 
-| Parametro | v1 (2026-03-11) | v2 (2026-03-13) | v3 (2026-03-16) | v4 (2026-03-19) | v6 (2026-03-26) |
-|---|---|---|---|---|---|
-| `rag_top_k` | 5 | 3 → 5 | 5 | 5 | 5 |
-| `rag_retrieval_k` | — | 20 | 20 | 20 | 20 |
-| `search_retrieval_k` | — | — | — | 200 | 200 |
-| `rag_score_threshold` | — | 0.35 | 0.35 | 0.35 | **0.50** |
-| `rag_similarity_threshold` | — | — | — | — | **0.45** |
-| `search_score_threshold` | — | — | — | 0.55 | 0.55 |
-| `embedding_query_instruction` | — | — | — | — | **Retrieve relevant heritage documents.** |
-| `llm_temperature` | 0.7 | 0.3 | 0.3 | 0.3 | 0.3 |
-| `llm_max_tokens` | 2048 → 512 | 512 | 512 | 512 | 512 |
-| `max_context_chars` | ∞ | 6000 | 6000 | 6000 | 6000 |
-| RRF `k_param` | — | 60 | 60 | 60 | 60 |
-| RRF `text_weight` | — | 1.5 | 1.5 | 1.5 | 1.5 |
-| Rerank `weight_base` (RAG) | — | 0.4 | 0.4 | 0.4 | 0.4 |
-| Rerank `weight_title` (RAG) | — | 0.3 | 0.3 | 0.3 | 0.3 |
-| Rerank `weight_coverage` (RAG) | — | 0.2 | 0.2 | 0.2 | 0.2 |
-| Rerank `weight_position` (RAG) | — | 0.1 | 0.1 | 0.1 | 0.1 |
-| Rerank `weight_base` (search) | — | — | — | 0.6 | 0.6 |
-| Rerank `weight_title` (search) | — | — | — | 0.2 | 0.2 |
-| Rerank `weight_coverage` (search) | — | — | — | 0.15 | 0.15 |
-| Rerank `weight_position` (search) | — | — | — | 0.05 | 0.05 |
-| Pre-filtro lexico | — | — | Chunks con 0 match descartados | = v3 | = v3 |
-| Abstencion | No | Si | Si | Si | Si |
+| Parametro | v1 (2026-03-11) | v2 (2026-03-13) | v3 (2026-03-16) | v4 (2026-03-19) | v6 (2026-03-26) | v7 (2026-03-27) |
+|---|---|---|---|---|---|---|
+| `rag_top_k` | 5 | 3 → 5 | 5 | 5 | 5 | 5 |
+| `rag_retrieval_k` | — | 20 | 20 | 20 | 20 | 20 |
+| `search_retrieval_k` | — | — | — | 200 | 200 | 200 |
+| `rag_score_threshold` | — | 0.35 | 0.35 | 0.35 | **0.50** | 0.50 |
+| `rag_similarity_threshold` | — | — | — | — | **0.45** | 0.45 |
+| `search_score_threshold` | — | — | — | 0.55 | 0.55 | 0.55 |
+| `embedding_query_instruction` | — | — | — | — | **Retrieve...** | = v6 |
+| `reranker_enabled` | — | — | — | — | — | **false** (toggle) |
+| `reranker_top_n` | — | — | — | — | — | **50** |
+| `llm_temperature` | 0.7 | 0.3 | 0.3 | 0.3 | 0.3 | 0.3 |
+| `llm_max_tokens` | 2048 → 512 | 512 | 512 | 512 | 512 | 512 |
+| `max_context_chars` | ∞ | 6000 | 6000 | 6000 | 6000 | 6000 |
+| RRF `k_param` | — | 60 | 60 | 60 | 60 | 60 |
+| RRF `text_weight` | — | 1.5 | 1.5 | 1.5 | 1.5 | 1.5 |
+| Reranking | — | Heuristico | + pre-filtro | Config separada | bypass (sim-only) | **Neural cross-encoder** |
+| Pre-filtro lexico | — | — | Chunks con 0 match descartados | = v3 | = v3 | — (reemplazado por neural) |
+| Abstencion | No | Si | Si | Si | Si | Si |
 
 ### v5 — Modo similarity-only configurable (2026-03-25, actual)
 
@@ -260,6 +256,73 @@ MRR global: 0.442 (v5) → **0.875** (v6)
 - Helper: `domain/rag/services/query_instruction_service.py` — `wrap_query_for_embedding(query, instruction)`
 - Aplicado en `RAGQueryUseCase.execute()` y `SimilaritySearchUseCase.execute()` antes de llamar a `embed()`
 - Retrocompatible: `EMBEDDING_QUERY_INSTRUCTION=` (vacio) desactiva el prefijo
+
+### v7 — Reranking neuronal con Qwen3-Reranker-0.6B (2026-03-27)
+
+- **Commits**: pendiente
+
+**Cambios respecto a v6**:
+
+1. **Reranking neuronal** opcional via cross-encoder (`Qwen3-Reranker-0.6B`, 0.6B params, 32k contexto)
+2. **Co-localizado** con el servicio de embeddings (`embedding/main.py`, endpoint `POST /rerank`)
+3. **Retrocompatible**: `RERANKER_ENABLED=false` (default) preserva el comportamiento de v6 exactamente
+4. **Activacion en modo similarity-only**: cuando `RERANKER_ENABLED=true` y `RAG_SIMILARITY_ONLY=true`, el pipeline aplica reranking neuronal despues del filtro de similaridad (antes este path saltaba el reranking)
+
+#### Modelo: Qwen3-Reranker-0.6B
+
+| Propiedad | Valor |
+|---|---|
+| Parametros | 600M |
+| Contexto maximo | 32,768 tokens |
+| Arquitectura | Causal LM (decoder-only) |
+| Scoring | P(yes) via softmax sobre logits "yes"/"no" |
+| Input | `<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {document}` |
+
+#### Pipeline con `RERANKER_ENABLED=true`
+
+El reranker neuronal reemplaza al heuristico en la misma posicion del pipeline:
+
+| Modo | Pipeline |
+|---|---|
+| `RAG_SIMILARITY_ONLY=true` (recomendado) | vector → filtro similaridad → **neural rerank** → top-k → contexto → LLM |
+| `RAG_SIMILARITY_ONLY=false` | vector + FTS → RRF → filtro relevancia → **neural rerank** → top-k → contexto → LLM |
+
+#### Scoring del cross-encoder
+
+1. Formatea cada par query-documento con el template de chat del modelo (system/user/assistant)
+2. Anade tokens de pensamiento: `<think>\n\n</think>\n\n`
+3. Forward pass → extrae logits en la ultima posicion para tokens "yes"/"no"
+4. `score = softmax([yes_logit, no_logit])[0]` → probabilidad de relevancia (0-1)
+5. Convierte a escala de distancia: `distance = 1.0 - relevance` (0 = mas relevante)
+
+#### Parametros nuevos
+
+| Parametro | Valor por defecto | Descripcion |
+|---|---|---|
+| `RERANKER_ENABLED` | `false` | Activa reranking neuronal |
+| `RERANKER_SERVICE_URL` | `http://localhost:18001` | URL del servicio (misma que embedding) |
+| `RERANKER_API_KEY` | *(vacio)* | API key (comparte `EMBEDDING_API_KEY`) |
+| `RERANKER_INSTRUCTION` | `Given a heritage search query, retrieve relevant heritage documents.` | Instruccion para el cross-encoder |
+| `RERANKER_TOP_N` | `50` | Maximo de candidatos enviados al reranker (control de latencia) |
+
+#### Matriz de configuracion recomendada
+
+| Modo | `RAG_SIMILARITY_ONLY` | `RERANKER_ENABLED` | Pipeline |
+|------|----------------------|-------------------|----------|
+| v6 (actual) | `true` | `false` | vector → filtro → top-k |
+| **v7 (recomendado)** | `true` | `true` | vector → filtro → neural rerank → top-k |
+| v7 hibrido | `false` | `true` | vector + FTS → RRF → filtro → neural rerank → top-k |
+| v4 legacy | `false` | `false` | vector + FTS → RRF → filtro → heuristico → top-k |
+
+#### Implementacion
+
+- Co-localizado en `embedding/main.py` — endpoint `POST /rerank` junto a `POST /embed`
+- El modelo se carga al arrancar si existe en `RERANKER_MODEL_PATH` (volumen Docker)
+- Puerto: RerankerPort (`domain/rag/ports/reranker_port.py`)
+- Adaptador: HttpRerankerAdapter (`infrastructure/rag/adapters/reranker_adapter.py`)
+- Servicio: NeuralRerankingService (`domain/rag/services/neural_reranking_service.py`)
+- Composicion: wiring condicional en `rag_composition.py` y `search_composition.py`
+- Docker: mismo contenedor que embedding, modelo montado en `/app/reranker_model`
 
 ## Como anadir una nueva version
 
