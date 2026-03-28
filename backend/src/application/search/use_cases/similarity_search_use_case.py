@@ -40,6 +40,7 @@ class SimilaritySearchUseCase:
         retrieval_k: int = 20,
         similarity_only: bool = False,
         similarity_threshold: float = 0.25,
+        reranker_enabled: bool = False,
     ) -> None:
         self._embedding_port = embedding_port
         self._vector_search_port = vector_search_port
@@ -50,6 +51,7 @@ class SimilaritySearchUseCase:
         self._heritage_asset_lookup_port = heritage_asset_lookup_port
         self._retrieval_k = retrieval_k
         self._similarity_only = similarity_only
+        self._reranker_enabled = reranker_enabled
         self._similarity_filter = RelevanceFilterService(
             score_threshold=similarity_threshold,
         )
@@ -102,16 +104,21 @@ class SimilaritySearchUseCase:
                 search_id, len(vector_chunks), len(filtered_chunks),
                 self._similarity_filter._score_threshold,
             )
-            for i, chunk in enumerate(
-                sorted(filtered_chunks, key=lambda c: c.score)[:20], 1,
-            ):
+            if self._reranker_enabled and filtered_chunks:
+                # Neural reranking on similarity-only candidates
+                final_chunks = await self._reranking_service.rerank(
+                    query=dto.query, chunks=filtered_chunks,
+                    top_k=len(filtered_chunks),
+                )
+            else:
+                final_chunks = sorted(filtered_chunks, key=lambda c: c.score)
+            for i, chunk in enumerate(final_chunks[:20], 1):
                 logger.info(
                     "Similarity #%d: search_id=%s score=%.4f | title: %s"
                     " | type: %s | province: %s",
                     i, search_id, chunk.score, chunk.title[:60],
                     chunk.heritage_type, chunk.province,
                 )
-            final_chunks = sorted(filtered_chunks, key=lambda c: c.score)
         else:
             # Full hybrid pipeline: text search + RRF fusion + reranking
             text_chunks = await self._text_search_port.search(
@@ -132,11 +139,18 @@ class SimilaritySearchUseCase:
                 search_id, len(vector_chunks), len(text_chunks),
                 len(fused_chunks), len(filtered_chunks),
             )
-            final_chunks = self._reranking_service.rerank(
-                query=dto.query,
-                chunks=filtered_chunks,
-                top_k=len(filtered_chunks),
-            )
+            if self._reranker_enabled:
+                final_chunks = await self._reranking_service.rerank(
+                    query=dto.query,
+                    chunks=filtered_chunks,
+                    top_k=len(filtered_chunks),
+                )
+            else:
+                final_chunks = self._reranking_service.rerank(
+                    query=dto.query,
+                    chunks=filtered_chunks,
+                    top_k=len(filtered_chunks),
+                )
             for i, chunk in enumerate(final_chunks[:20], 1):
                 logger.info(
                     "Hybrid #%d: search_id=%s score=%.4f | title: %s"

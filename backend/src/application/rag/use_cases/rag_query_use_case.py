@@ -39,6 +39,7 @@ class RAGQueryUseCase:
         retrieval_k: int = 20,
         similarity_only: bool = False,
         similarity_threshold: float = 0.25,
+        reranker_enabled: bool = False,
     ) -> None:
         self._embedding_port = embedding_port
         self._vector_search_port = vector_search_port
@@ -50,6 +51,7 @@ class RAGQueryUseCase:
         self._reranking_service = reranking_service
         self._retrieval_k = retrieval_k
         self._similarity_only = similarity_only
+        self._reranker_enabled = reranker_enabled
         self._similarity_filter = RelevanceFilterService(
             score_threshold=similarity_threshold,
         )
@@ -87,7 +89,18 @@ class RAGQueryUseCase:
                 return RAGResponseDTO(
                     answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
                 )
-            final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
+            if self._reranker_enabled:
+                # Neural reranking on similarity-only candidates
+                final_chunks = await self._reranking_service.rerank(
+                    query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+                )
+                if not final_chunks:
+                    logger.info("Abstaining: neural reranker returned no results")
+                    return RAGResponseDTO(
+                        answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
+                    )
+            else:
+                final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
             for i, chunk in enumerate(final_chunks, 1):
                 logger.info(
                     "Similarity #%d: score=%.4f | title: %s | type: %s | province: %s",
@@ -117,9 +130,14 @@ class RAGQueryUseCase:
                 return RAGResponseDTO(
                     answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
                 )
-            final_chunks = self._reranking_service.rerank(
-                query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
-            )
+            if self._reranker_enabled:
+                final_chunks = await self._reranking_service.rerank(
+                    query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+                )
+            else:
+                final_chunks = self._reranking_service.rerank(
+                    query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+                )
             if not final_chunks:
                 logger.info("Abstaining: all chunks discarded by lexical filter")
                 return RAGResponseDTO(

@@ -5,11 +5,13 @@ from src.application.rag.use_cases.rag_query_use_case import RAGQueryUseCase
 from src.config import settings
 from src.domain.rag.services.context_assembly_service import ContextAssemblyService
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
+from src.domain.rag.services.neural_reranking_service import NeuralRerankingService
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
 from src.infrastructure.rag.adapters.embedding_adapter import HttpEmbeddingAdapter
 from src.infrastructure.rag.adapters.gemini_llm_adapter import GeminiRAGAdapter
 from src.infrastructure.rag.adapters.llm_adapter import VLLMAdapter
+from src.infrastructure.rag.adapters.reranker_adapter import HttpRerankerAdapter
 from src.infrastructure.rag.adapters.text_search_adapter import PgTextSearchAdapter
 from src.infrastructure.rag.adapters.vector_search_adapter import PgVectorSearchAdapter
 
@@ -28,7 +30,17 @@ def build_rag_application_service(db: AsyncSession) -> RAGApplicationService:
         score_threshold=settings.rag_score_threshold,
     )
     hybrid_search_service = HybridSearchService()
-    reranking_service = RerankingService()
+
+    # Neural reranker (cross-encoder) or heuristic fallback
+    if settings.reranker_enabled:
+        reranker_adapter = HttpRerankerAdapter()
+        reranking_service = NeuralRerankingService(
+            reranker_port=reranker_adapter,
+            instruction=settings.reranker_instruction,
+            top_n=settings.reranker_top_n,
+        )
+    else:
+        reranking_service = RerankingService()
 
     use_case = RAGQueryUseCase(
         embedding_port=embedding_adapter,
@@ -42,6 +54,7 @@ def build_rag_application_service(db: AsyncSession) -> RAGApplicationService:
         retrieval_k=settings.rag_retrieval_k,
         similarity_only=settings.rag_similarity_only,
         similarity_threshold=settings.rag_similarity_threshold,
+        reranker_enabled=settings.reranker_enabled,
     )
 
     return RAGApplicationService(rag_query_use_case=use_case)

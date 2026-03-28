@@ -14,6 +14,9 @@ from src.application.search.use_cases.suggestion_use_case import (
 )
 from src.config import settings
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
+from src.domain.rag.services.neural_reranking_service import (
+    NeuralRerankingService,
+)
 from src.domain.rag.services.relevance_filter_service import (
     RelevanceFilterService,
 )
@@ -23,6 +26,9 @@ from src.domain.search.services.entity_detection_service import (
 )
 from src.infrastructure.rag.adapters.embedding_adapter import (
     HttpEmbeddingAdapter,
+)
+from src.infrastructure.rag.adapters.reranker_adapter import (
+    HttpRerankerAdapter,
 )
 from src.infrastructure.rag.adapters.text_search_adapter import (
     PgTextSearchAdapter,
@@ -52,12 +58,21 @@ def build_search_application_service(
     relevance_filter_service = RelevanceFilterService(
         score_threshold=settings.search_score_threshold,
     )
-    reranking_service = RerankingService(
-        weight_base=0.6,
-        weight_title=0.2,
-        weight_coverage=0.15,
-        weight_position=0.05,
-    )
+    # Neural reranker (cross-encoder) or heuristic fallback
+    if settings.reranker_enabled:
+        reranker_adapter = HttpRerankerAdapter()
+        reranking_service = NeuralRerankingService(
+            reranker_port=reranker_adapter,
+            instruction=settings.reranker_instruction,
+            top_n=settings.reranker_top_n,
+        )
+    else:
+        reranking_service = RerankingService(
+            weight_base=0.6,
+            weight_title=0.2,
+            weight_coverage=0.15,
+            weight_position=0.05,
+        )
 
     # Search-specific adapters and services
     filter_metadata_adapter = PgFilterMetadataAdapter(db)
@@ -76,6 +91,7 @@ def build_search_application_service(
         retrieval_k=settings.search_retrieval_k,
         similarity_only=settings.rag_similarity_only,
         similarity_threshold=settings.rag_similarity_threshold,
+        reranker_enabled=settings.reranker_enabled,
     )
 
     suggestion_use_case = SuggestionUseCase(

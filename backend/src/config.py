@@ -47,6 +47,15 @@ class Settings(BaseSettings):
     def chunks_table_name(self) -> str:
         return f"document_chunks_{self.chunks_table_version}"
 
+    # Reranker (served by the embedding service at /rerank)
+    reranker_enabled: bool = False
+    reranker_service_url: str = "http://localhost:18001"
+    reranker_api_key: str = ""
+    reranker_instruction: str = (
+        "Given a heritage search query, retrieve relevant heritage documents."
+    )
+    reranker_top_n: int = 50
+
     # API
     api_v1_prefix: str = "/api/v1"
     project_name: str = "IAPH Heritage RAG"
