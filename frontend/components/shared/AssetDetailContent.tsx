@@ -104,22 +104,6 @@ function LongField({
   );
 }
 
-function TruncatedDescription({
-  value,
-  maxLength = 200,
-}: {
-  value: string | null | undefined;
-  maxLength?: number;
-}) {
-  if (!hasValue(value)) return null;
-  const text = value.trim();
-  if (text.length <= maxLength) {
-    return <p className="text-sm text-stone-600 leading-relaxed">{text}</p>;
-  }
-  const cutoff = text.lastIndexOf(" ", maxLength);
-  const truncated = text.slice(0, cutoff > 0 ? cutoff : maxLength) + "...";
-  return <p className="text-sm text-stone-600 leading-relaxed">{truncated}</p>;
-}
 
 function Tags({ items }: { items: string[] }) {
   if (items.length === 0) return null;
@@ -265,7 +249,7 @@ function InmueblePractical({
       {mapSlot}
       {hasValue(d.description) && (
         <Section title="Descripcion">
-          <TruncatedDescription value={d.description} />
+          <p className="text-sm text-stone-600 leading-relaxed">{d.description!.trim()}</p>
         </Section>
       )}
       {d.historical_periods.length > 0 && (
@@ -294,7 +278,7 @@ function MueblePractical({
       )}
       {hasValue(d.description) && (
         <Section title="Descripcion">
-          <TruncatedDescription value={d.description} />
+          <p className="text-sm text-stone-600 leading-relaxed">{d.description!.trim()}</p>
         </Section>
       )}
     </>
@@ -321,7 +305,7 @@ function InmaterialPractical({
       {mapSlot}
       {hasValue(d.description) && (
         <Section title="Descripcion">
-          <TruncatedDescription value={d.description} />
+          <p className="text-sm text-stone-600 leading-relaxed">{d.description!.trim()}</p>
         </Section>
       )}
     </>
