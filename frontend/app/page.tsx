@@ -31,8 +31,8 @@ export default function Home() {
   return (
     <div className="mx-auto max-w-6xl px-6">
       {/* Hero */}
-      <div className="py-20 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-green-50 border border-green-200/60 px-4 py-1.5 text-sm text-green-700 mb-6">
+      <div className="py-10 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-green-50 border border-green-200/60 px-4 py-1.5 text-sm text-green-700 mb-4">
           <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
           Universidad de Jaén · Patrimonio de Andalucía
         </div>
@@ -42,14 +42,14 @@ export default function Home() {
             Andaluz
           </span>
         </h1>
-        <p className="mt-6 text-lg text-stone-500 max-w-2xl mx-auto leading-relaxed">
-          Asistente inteligente de Patrimonio de Andalucía.
-          Explora, pregunta y descubre el rico patrimonio cultural de Andalucía.
+        <p className="mt-4 text-lg text-stone-500 max-w-2xl mx-auto leading-relaxed">
+          Explora, pregunta y descubre el rico patrimonio cultural de Andalucía
+          con ayuda de inteligencia artificial.
         </p>
       </div>
 
       {/* Feature cards */}
-      <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto pb-16">
+      <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto pb-8">
         {features.map((f) => (
           <Link
             key={f.href}
@@ -77,8 +77,8 @@ export default function Home() {
       </div>
 
       {/* Stats bar */}
-      <div className="rounded-2xl bg-gradient-to-r from-stone-800 to-stone-900 p-8 mb-16 text-center">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="rounded-2xl bg-gradient-to-r from-stone-800 to-stone-900 p-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           {[
             { value: "134K+", label: "Bienes catalogados" },
             { value: "30K", label: "Patrimonio Inmueble" },
@@ -86,8 +86,8 @@ export default function Home() {
             { value: "8", label: "Provincias andaluzas" },
           ].map((stat) => (
             <div key={stat.label}>
-              <p className="text-2xl font-bold text-white">{stat.value}</p>
-              <p className="text-sm text-stone-400 mt-1">{stat.label}</p>
+              <p className="text-xl font-bold text-white">{stat.value}</p>
+              <p className="text-xs text-stone-400 mt-0.5">{stat.label}</p>
             </div>
           ))}
         </div>
