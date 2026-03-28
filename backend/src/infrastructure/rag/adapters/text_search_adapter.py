@@ -26,17 +26,36 @@ def _build_filter_conditions(
     heritage_type: str | list[str] | None,
     province: str | list[str] | None,
     municipality: str | list[str] | None,
+    *,
+    use_asset_join: bool = False,
 ) -> tuple[list[str], dict]:
-    """Build dynamic WHERE conditions supporting single values or lists (OR)."""
+    """Build dynamic WHERE conditions supporting single values or lists (OR).
+
+    When *use_asset_join* is True the query includes a LEFT JOIN on
+    ``heritage_assets`` so geographic filters use the authoritative asset
+    data via ``COALESCE(ha.<col>, c.<col>)``.
+    """
     conditions: list[str] = []
     params: dict = {}
-    for col, value, key in [
-        ("heritage_type", heritage_type, "heritage_type"),
-        ("province", province, "province"),
-        ("municipality", municipality, "municipality"),
+
+    col_map = {
+        "heritage_type": "c.heritage_type" if use_asset_join else "heritage_type",
+        "province": (
+            "COALESCE(ha.province, c.province)" if use_asset_join else "province"
+        ),
+        "municipality": (
+            "COALESCE(ha.municipality, c.municipality)" if use_asset_join else "municipality"
+        ),
+    }
+
+    for key, value in [
+        ("heritage_type", heritage_type),
+        ("province", province),
+        ("municipality", municipality),
     ]:
         if value is None:
             continue
+        col = col_map[key]
         if isinstance(value, list):
             if not value:
                 continue
@@ -71,29 +90,57 @@ class PgTextSearchAdapter(TextSearchPort):
             logger.info("FTS: empty query after cleaning, skipping")
             return []
 
-        metadata_col = ", metadata" if self._has_metadata else ""
+        # JOIN heritage_assets only when geographic filters are present
+        needs_asset_join = province is not None or municipality is not None
+
         conditions, params = _build_filter_conditions(
             heritage_type, province, municipality,
+            use_asset_join=needs_asset_join,
         )
         where_extra = (" AND " + " AND ".join(conditions)) if conditions else ""
 
+        if needs_asset_join:
+            prefix = "c."
+            metadata_col = ", c.metadata" if self._has_metadata else ""
+            from_clause = (
+                f"{self._table} c\n"
+                "            LEFT JOIN heritage_assets ha\n"
+                "                ON ha.id = regexp_replace(c.document_id,"
+                " '^ficha-\\w+-', '')"
+            )
+            fts_where = "c.search_vector @@ plainto_tsquery('spanish', :query)"
+            rank_expr = (
+                "ts_rank_cd(\n"
+                "                    c.search_vector,\n"
+                "                    plainto_tsquery('spanish', :query)\n"
+                "                )"
+            )
+        else:
+            prefix = ""
+            metadata_col = ", metadata" if self._has_metadata else ""
+            from_clause = self._table
+            fts_where = "search_vector @@ plainto_tsquery('spanish', :query)"
+            rank_expr = (
+                "ts_rank_cd(\n"
+                "                    search_vector,\n"
+                "                    plainto_tsquery('spanish', :query)\n"
+                "                )"
+            )
+
         sql = text(f"""
             SELECT
-                id,
-                document_id,
-                title,
-                heritage_type,
-                province,
-                municipality,
-                url,
-                content,
-                ts_rank_cd(
-                    search_vector,
-                    plainto_tsquery('spanish', :query)
-                ) AS score
+                {prefix}id,
+                {prefix}document_id,
+                {prefix}title,
+                {prefix}heritage_type,
+                {prefix}province,
+                {prefix}municipality,
+                {prefix}url,
+                {prefix}content,
+                {rank_expr} AS score
                 {metadata_col}
-            FROM {self._table}
-            WHERE search_vector @@ plainto_tsquery('spanish', :query)
+            FROM {from_clause}
+            WHERE {fts_where}
               {where_extra}
             ORDER BY score DESC
             LIMIT :top_k

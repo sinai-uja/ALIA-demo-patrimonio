@@ -14,17 +14,38 @@ def _build_filter_conditions(
     heritage_type: str | list[str] | None,
     province: str | list[str] | None,
     municipality: str | list[str] | None,
+    *,
+    use_asset_join: bool = False,
 ) -> tuple[list[str], dict]:
-    """Build dynamic WHERE conditions supporting single values or lists (OR)."""
+    """Build dynamic WHERE conditions supporting single values or lists (OR).
+
+    When *use_asset_join* is True the query includes a LEFT JOIN on
+    ``heritage_assets`` so geographic filters use the authoritative asset
+    data via ``COALESCE(ha.<col>, c.<col>)``.  ``heritage_type`` always
+    filters on the chunks table because the two tables use different naming
+    conventions (``patrimonio_inmueble`` vs ``inmueble``).
+    """
     conditions: list[str] = []
     params: dict = {}
-    for col, value, key in [
-        ("heritage_type", heritage_type, "heritage_type"),
-        ("province", province, "province"),
-        ("municipality", municipality, "municipality"),
+
+    col_map = {
+        "heritage_type": "c.heritage_type" if use_asset_join else "heritage_type",
+        "province": (
+            "COALESCE(ha.province, c.province)" if use_asset_join else "province"
+        ),
+        "municipality": (
+            "COALESCE(ha.municipality, c.municipality)" if use_asset_join else "municipality"
+        ),
+    }
+
+    for key, value in [
+        ("heritage_type", heritage_type),
+        ("province", province),
+        ("municipality", municipality),
     ]:
         if value is None:
             continue
+        col = col_map[key]
         if isinstance(value, list):
             if not value:
                 continue
@@ -54,11 +75,29 @@ class PgVectorSearchAdapter(VectorSearchPort):
         province: str | list[str] | None = None,
         municipality: str | list[str] | None = None,
     ) -> list[RetrievedChunk]:
-        metadata_col = ", metadata" if self._has_metadata else ""
+        # JOIN heritage_assets only when geographic filters are present so that
+        # province/municipality filtering uses the authoritative asset data.
+        needs_asset_join = province is not None or municipality is not None
+
         conditions, params = _build_filter_conditions(
             heritage_type, province, municipality,
+            use_asset_join=needs_asset_join,
         )
         where_clause = (" AND " + " AND ".join(conditions)) if conditions else ""
+
+        if needs_asset_join:
+            prefix = "c."
+            metadata_col = ", c.metadata" if self._has_metadata else ""
+            from_clause = (
+                f"{self._table} c\n"
+                "            LEFT JOIN heritage_assets ha\n"
+                "                ON ha.id = regexp_replace(c.document_id,"
+                " '^ficha-\\w+-', '')"
+            )
+        else:
+            prefix = ""
+            metadata_col = ", metadata" if self._has_metadata else ""
+            from_clause = self._table
 
         # Ensure HNSW index explores enough candidates for the requested top_k
         await self._db.execute(
@@ -67,17 +106,17 @@ class PgVectorSearchAdapter(VectorSearchPort):
 
         query = text(f"""
             SELECT
-                id,
-                document_id,
-                title,
-                heritage_type,
-                province,
-                municipality,
-                url,
-                content,
-                embedding <=> :query_vec AS score
+                {prefix}id,
+                {prefix}document_id,
+                {prefix}title,
+                {prefix}heritage_type,
+                {prefix}province,
+                {prefix}municipality,
+                {prefix}url,
+                {prefix}content,
+                {prefix}embedding <=> :query_vec AS score
                 {metadata_col}
-            FROM {self._table}
+            FROM {from_clause}
             WHERE TRUE{where_clause}
             ORDER BY score ASC
             LIMIT :top_k
