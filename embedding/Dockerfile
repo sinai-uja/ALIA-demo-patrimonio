@@ -1,18 +1,22 @@
 # =============================================================================
-# Embedding Service — dual encoder (MrBERT / Qwen3-Embedding-0.6B)
+# Embedding & Reranker Service
 #
 # Build context: embedding/
 # Image: nvidia/cuda:12.8.0-runtime-ubuntu22.04
 #
-# Serves a transformer encoder model via HTTP (FastAPI + uvicorn).
-# The model files are NOT baked into the image — they are mounted at runtime
-# as a read-only volume at /app/model (see docker-compose.yml).
+# Serves embeddings (POST /embed) and optional cross-encoder reranking
+# (POST /rerank) via HTTP (FastAPI + uvicorn).
+# Model files are NOT baked into the image — they are mounted at runtime
+# as read-only volumes (see docker-compose.yml).
 #
 # Configurable via environment variables:
-#   MODEL_PATH       — path to the mounted model (default: /app/model)
-#   DEVICE           — compute device: "cuda" or "cpu" (default: cpu)
-#   POOLING_STRATEGY — "mean" (MrBERT) or "last_token" (Qwen3)
-#   MAX_LENGTH       — max token length: 8192 (MrBERT) or 32768 (Qwen3)
+#   MODEL_PATH            — embedding model path (default: /app/model)
+#   RERANKER_MODEL_PATH   — reranker model path (default: /app/reranker_model)
+#                            If absent, /rerank returns 503
+#   DEVICE                — compute device: "cuda" or "cpu" (default: cpu)
+#   POOLING_STRATEGY      — "mean" (MrBERT) or "last_token" (Qwen3)
+#   MAX_LENGTH            — max token length for embeddings
+#   RERANKER_MAX_LENGTH   — max token length for reranker (default: 8192)
 # =============================================================================
 
 FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
