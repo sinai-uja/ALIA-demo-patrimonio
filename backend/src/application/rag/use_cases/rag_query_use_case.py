@@ -60,7 +60,9 @@ class RAGQueryUseCase:
         logger.info("RAG pipeline start: query=%s", dto.query[:80])
 
         # 1. Embed the user query (with instruction prefix for Qwen3)
-        query_text = wrap_query_for_embedding(dto.query, settings.embedding_query_instruction)
+        # Normalize to lowercase for consistent embedding/reranking regardless of casing
+        search_query = dto.query.lower()
+        query_text = wrap_query_for_embedding(search_query, settings.embedding_query_instruction)
         embeddings = await self._embedding_port.embed([query_text])
         query_embedding = embeddings[0]
         logger.info(
@@ -92,7 +94,7 @@ class RAGQueryUseCase:
             if self._reranker_enabled:
                 # Neural reranking on similarity-only candidates
                 final_chunks = await self._reranking_service.rerank(
-                    query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+                    query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
                 )
                 if not final_chunks:
                     logger.info("Abstaining: neural reranker returned no results")
@@ -109,7 +111,7 @@ class RAGQueryUseCase:
         else:
             # Full hybrid pipeline: text search + RRF fusion + reranking
             text_chunks = await self._text_search_port.search(
-                query=dto.query,
+                query=search_query,
                 top_k=self._retrieval_k,
                 heritage_type=dto.heritage_type_filter,
                 province=dto.province_filter,
@@ -132,11 +134,11 @@ class RAGQueryUseCase:
                 )
             if self._reranker_enabled:
                 final_chunks = await self._reranking_service.rerank(
-                    query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+                    query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
                 )
             else:
                 final_chunks = self._reranking_service.rerank(
-                    query=dto.query, chunks=filtered_chunks, top_k=dto.top_k,
+                    query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
                 )
             if not final_chunks:
                 logger.info("Abstaining: all chunks discarded by lexical filter")
