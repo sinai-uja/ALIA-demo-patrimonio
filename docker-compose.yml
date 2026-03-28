@@ -34,7 +34,7 @@ services:
       - uja-net
 
   # ---------------------------------------------------------------------------
-  # Embedding service (MrBERT / Qwen3)
+  # Embedding & Reranker service (MrBERT / Qwen3-Embedding + Qwen3-Reranker)
   # ---------------------------------------------------------------------------
   embedding-service:
     build:
@@ -44,11 +44,15 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/models/${EMBEDDING_MODEL_DIR:-MrBERT}:/app/model:ro
+      - ./backend/models/Qwen3-Reranker-0.6B:/app/reranker_model:ro
     environment:
       MODEL_PATH: /app/model
+      RERANKER_MODEL_PATH: /app/reranker_model
       DEVICE: cuda
       POOLING_STRATEGY: ${POOLING_STRATEGY}
       MAX_LENGTH: ${MAX_LENGTH}
+      RERANKER_MAX_LENGTH: ${RERANKER_MAX_LENGTH:-8192}
+      RERANKER_BATCH_SIZE: ${RERANKER_BATCH_SIZE:-4}
       API_KEY: ${EMBEDDING_API_KEY}
     deploy:
       resources:
@@ -141,6 +145,12 @@ services:
       # Service API keys
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY}
       LLM_API_KEY: ${LLM_API_KEY}
+      # Reranker (served by embedding-service on the same endpoint)
+      RERANKER_ENABLED: ${RERANKER_ENABLED:-false}
+      RERANKER_SERVICE_URL: http://embedding-service:8001
+      RERANKER_API_KEY: ${EMBEDDING_API_KEY}
+      RERANKER_INSTRUCTION: ${RERANKER_INSTRUCTION}
+      RERANKER_TOP_N: ${RERANKER_TOP_N:-50}
       # Auth
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM}

@@ -1,4 +1,5 @@
-.PHONY: dev backend frontend infra infra-llm infra-down docker-up docker-up-llm docker-down \
+.PHONY: dev backend frontend infra infra-llm infra-down \
+       docker-up docker-up-llm docker-down \
        build-backend build-frontend build-embedding build-all \
        push-backend push-frontend push-embedding push-all \
        migrate test lint help
