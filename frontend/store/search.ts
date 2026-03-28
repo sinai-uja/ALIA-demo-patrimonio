@@ -56,19 +56,13 @@ interface SearchState {
   closeDetail: () => void;
 }
 
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 /** Extract numeric asset ID from document_id (e.g. "ficha-inmueble-20831" → "20831"). */
 function extractAssetId(documentId: string): string {
   return documentId.replace(/^ficha-\w+-/, "");
 }
 
-/** Clean query for API submission.
- *  All filter matched texts (province, municipality, heritage_type) are kept
- *  in the query — they carry semantic value for embedding search. */
-function buildCleanQuery(query: string, _filters: ActiveFilter[]): string {
+/** Clean query whitespace for API submission. */
+function buildCleanQuery(query: string): string {
   return query.replace(/\s{2,}/g, " ").trim();
 }
 
@@ -132,7 +126,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     const { query, activeFilters, pageSize } = get();
     if (!query.trim()) return;
 
-    const cleanQuery = buildCleanQuery(query, activeFilters);
+    const cleanQuery = buildCleanQuery(query);
     if (!cleanQuery) return;
 
     // Abort any in-flight search to prevent duplicate requests

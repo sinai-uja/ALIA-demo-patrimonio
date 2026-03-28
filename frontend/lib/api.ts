@@ -153,10 +153,11 @@ export const routes = {
     heritage_type_filter?: string[] | null;
     province_filter?: string[] | null;
     municipality_filter?: string[] | null;
-  }) =>
+  }, signal?: AbortSignal) =>
     apiFetch<VirtualRoute>("/routes/generate", {
       method: "POST",
       body: JSON.stringify(params),
+      signal,
     }),
 
   suggestions: (query: string) =>

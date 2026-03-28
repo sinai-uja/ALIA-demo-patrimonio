@@ -16,23 +16,6 @@ export interface ActiveFilter {
   matchedText: string;
 }
 
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/** Remove active filter matched texts from the query before sending to API.
- *  Heritage type matches are kept — they carry semantic value for embeddings.
- *  Geographic filters (province, municipality) are removed. */
-function buildCleanQuery(query: string, filters: ActiveFilter[]): string {
-  let clean = query;
-  for (const f of filters) {
-    if (f.matchedText && f.type !== "heritage_type") {
-      clean = clean.replace(new RegExp(escapeRegex(f.matchedText), "gi"), "");
-    }
-  }
-  return clean.replace(/\s{2,}/g, " ").trim();
-}
-
 function collectFilters(filters: ActiveFilter[]) {
   const heritage: string[] = [];
   const provinces: string[] = [];
@@ -91,6 +74,8 @@ interface RoutesState {
   openStopDetail: (heritageAssetId: string) => Promise<void>;
   closeStopDetail: () => void;
 }
+
+let _generateController: AbortController | null = null;
 
 export const useRoutesStore = create<RoutesState>((set, get) => ({
   // Smart input
@@ -212,6 +197,11 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     const { query, activeFilters, numStops } = get();
     if (!query.trim()) throw new Error("La consulta no puede estar vacia");
 
+    // Abort any in-flight generation to prevent duplicate requests
+    _generateController?.abort();
+    const controller = new AbortController();
+    _generateController = controller;
+
     set({ generating: true });
     try {
       const filters = collectFilters(activeFilters);
@@ -219,15 +209,21 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
         query: query.trim(),
         num_stops: numStops,
         ...filters,
-      });
+      }, controller.signal);
+      if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
       set((s) => ({
         routes: [route, ...s.routes],
         generatedRoute: route,
         activeRoute: route,
       }));
       return route;
+    } catch (err) {
+      if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+      throw err;
     } finally {
-      set({ generating: false });
+      if (_generateController === controller) {
+        set({ generating: false });
+      }
     }
   },
 
