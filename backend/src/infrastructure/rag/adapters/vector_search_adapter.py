@@ -60,6 +60,11 @@ class PgVectorSearchAdapter(VectorSearchPort):
         )
         where_clause = (" AND " + " AND ".join(conditions)) if conditions else ""
 
+        # Ensure HNSW index explores enough candidates for the requested top_k
+        await self._db.execute(
+            text(f"SET LOCAL hnsw.ef_search = {max(top_k, 100)}"),
+        )
+
         query = text(f"""
             SELECT
                 id,
