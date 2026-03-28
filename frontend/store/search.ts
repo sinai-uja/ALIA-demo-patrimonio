@@ -96,6 +96,8 @@ function collectFilters(filters: ActiveFilter[]) {
   };
 }
 
+let _searchController: AbortController | null = null;
+
 export const useSearchStore = create<SearchState>((set, get) => ({
   query: "",
   results: [],
@@ -141,6 +143,11 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     const cleanQuery = buildCleanQuery(query, activeFilters);
     if (!cleanQuery) return;
 
+    // Abort any in-flight search to prevent duplicate requests
+    _searchController?.abort();
+    const controller = new AbortController();
+    _searchController = controller;
+
     const targetPage = page ?? 1;
     set({
       loading: true,
@@ -155,7 +162,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         page: targetPage,
         page_size: pageSize,
         ...filters,
-      });
+      }, controller.signal);
+      if (controller.signal.aborted) return;
       set({
         results: res.results,
         totalResults: res.total_results,
@@ -163,10 +171,13 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         totalPages: res.total_pages,
         searchId: res.search_id,
       });
-    } catch {
+    } catch (err) {
+      if (controller.signal.aborted) return;
       set({ results: [], totalResults: 0, page: 1, totalPages: 0, searchId: null });
     } finally {
-      set({ loading: false });
+      if (_searchController === controller) {
+        set({ loading: false });
+      }
     }
   },
 

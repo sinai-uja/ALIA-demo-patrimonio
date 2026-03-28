@@ -411,10 +411,11 @@ export const search = {
     heritage_type_filter?: string[] | null;
     province_filter?: string[] | null;
     municipality_filter?: string[] | null;
-  }) =>
+  }, signal?: AbortSignal) =>
     apiFetch<SimilaritySearchResponse>("/search/similarity", {
       method: "POST",
       body: JSON.stringify(params),
+      signal,
     }),
 
   suggestions: (query: string) =>
