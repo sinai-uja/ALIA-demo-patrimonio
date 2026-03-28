@@ -194,10 +194,13 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   clearSuggestions: () => set({ suggestions: null }),
 
   generateRoute: async () => {
-    const { query, activeFilters, numStops } = get();
+    const { query, activeFilters, numStops, generating } = get();
     if (!query.trim()) throw new Error("La consulta no puede estar vacia");
 
-    // Abort any in-flight generation to prevent duplicate requests
+    // Skip if a generation is already in progress (prevents same-tick duplicates)
+    if (generating) return get().generatedRoute as VirtualRoute;
+
+    // Abort any in-flight generation to prevent stale responses
     _generateController?.abort();
     const controller = new AbortController();
     _generateController = controller;
