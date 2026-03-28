@@ -27,9 +27,10 @@ function formatDuration(minutes: number): string {
 
 interface RouteStopCardProps {
   stop: RouteStop;
+  showNarrative?: boolean;
 }
 
-export function RouteStopCard({ stop }: RouteStopCardProps) {
+export function RouteStopCard({ stop, showNarrative = true }: RouteStopCardProps) {
   const openStopDetail = useRoutesStore((s) => s.openStopDetail);
 
   const typeColor =
@@ -47,7 +48,7 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
 
   return (
     <div
-      className={`rounded-xl border border-stone-200/60 bg-white p-4 sm:p-5 shadow-sm transition-all ${
+      className={`rounded-xl border border-stone-200/60 bg-white shadow-sm transition-all overflow-hidden ${
         isClickable
           ? "hover:shadow-md hover:border-green-200/60 cursor-pointer"
           : ""
@@ -66,78 +67,74 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
           : undefined
       }
     >
-      <div className="flex gap-4">
+      {/* Image — full width header when available */}
+      {stop.image_url && (
+        <div className="w-full h-36 bg-stone-100 overflow-hidden">
+          <img
+            src={stop.image_url}
+            alt={stop.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="p-4 flex gap-3">
         {/* Order badge */}
-        <div className="flex flex-col items-center shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-sm shadow-sm">
+        <div className="shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-sm shadow-sm">
             {stop.order}
           </div>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-3">
-            {/* Image thumbnail */}
-            {stop.image_url && (
-              <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-stone-100">
-                <img
-                  src={stop.image_url}
-                  alt={stop.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+          {/* Title */}
+          <h4
+            className={`font-semibold text-stone-900 leading-snug line-clamp-2 ${
+              isClickable ? "hover:text-green-700 transition-colors" : ""
+            }`}
+          >
+            {stop.title}
+          </h4>
 
-            <div className="flex-1 min-w-0">
-              {/* Title */}
-              <h4
-                className={`font-semibold text-stone-900 leading-snug ${
-                  isClickable ? "hover:text-green-700 transition-colors" : ""
-                }`}
+          {/* Metadata row */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}
+            >
+              {typeLabel}
+            </span>
+            <span className="text-xs text-stone-400 truncate">
+              {stop.municipality ? `${stop.municipality}, ` : ""}
+              {stop.province}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500 shrink-0">
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
               >
-                {stop.title}
-              </h4>
-
-              {/* Metadata row */}
-              <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}
-                >
-                  {typeLabel}
-                </span>
-                <span className="text-xs text-stone-400">
-                  {stop.municipality ? `${stop.municipality}, ` : ""}
-                  {stop.province}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                    />
-                  </svg>
-                  {formatDuration(stop.visit_duration_minutes)}
-                </span>
-              </div>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+              {formatDuration(stop.visit_duration_minutes)}
+            </span>
           </div>
 
           {/* Asset description */}
           {stop.description && (
-            <p className="text-xs text-stone-500 mt-2.5 leading-relaxed line-clamp-3">
+            <p className="text-xs text-stone-500 mt-2 leading-relaxed line-clamp-2">
               {stop.description}
             </p>
           )}
 
           {/* Narrative segment */}
-          {stop.narrative_segment && (
+          {showNarrative && stop.narrative_segment && (
             <p className="text-sm text-stone-600 mt-3 leading-relaxed">
               {stop.narrative_segment}
             </p>

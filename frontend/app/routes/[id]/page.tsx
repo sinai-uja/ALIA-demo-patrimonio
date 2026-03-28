@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useRoutesStore } from "@/store/routes";
@@ -90,12 +90,25 @@ function LegacyStopsLayout({
   );
 }
 
-/** New layout with introduction, interleaved RouteStopCards, and conclusion */
+/** New layout with introduction, alternating card/narrative roadmap, and conclusion */
 function InterleavedStopsLayout({
   route,
 }: {
   route: NonNullable<ReturnType<typeof useRoutesStore.getState>["activeRoute"]>;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [twoCol, setTwoCol] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setTwoCol(entry.contentRect.width >= 700);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <>
       {/* Introduction */}
@@ -103,12 +116,48 @@ function InterleavedStopsLayout({
         <p className="text-stone-600 leading-relaxed">{route.introduction}</p>
       )}
 
-      {/* Interleaved stop cards */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-stone-900">Paradas</h2>
-        {route.stops.map((stop) => (
-          <RouteStopCard key={stop.order} stop={stop} />
-        ))}
+      {/* Roadmap: alternating card / narrative */}
+      <div ref={containerRef}>
+        <h2 className="text-xl font-semibold text-stone-900 mb-5">Paradas</h2>
+        <div className="flex flex-col">
+          {route.stops.map((stop, i) => (
+            <div key={stop.order}>
+              {twoCol ? (
+                <div
+                  className={`flex gap-6 items-center ${
+                    i % 2 !== 0 ? "flex-row-reverse" : ""
+                  }`}
+                >
+                  <div className="w-1/2">
+                    <RouteStopCard stop={stop} showNarrative={false} />
+                  </div>
+                  {stop.narrative_segment && (
+                    <div className="w-1/2">
+                      <p className="text-sm text-stone-600 leading-relaxed">
+                        {stop.narrative_segment}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <RouteStopCard stop={stop} showNarrative={false} />
+                  {stop.narrative_segment && (
+                    <p className="text-sm text-stone-600 leading-relaxed px-1">
+                      {stop.narrative_segment}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {i < route.stops.length - 1 && (
+                <div className="flex justify-center py-1">
+                  <div className="w-px h-8 bg-stone-200" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Conclusion */}
@@ -271,7 +320,7 @@ export default function RouteDetailPage() {
           guideOpen ? "left-80" : "left-0"
         } ${hasDetail ? "right-[560px]" : "right-0"}`}
       >
-        <div className="mx-auto max-w-3xl px-6 py-8 space-y-10">
+        <div className="mx-auto max-w-4xl px-6 py-8 space-y-10">
           {/* Header */}
           <div>
             <div className="flex items-center gap-3 mb-3">
