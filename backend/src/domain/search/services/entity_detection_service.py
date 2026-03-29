@@ -46,6 +46,19 @@ HERITAGE_TYPE_KEYWORDS: dict[str, str] = {
     "catedral": "patrimonio_inmueble",
     "basilica": "patrimonio_inmueble",
     "abadia": "patrimonio_inmueble",
+    "fortaleza": "patrimonio_inmueble",
+    "ciudadela": "patrimonio_inmueble",
+    "capilla": "patrimonio_inmueble",
+    "cripta": "patrimonio_inmueble",
+    "claustro": "patrimonio_inmueble",
+    "campanario": "patrimonio_inmueble",
+    "baptisterio": "patrimonio_inmueble",
+    "mosaico": "patrimonio_inmueble",
+    "calzada": "patrimonio_inmueble",
+    "baluarte": "patrimonio_inmueble",
+    "toreon": "patrimonio_inmueble",
+    "rupestre": "patrimonio_inmueble",
+    "finca": "patrimonio_inmueble",
     # Patrimonio Mueble
     "mueble": "patrimonio_mueble",
     "objeto": "patrimonio_mueble",
@@ -74,6 +87,14 @@ HERITAGE_TYPE_KEYWORDS: dict[str, str] = {
     "dibujo": "patrimonio_mueble",
     "cuadro": "patrimonio_mueble",
     "lamina": "patrimonio_mueble",
+    "relicario": "patrimonio_mueble",
+    "caliz": "patrimonio_mueble",
+    "vasija": "patrimonio_mueble",
+    "anfora": "patrimonio_mueble",
+    "armadura": "patrimonio_mueble",
+    "urna": "patrimonio_mueble",
+    "pergamino": "patrimonio_mueble",
+    "sello": "patrimonio_mueble",
     # Patrimonio Inmaterial
     "inmaterial": "patrimonio_inmaterial",
     "fiesta": "patrimonio_inmaterial",
@@ -94,6 +115,13 @@ HERITAGE_TYPE_KEYWORDS: dict[str, str] = {
     "cofradia": "patrimonio_inmaterial",
     "folklore": "patrimonio_inmaterial",
     "procesion": "patrimonio_inmaterial",
+    "saeta": "patrimonio_inmaterial",
+    "copla": "patrimonio_inmaterial",
+    "sevillana": "patrimonio_inmaterial",
+    "carnaval": "patrimonio_inmaterial",
+    "leyenda": "patrimonio_inmaterial",
+    "zambomba": "patrimonio_inmaterial",
+    "corpus": "patrimonio_inmaterial",
     # Paisaje Cultural
     "paisaje cultural": "paisaje_cultural",
     "paisaje": "paisaje_cultural",
@@ -103,6 +131,14 @@ HERITAGE_TYPE_KEYWORDS: dict[str, str] = {
     "serrania": "paisaje_cultural",
     "huerta": "paisaje_cultural",
     "paraje": "paisaje_cultural",
+    "marisma": "paisaje_cultural",
+    "campina": "paisaje_cultural",
+    "olivar": "paisaje_cultural",
+    "vinedo": "paisaje_cultural",
+    "laguna": "paisaje_cultural",
+    "embalse": "paisaje_cultural",
+    "canada": "paisaje_cultural",
+    "monte": "paisaje_cultural",
 }
 
 HERITAGE_TYPE_LABELS: dict[str, str] = {
@@ -179,9 +215,9 @@ class EntityDetectionService:
             if heritage_type in seen_types:
                 continue
             norm_keyword = _strip_accents(keyword.lower())
-            if re.search(r"\b" + re.escape(norm_keyword) + r"\b", query_normalized):
+            matched = _find_match_in_query(norm_keyword, query)
+            if matched:
                 label = HERITAGE_TYPE_LABELS.get(heritage_type, heritage_type)
-                matched = _find_match_in_query(norm_keyword, query) or keyword
                 entities.append(DetectedEntity(
                     entity_type="heritage_type",
                     value=heritage_type,
