@@ -55,6 +55,8 @@ def _seed_admin() -> None:
                 profile_type_id=pt.id,
             )
             session.add(user)
+        elif existing.profile_type_id != pt.id:
+            existing.profile_type_id = pt.id
 
         session.commit()
     engine.dispose()
