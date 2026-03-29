@@ -44,6 +44,7 @@ function NumStopsSelector() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
       </button>
+      <div className="w-px h-5 bg-stone-200 ml-1 shrink-0" />
     </div>
   );
 }
@@ -115,7 +116,7 @@ export default function RoutesPage() {
       {/* Main content */}
       <div className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
         drawerOpen ? "left-72" : "left-0"
-      } ${hasDetail ? "right-[560px]" : "right-0"}`}>
+      } ${hasDetail ? "md:right-[560px]" : "right-0"}`}>
 
         {routes.length === 0 && !generatedRoute && !generating && !loading ? (
           /* Centered empty state */
@@ -221,7 +222,7 @@ export default function RoutesPage() {
 
       {/* Detail panel — slides in from right */}
       {hasDetail && (
-        <aside className="absolute right-0 top-0 bottom-0 w-[560px] z-10 max-md:w-full">
+        <aside className="fixed inset-0 z-50 md:absolute md:inset-auto md:right-0 md:top-0 md:bottom-0 md:w-[560px] md:z-10">
           <RouteDetailPanel />
         </aside>
       )}

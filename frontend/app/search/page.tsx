@@ -50,7 +50,7 @@ export default function SearchPage() {
       <div
         className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
           drawerOpen ? "left-72" : "left-0"
-        } ${hasDetail ? "right-[560px]" : "right-0"}`}
+        } ${hasDetail ? "md:right-[560px]" : "right-0"}`}
       >
         {!hasSearched ? (
           /* Centered empty state */
@@ -91,7 +91,7 @@ export default function SearchPage() {
 
       {/* Detail panel */}
       {hasDetail && (
-        <aside className="absolute right-0 top-0 bottom-0 w-[560px] z-10">
+        <aside className="fixed inset-0 z-50 md:absolute md:inset-auto md:right-0 md:top-0 md:bottom-0 md:w-[560px] md:z-10">
           <AssetDetailPanel />
         </aside>
       )}

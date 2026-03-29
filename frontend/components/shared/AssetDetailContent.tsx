@@ -580,7 +580,7 @@ export function AssetDetailContent({
     asset?.details && hasExtendedContent(asset.details);
 
   return (
-    <aside className="h-full border-l border-stone-200/60 bg-white flex flex-col">
+    <aside className="h-full md:border-l border-stone-200/60 bg-white flex flex-col">
       {/* Header */}
       <div className="shrink-0 flex items-start gap-3 p-4 border-b border-stone-100">
         <button
