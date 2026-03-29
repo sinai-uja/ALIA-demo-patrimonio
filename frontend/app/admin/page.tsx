@@ -165,13 +165,12 @@ export default function AdminPage() {
   const [deletingPtId, setDeletingPtId] = useState<string | null>(null);
   const [ptError, setPtError] = useState<string | null>(null);
 
-  // Protection: redirect non-admins
+  // Protection: redirect non-admins — wait for username to ensure fetchUser() has completed
   useEffect(() => {
     if (!hydrated) return;
-    if (!isAuthenticated || profileType !== "admin") {
-      router.replace("/");
-    }
-  }, [hydrated, isAuthenticated, profileType, router]);
+    if (!isAuthenticated) { router.replace("/"); return; }
+    if (currentUsername !== null && profileType !== "admin") router.replace("/");
+  }, [hydrated, isAuthenticated, currentUsername, profileType, router]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -226,6 +225,7 @@ export default function AdminPage() {
       setNewProfileType("");
       setShowCreate(false);
       await fetchUsers();
+      await fetchProfileTypes();
     } catch (err) {
       if (err instanceof ValidationError) {
         setCreateFieldErrors(err.fields);
@@ -240,6 +240,7 @@ export default function AdminPage() {
   async function handleEditSave(id: string, data: { password?: string | null; profile_type?: string | null }) {
     await admin.updateUser(id, data);
     await fetchUsers();
+    await fetchProfileTypes();
   }
 
   async function handleDelete(id: string) {
@@ -247,6 +248,7 @@ export default function AdminPage() {
       await admin.deleteUser(id);
       setDeletingId(null);
       await fetchUsers();
+      await fetchProfileTypes();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al eliminar usuario");
       setDeletingId(null);
@@ -513,13 +515,9 @@ export default function AdminPage() {
         </div>
 
         {/* Right panel — profile types */}
-        <div className="space-y-4">
+        <div className="space-y-8">
+          <h2 className="text-2xl font-bold tracking-tight text-stone-900">Tipos de perfil</h2>
           <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-            {/* Header */}
-            <div className="border-b border-stone-200 px-5 py-4">
-              <h2 className="text-base font-semibold text-stone-900">Tipos de perfil</h2>
-            </div>
-
             {/* Create form */}
             <div className="px-5 py-4 border-b border-stone-100">
               <form onSubmit={handleCreatePt} noValidate className="flex gap-2">
