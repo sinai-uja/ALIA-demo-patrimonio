@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
+const DISABLED_ROUTES = ["/chat", "/accessibility"];
+
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (DISABLED_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
   const token = request.cookies.get("token")?.value;
-  const isLoginPage = request.nextUrl.pathname === "/login";
+  const isLoginPage = pathname === "/login";
 
   if (isLoginPage && token) {
     return NextResponse.redirect(new URL("/", request.url));
