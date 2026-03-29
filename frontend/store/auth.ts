@@ -28,6 +28,7 @@ interface AuthState {
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  hydrated: boolean;
   username: string | null;
   profileType: string | null;
   login: (username: string, password: string) => Promise<void>;
@@ -42,6 +43,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
   isAuthenticated: false,
+  hydrated: false,
   username: null,
   profileType: null,
 
@@ -119,6 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ token, refreshToken, isAuthenticated: true });
       get().fetchUser();
     }
+    set({ hydrated: true });
   },
 
   fetchUser: async () => {
