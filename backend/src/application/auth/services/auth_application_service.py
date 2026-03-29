@@ -1,9 +1,12 @@
 import uuid
 
 from src.application.auth.dto.auth_dto import (
+    CreateProfileTypeDTO,
     CreateUserDTO,
     LoginDTO,
+    ProfileTypeDTO,
     TokenPairDTO,
+    UpdateProfileTypeDTO,
     UpdateUserDTO,
     UserInfoDTO,
 )
@@ -83,3 +86,20 @@ class AuthApplicationService:
 
     def delete_user(self, user_id: uuid.UUID) -> None:
         self._auth_port.delete_user(user_id)
+
+    def list_profile_types_admin(self) -> list[ProfileTypeDTO]:
+        return [
+            ProfileTypeDTO(id=str(pt.id), name=pt.name, user_count=count)
+            for pt, count in self._auth_port.list_profile_types_with_counts()
+        ]
+
+    def create_profile_type(self, dto: CreateProfileTypeDTO) -> ProfileTypeDTO:
+        pt = self._auth_port.create_profile_type(dto.name)
+        return ProfileTypeDTO(id=str(pt.id), name=pt.name, user_count=0)
+
+    def rename_profile_type(self, dto: UpdateProfileTypeDTO) -> ProfileTypeDTO:
+        pt = self._auth_port.rename_profile_type(dto.profile_type_id, dto.name)
+        return ProfileTypeDTO(id=str(pt.id), name=pt.name, user_count=0)
+
+    def delete_profile_type(self, profile_type_id: uuid.UUID) -> None:
+        self._auth_port.delete_profile_type(profile_type_id)

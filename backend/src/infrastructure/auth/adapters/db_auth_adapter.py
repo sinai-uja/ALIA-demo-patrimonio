@@ -1,11 +1,12 @@
 import uuid
 
 import bcrypt
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.domain.auth.entities.user import User, UserProfileType
-from src.domain.auth.ports.auth_port import AuthPort
+from src.domain.auth.ports.auth_port import AuthPort, ProfileTypeInUseError
 from src.infrastructure.auth.models import UserModel, UserProfileTypeModel
 
 
@@ -154,6 +155,75 @@ class DbAuthAdapter(AuthPort):
                 raise ValueError("User not found")
             session.delete(user)
             session.commit()
+
+    def list_profile_types_with_counts(self) -> list[tuple[UserProfileType, int]]:
+        with self._session_factory() as session:
+            rows = session.execute(
+                select(
+                    UserProfileTypeModel,
+                    func.count(UserModel.id).label("user_count"),
+                )
+                .outerjoin(UserModel, UserModel.profile_type_id == UserProfileTypeModel.id)
+                .group_by(UserProfileTypeModel.id)
+                .order_by(UserProfileTypeModel.name)
+            ).all()
+            return [
+                (
+                    UserProfileType(id=r.UserProfileTypeModel.id, name=r.UserProfileTypeModel.name),
+                    r.user_count,
+                )
+                for r in rows
+            ]
+
+    def create_profile_type(self, name: str) -> UserProfileType:
+        with self._session_factory() as session:
+            existing = session.execute(
+                select(UserProfileTypeModel).where(UserProfileTypeModel.name == name)
+            ).scalar_one_or_none()
+            if existing is not None:
+                raise ValueError(f"El tipo de perfil '{name}' ya existe")
+            pt = UserProfileTypeModel(id=uuid.uuid4(), name=name)
+            session.add(pt)
+            session.commit()
+            session.refresh(pt)
+            return UserProfileType(id=pt.id, name=pt.name)
+
+    def rename_profile_type(self, profile_type_id: uuid.UUID, new_name: str) -> UserProfileType:
+        with self._session_factory() as session:
+            pt = session.execute(
+                select(UserProfileTypeModel).where(UserProfileTypeModel.id == profile_type_id)
+            ).scalar_one_or_none()
+            if pt is None:
+                raise ValueError("Tipo de perfil no encontrado")
+            conflict = session.execute(
+                select(UserProfileTypeModel).where(
+                    UserProfileTypeModel.name == new_name,
+                    UserProfileTypeModel.id != profile_type_id,
+                )
+            ).scalar_one_or_none()
+            if conflict is not None:
+                raise ValueError(f"El tipo de perfil '{new_name}' ya existe")
+            pt.name = new_name
+            session.commit()
+            session.refresh(pt)
+            return UserProfileType(id=pt.id, name=pt.name)
+
+    def delete_profile_type(self, profile_type_id: uuid.UUID) -> None:
+        with self._session_factory() as session:
+            pt = session.execute(
+                select(UserProfileTypeModel).where(UserProfileTypeModel.id == profile_type_id)
+            ).scalar_one_or_none()
+            if pt is None:
+                raise ValueError("Tipo de perfil no encontrado")
+            session.delete(pt)
+            try:
+                session.commit()
+            except IntegrityError:
+                session.rollback()
+                raise ProfileTypeInUseError(
+                    f"El tipo de perfil '{pt.name}' está asignado a uno o más usuarios"
+                    " y no puede eliminarse"
+                )
 
     @staticmethod
     def _to_domain(row: UserModel) -> User:

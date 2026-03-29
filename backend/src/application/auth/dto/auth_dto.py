@@ -35,3 +35,21 @@ class UpdateUserDTO:
     user_id: uuid.UUID
     password: str | None = None
     profile_type_name: str | None = None
+
+
+@dataclass(frozen=True)
+class ProfileTypeDTO:
+    id: str
+    name: str
+    user_count: int
+
+
+@dataclass(frozen=True)
+class CreateProfileTypeDTO:
+    name: str
+
+
+@dataclass(frozen=True)
+class UpdateProfileTypeDTO:
+    profile_type_id: uuid.UUID
+    name: str
