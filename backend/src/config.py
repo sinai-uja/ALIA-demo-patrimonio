@@ -69,6 +69,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
+    admin_username: str = "admin"
+    admin_password: str = "admin"
 
     @property
     def database_url_sync(self) -> str:

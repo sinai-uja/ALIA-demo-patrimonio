@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -14,3 +15,4 @@ class User:
     username: str
     password_hash: str
     profile_type: UserProfileType | None = None
+    created_at: datetime | None = None
