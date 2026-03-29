@@ -383,7 +383,7 @@ export function SmartInput({
           <div
             ref={backdropRef}
             aria-hidden="true"
-            className={`absolute inset-0 z-[2] pl-12 ${rightContent ? "pr-36" : "pr-4"} rounded-2xl overflow-hidden whitespace-pre pointer-events-none flex items-center`}
+            className={`absolute inset-0 z-[2] pl-12 ${rightContent ? "pr-48" : "pr-12"} rounded-2xl overflow-hidden whitespace-pre pointer-events-none flex items-center`}
             style={textStyle}
           >
             {hasEntities
@@ -417,7 +417,7 @@ export function SmartInput({
             value={query}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full border border-stone-200 bg-white pl-12 ${rightContent ? "pr-36" : "pr-4"} py-4 rounded-2xl placeholder:text-stone-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none shadow-sm transition-all relative`}
+            className={`w-full border border-stone-200 bg-white pl-12 ${rightContent ? "pr-48" : "pr-12"} py-4 rounded-2xl placeholder:text-stone-400 focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none shadow-sm transition-all relative`}
             style={{
               ...textStyle,
               background: hasEntities ? "transparent" : undefined,
@@ -427,19 +427,27 @@ export function SmartInput({
             }}
           />
 
-          {/* Right content (e.g. stop counter) — inside the input visually */}
-          {rightContent && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
-              {rightContent}
-            </div>
-          )}
-
-          {loading && !rightContent && (
-            <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 animate-spin text-green-600 z-10" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          )}
+          {/* Right zone: optional content + submit button */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex items-center gap-2">
+            {rightContent}
+            <button
+              type="submit"
+              disabled={!query.trim() || loading}
+              className="h-8 w-8 shrink-0 flex items-center justify-center rounded-lg bg-green-600 text-white transition-all hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Buscar"
+            >
+              {loading ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </form>
 
