@@ -478,6 +478,7 @@ export interface UserInfo {
   id: string;
   username: string;
   profile_type: string | null;
+  is_root_admin: boolean;
 }
 
 export interface ProfileType {
@@ -494,6 +495,24 @@ export const auth = {
     }),
 
   getProfileTypes: () => apiFetch<ProfileType[]>("/auth/profile-types"),
+};
+
+// ── Admin ────────────────────────────────────────────────────────────────────
+export interface AdminUser {
+  id: string;
+  username: string;
+  profile_type: string | null;
+  created_at: string;
+}
+
+export const admin = {
+  listUsers: () => apiFetch<AdminUser[]>("/admin/users"),
+  createUser: (data: { username: string; password: string; profile_type?: string | null }) =>
+    apiFetch<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(data) }),
+  updateUser: (id: string, data: { password?: string | null; profile_type?: string | null }) =>
+    apiFetch<AdminUser>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteUser: (id: string) =>
+    apiFetch<void>(`/admin/users/${id}`, { method: "DELETE" }),
 };
 
 // ── Accessibility ─────────────────────────────────────────────────────────────

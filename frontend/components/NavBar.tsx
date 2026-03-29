@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/auth";
 import { auth as authApi } from "@/lib/api";
 import type { ProfileType } from "@/lib/api";
 
-const links = [
+const baseLinks = [
   { href: "/search", label: "Busqueda" },
   { href: "/routes", label: "Rutas" },
 ];
@@ -19,6 +19,11 @@ export function NavBar() {
   const profileType = useAuthStore((s) => s.profileType);
   const setProfileType = useAuthStore((s) => s.setProfileType);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const links = [
+    ...baseLinks,
+    ...(profileType === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+  ];
 
   const [profileTypes, setProfileTypes] = useState<ProfileType[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);

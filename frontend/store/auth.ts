@@ -31,6 +31,7 @@ interface AuthState {
   hydrated: boolean;
   username: string | null;
   profileType: string | null;
+  isRootAdmin: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<boolean>;
@@ -46,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   hydrated: false,
   username: null,
   profileType: null,
+  isRootAdmin: false,
 
   login: async (username: string, password: string) => {
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -80,6 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: false,
       username: null,
       profileType: null,
+      isRootAdmin: false,
     });
     window.location.href = "/login";
   },
@@ -127,7 +130,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   fetchUser: async () => {
     try {
       const user = await authApi.getMe();
-      set({ username: user.username, profileType: user.profile_type });
+      set({ username: user.username, profileType: user.profile_type, isRootAdmin: user.is_root_admin ?? false });
     } catch {
       // If fetching user fails, keep existing auth state
     }
