@@ -20,6 +20,7 @@ class UserInfoResponse(BaseModel):
     id: str
     username: str
     profile_type: str | None = None
+    is_root_admin: bool = False
 
 
 class UpdateProfileTypeRequest(BaseModel):

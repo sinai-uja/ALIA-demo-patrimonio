@@ -12,6 +12,7 @@ from src.api.v1.endpoints.auth.schemas import (
     UserInfoResponse,
 )
 from src.application.auth.dto.auth_dto import LoginDTO
+from src.config import settings
 from src.domain.auth.entities.user import User
 
 logger = logging.getLogger("iaph.auth")
@@ -78,7 +79,12 @@ def get_me(
     service=Depends(get_auth_service),
 ):
     info = service.get_user_info(user)
-    return UserInfoResponse(id=info.id, username=info.username, profile_type=info.profile_type)
+    return UserInfoResponse(
+        id=info.id,
+        username=info.username,
+        profile_type=info.profile_type,
+        is_root_admin=(info.username == settings.admin_username),
+    )
 
 
 @router.put("/profile-type", response_model=UserInfoResponse)
@@ -101,4 +107,4 @@ def update_profile_type(
 @router.get("/profile-types", response_model=list[ProfileTypeResponse])
 def list_profile_types(service=Depends(get_auth_service)):
     names = service.list_profile_types()
-    return [ProfileTypeResponse(name=n) for n in names]
+    return [ProfileTypeResponse(name=n) for n in names if n != "admin"]
