@@ -8,7 +8,6 @@ import { routes as routesApi, type RagSource } from "@/lib/api";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { RouteStopCard } from "@/components/routes/RouteStopCard";
 import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
-import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
 import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 import { useFeedbackStore } from "@/store/feedback";
 import ReactMarkdown from "react-markdown";
@@ -180,6 +179,26 @@ export default function RouteDetailPage() {
   >([]);
   const [guiding, setGuiding] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [guideExpanded, setGuideExpanded] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  // Close chat when clicking outside
+  useEffect(() => {
+    if (!guideOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (chatRef.current && !chatRef.current.contains(e.target as Node)) {
+        setGuideOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [guideOpen]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [guideMessages, guiding]);
 
   useEffect(() => {
     if (id) {
@@ -236,10 +255,34 @@ export default function RouteDetailPage() {
 
   return (
     <div className="relative h-[calc(100vh-3.625rem)] overflow-hidden">
-      {/* Guide chat drawer */}
-      <CollapsibleDrawer open={guideOpen} width="w-80">
-        <div className="flex flex-col h-full">
-          <div className="px-4 py-4 border-b border-stone-200/60 shrink-0">
+      {/* Floating guide chat button — hidden when chat is open */}
+      <button
+        onClick={() => { setGuideOpen(true); if (window.innerWidth < 768) setGuideExpanded(true); }}
+        className={`fixed bottom-6 left-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white shadow-lg hover:scale-105 transition-all ${guideOpen ? "opacity-0 pointer-events-none scale-75" : "opacity-100 scale-100"}`}
+        aria-label="Abrir guia"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+        </svg>
+        {guideMessages.length > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            {guideMessages.length}
+          </span>
+        )}
+      </button>
+
+      {/* Floating chat window */}
+      <div
+        ref={chatRef}
+        className={`fixed bottom-0 left-0 z-40 rounded-t-2xl shadow-2xl border-t border-x border-stone-200 bg-white flex flex-col overflow-hidden origin-bottom transition-all duration-200 ${guideExpanded ? "w-[min(520px,100vw)] h-[min(600px,calc(100vh-4rem))]" : "w-[min(20rem,100vw)] h-[420px]"} ${
+          guideOpen
+            ? "opacity-100 scale-100"
+            : "opacity-0 scale-95 pointer-events-none"
+        }`}
+      >
+        {/* Header */}
+        <div className="px-4 py-4 border-b border-stone-200/60 shrink-0 flex items-center justify-between">
+          <div>
             <h2 className="text-sm font-semibold text-stone-900">
               Guia interactivo
             </h2>
@@ -247,97 +290,110 @@ export default function RouteDetailPage() {
               Pregunta sobre esta ruta
             </p>
           </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
-            {guideMessages.length === 0 && !guiding && (
-              <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <svg className="w-10 h-10 text-stone-200 mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setGuideExpanded((v) => !v)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+              aria-label={guideExpanded ? "Reducir ventana" : "Ampliar ventana"}
+            >
+              {guideExpanded ? (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
                 </svg>
-                <p className="text-xs text-stone-400">
-                  Pregunta sobre las paradas, historia o cualquier detalle de esta ruta
-                </p>
-              </div>
-            )}
-            {guideMessages.map((m, i) => (
-              <div
-                key={i}
-                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <span
-                  className={`inline-block rounded-2xl px-3 py-2 text-xs leading-relaxed max-w-[90%] ${
-                    m.role === "user"
-                      ? "bg-gradient-to-br from-green-700 to-emerald-700 text-white rounded-br-md"
-                      : "bg-stone-50 border border-stone-200 text-stone-700 rounded-bl-md"
-                  }`}
-                >
-                  {m.role === "assistant" ? (
-                    <ReactMarkdown
-                      components={{
-                        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
-                        ol: ({ children }) => <ol className="list-decimal pl-3.5 mb-1.5 last:mb-0 space-y-0.5">{children}</ol>,
-                        ul: ({ children }) => <ul className="list-disc pl-3.5 mb-1.5 last:mb-0 space-y-0.5">{children}</ul>,
-                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                        em: ({ children }) => <em className="italic">{children}</em>,
-                      }}
-                    >
-                      {m.content}
-                    </ReactMarkdown>
-                  ) : (
-                    m.content
-                  )}
-                </span>
-              </div>
-            ))}
-            {guiding && (
-              <div className="flex justify-start">
-                <span className="inline-block rounded-2xl rounded-bl-md bg-stone-50 border border-stone-200 px-3 py-2">
-                  <span className="flex gap-1">
-                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
-                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
-                    <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
-                  </span>
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Input — pinned to bottom */}
-          <div className="px-3 py-3 border-t border-stone-200/60 shrink-0">
-            <ChatInput
-              onSend={handleGuideQuestion}
-              disabled={guiding}
-              placeholder="Pregunta sobre la ruta..."
-            />
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={() => setGuideOpen(false)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+              aria-label="Cerrar guia"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
-      </CollapsibleDrawer>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+          {guideMessages.length === 0 && !guiding && (
+            <div className="flex flex-col items-center justify-center h-full text-center px-4">
+              <svg className="w-10 h-10 text-stone-200 mb-3" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+              </svg>
+              <p className="text-xs text-stone-400">
+                Pregunta sobre las paradas, historia o cualquier detalle de esta ruta
+              </p>
+            </div>
+          )}
+          {guideMessages.map((m, i) => (
+            <div
+              key={i}
+              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <span
+                className={`inline-block rounded-2xl px-3 py-2 text-xs leading-relaxed max-w-[90%] ${
+                  m.role === "user"
+                    ? "bg-gradient-to-br from-green-700 to-emerald-700 text-white rounded-br-md"
+                    : "bg-stone-50 border border-stone-200 text-stone-700 rounded-bl-md"
+                }`}
+              >
+                {m.role === "assistant" ? (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                      ol: ({ children }) => <ol className="list-decimal pl-3.5 mb-1.5 last:mb-0 space-y-0.5">{children}</ol>,
+                      ul: ({ children }) => <ul className="list-disc pl-3.5 mb-1.5 last:mb-0 space-y-0.5">{children}</ul>,
+                      strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                      em: ({ children }) => <em className="italic">{children}</em>,
+                    }}
+                  >
+                    {m.content}
+                  </ReactMarkdown>
+                ) : (
+                  m.content
+                )}
+              </span>
+            </div>
+          ))}
+          {guiding && (
+            <div className="flex justify-start">
+              <span className="inline-block rounded-2xl rounded-bl-md bg-stone-50 border border-stone-200 px-3 py-2">
+                <span className="flex gap-1">
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                  <span className="typing-dot h-1.5 w-1.5 rounded-full bg-stone-400" />
+                </span>
+              </span>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input — pinned to bottom */}
+        <div className="px-3 py-3 border-t border-stone-200/60 shrink-0">
+          <ChatInput
+            onSend={handleGuideQuestion}
+            disabled={guiding}
+            placeholder="Pregunta sobre la ruta..."
+          />
+        </div>
+      </div>
 
       {/* Main content */}
       <div
-        className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
-          guideOpen ? "left-80" : "left-0"
-        } ${hasDetail ? "right-[560px]" : "right-0"}`}
+        className={`absolute top-0 bottom-0 left-0 overflow-y-auto transition-all duration-300 ${
+          hasDetail ? "right-[560px]" : "right-0"
+        }`}
       >
         <div className="mx-auto max-w-4xl px-6 py-8 space-y-10">
           {/* Header */}
           <div>
             <div className="flex items-center gap-3 mb-3">
-              <button
-                onClick={() => setGuideOpen((v) => !v)}
-                className="shrink-0 relative flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:text-stone-700 hover:border-stone-300 transition-colors"
-                aria-label={guideOpen ? "Cerrar guia" : "Abrir guia"}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
-                </svg>
-                {guideMessages.length > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-green-600 text-[10px] font-bold text-white">
-                    {guideMessages.length}
-                  </span>
-                )}
-              </button>
               <Link
                 href="/routes"
                 className="inline-flex items-center gap-1 text-sm text-green-700 hover:text-green-700 transition-colors"
