@@ -6,6 +6,14 @@ function getToken(): string | null {
   return match ? match[1] : null;
 }
 
+export class ValidationError extends Error {
+  fields: Record<string, string>;
+  constructor(fields: Record<string, string>) {
+    super(Object.values(fields).join("; "));
+    this.fields = fields;
+  }
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -28,8 +36,34 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err || res.statusText);
+    const text = await res.text();
+    if (res.status === 422) {
+      try {
+        const json = JSON.parse(text);
+        if (Array.isArray(json.detail)) {
+          const fields: Record<string, string> = {};
+          for (const e of json.detail as { loc: string[]; msg: string }[]) {
+            const field = e.loc[e.loc.length - 1] ?? "general";
+            // Strip Pydantic v2 "Value error, " prefix if present
+            const msg = e.msg.replace(/^Value error,\s*/i, "");
+            fields[field] = msg;
+          }
+          throw new ValidationError(fields);
+        }
+      } catch (e) {
+        if (e instanceof ValidationError) throw e;
+      }
+    }
+    try {
+      const json = JSON.parse(text);
+      if (Array.isArray(json.detail)) {
+        throw new Error(json.detail.map((e: { msg: string }) => e.msg.replace(/^Value error,\s*/i, "")).join("; "));
+      }
+      if (typeof json.detail === "string") throw new Error(json.detail);
+    } catch (e) {
+      if (e instanceof Error && e.message !== text) throw e;
+    }
+    throw new Error(text || res.statusText);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -505,6 +539,12 @@ export interface AdminUser {
   created_at: string;
 }
 
+export interface AdminProfileType {
+  id: string;
+  name: string;
+  user_count: number;
+}
+
 export const admin = {
   listUsers: () => apiFetch<AdminUser[]>("/admin/users"),
   createUser: (data: { username: string; password: string; profile_type?: string | null }) =>
@@ -513,6 +553,21 @@ export const admin = {
     apiFetch<AdminUser>(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   deleteUser: (id: string) =>
     apiFetch<void>(`/admin/users/${id}`, { method: "DELETE" }),
+  profileTypes: {
+    list: () => apiFetch<AdminProfileType[]>("/admin/profile-types"),
+    create: (name: string) =>
+      apiFetch<AdminProfileType>("/admin/profile-types", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      }),
+    rename: (id: string, name: string) =>
+      apiFetch<AdminProfileType>(`/admin/profile-types/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name }),
+      }),
+    delete: (id: string) =>
+      apiFetch<void>(`/admin/profile-types/${id}`, { method: "DELETE" }),
+  },
 };
 
 // ── Accessibility ─────────────────────────────────────────────────────────────

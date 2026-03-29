@@ -83,7 +83,11 @@ export function NavBar() {
           {isAuthenticated && username && (
             <>
               <span className="text-sm text-stone-500">{username}</span>
-              {profileTypes.length > 0 && (
+              {profileType === "admin" ? (
+                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 capitalize select-none">
+                  admin
+                </span>
+              ) : profileTypes.length > 0 ? (
                 <div className="relative">
                   <select
                     value={profileType ?? ""}
@@ -109,7 +113,7 @@ export function NavBar() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
-              )}
+              ) : null}
             </>
           )}
           <div className="h-4 w-px bg-stone-200" />
@@ -172,7 +176,11 @@ export function NavBar() {
               {isAuthenticated && username && (
                 <>
                   <span className="px-4 text-sm text-stone-500">{username}</span>
-                  {profileTypes.length > 0 && (
+                  {profileType === "admin" ? (
+                    <span className="mx-4 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 capitalize select-none">
+                      admin
+                    </span>
+                  ) : profileTypes.length > 0 ? (
                     <div className="relative px-4">
                       <select
                         value={profileType ?? ""}
@@ -198,7 +206,7 @@ export function NavBar() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>
-                  )}
+                  ) : null}
                 </>
               )}
               <button
