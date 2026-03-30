@@ -1,0 +1,62 @@
+# =============================================================================
+# cloudbuild-baked.yaml — Build embedding image with models baked in
+#
+# Three-step build:
+#   1. Build base image (Dockerfile — code only, no models)
+#   2. Download models from GCS into workspace (Cloud Build has bucket access)
+#   3. Build baked image (base + models from workspace context)
+#
+# Usage:
+#   gcloud builds submit ./embedding \
+#     --config=embedding/cloudbuild-baked.yaml \
+#     --timeout=1800
+#
+# Or via scripts: ./embedding/scripts/deploy.sh --bake-models
+# =============================================================================
+
+substitutions:
+  _IMAGE: 'europe-west1-docker.pkg.dev/innovasur-uja-alia/iaph-rag/embedding'
+  _GCS_BUCKET: 'innovasur-uja-alia-iaph-models'
+
+steps:
+  # Step 1: Build base image (code only, no models)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:base'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # Step 2: Download models from GCS into workspace
+  # Cloud Build service account has storage access; docker build does not.
+  - name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p models
+        gsutil -m cp -r gs://${_GCS_BUCKET}/Qwen3-Embedding-0.6B models/
+        gsutil -m cp -r gs://${_GCS_BUCKET}/Qwen3-Reranker-0.6B models/
+
+  # Step 3: Build baked image (base + models now in workspace/models/)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:baked'
+      - '--build-arg'
+      - 'BASE_IMAGE=${_IMAGE}:base'
+      - '-f'
+      - 'Dockerfile.baked'
+      - '.'
+
+images:
+  - '${_IMAGE}:latest'
+  - '${_IMAGE}:baked'
+  - '${_IMAGE}:base'
+
+timeout: '1800s'

@@ -2,6 +2,7 @@
        docker-up docker-up-llm docker-down \
        build-backend build-frontend build-embedding build-all \
        push-backend push-frontend push-embedding push-all \
+       cloud-setup cloud-setup-baked cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
        migrate test lint help
 
 COMPOSE = docker compose
@@ -35,6 +36,14 @@ help:
 	@echo "  push-frontend    Push frontend image"
 	@echo "  push-embedding   Push embedding image"
 	@echo "  push-all         Push all images"
+	@echo ""
+	@echo "Cloud Run (embedding service):"
+	@echo "  cloud-setup              First-time infra setup + deploy (GCS FUSE)"
+	@echo "  cloud-setup-models       Setup + upload models to GCS"
+	@echo "  cloud-setup-baked        Setup + bake models into image (fast cold start)"
+	@echo "  cloud-deploy             Rebuild and redeploy (GCS FUSE)"
+	@echo "  cloud-deploy-baked       Rebuild with models baked in (fast cold start)"
+	@echo "  cloud-deploy-skip-build  Redeploy without rebuilding image"
 	@echo ""
 	@echo "Other:"
 	@echo "  migrate          Apply pending Alembic migrations"
@@ -107,6 +116,31 @@ push-embedding: build-embedding
 	docker push $(REGISTRY)/embedding:latest
 
 push-all: push-backend push-frontend push-embedding
+
+# ---------------------------------------------------------------------------
+# Cloud Run (embedding service)
+# ---------------------------------------------------------------------------
+
+cloud-setup:
+	./embedding/scripts/setup.sh
+
+cloud-setup-models:
+	./embedding/scripts/setup.sh --upload-models
+
+cloud-setup-baked:
+	./embedding/scripts/setup.sh --bake-models
+
+cloud-deploy:
+	./embedding/scripts/deploy.sh
+
+cloud-deploy-baked:
+	./embedding/scripts/deploy.sh --bake-models
+
+cloud-deploy-skip-build:
+	./embedding/scripts/deploy.sh --skip-build
+
+cloud-deploy-baked-skip-build:
+	./embedding/scripts/deploy.sh --bake-models --skip-build
 
 # ---------------------------------------------------------------------------
 # Other

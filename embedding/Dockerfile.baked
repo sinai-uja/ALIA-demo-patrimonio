@@ -1,0 +1,19 @@
+# =============================================================================
+# Dockerfile.baked — Embedding + Reranker with model weights baked into image
+#
+# Uses models pre-downloaded by Cloud Build (see cloudbuild-baked.yaml).
+# The models directory is passed as build context, not downloaded at build time.
+#
+# Result: ~4-5 GB image, but cold start drops from ~3-4 min to ~10-20s
+# because no GCS FUSE reads are needed at runtime.
+#
+# Build via Cloud Build:
+#   gcloud builds submit ./embedding --config=embedding/cloudbuild-baked.yaml
+# =============================================================================
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Models are provided in the build context (downloaded by Cloud Build step)
+COPY models/Qwen3-Embedding-0.6B /app/model
+COPY models/Qwen3-Reranker-0.6B /app/reranker_model
