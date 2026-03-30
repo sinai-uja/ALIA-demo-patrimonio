@@ -3,7 +3,7 @@
        build-backend build-frontend build-embedding build-all \
        push-backend push-frontend push-embedding push-all \
        cloud-setup cloud-setup-baked cloud-generate-sa-key cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
-       migrate test lint help
+       migrate test lint db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose
 VERSION = $(shell cat VERSION)
@@ -45,6 +45,12 @@ help:
 	@echo "  cloud-deploy             Rebuild and redeploy (GCS FUSE)"
 	@echo "  cloud-deploy-baked       Rebuild with models baked in (fast cold start)"
 	@echo "  cloud-deploy-skip-build  Redeploy without rebuilding image"
+	@echo ""
+	@echo "Database:"
+	@echo "  db-export        Export database (local)"
+	@echo "  db-export-docker Export database (Docker container)"
+	@echo "  db-import        Import database (local, FILE=path/to/dump)"
+	@echo "  db-import-docker Import database (Docker, FILE=path/to/dump)"
 	@echo ""
 	@echo "Other:"
 	@echo "  migrate          Apply pending Alembic migrations"
@@ -158,3 +164,15 @@ test:
 
 lint:
 	$(MAKE) -C backend lint
+
+db-export:
+	$(MAKE) -C backend db-export
+
+db-export-docker:
+	$(MAKE) -C backend db-export-docker
+
+db-import:
+	$(MAKE) -C backend db-import FILE=$(FILE)
+
+db-import-docker:
+	$(MAKE) -C backend db-import-docker FILE=$(FILE)

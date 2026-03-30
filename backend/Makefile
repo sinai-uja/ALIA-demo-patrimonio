@@ -1,4 +1,4 @@
-.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 download-reranker analyze-feedback analyze-queries manage-users help
+.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 download-reranker analyze-feedback analyze-queries manage-users db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose -f ../docker-compose.yml -f ../docker-compose.override.yml
 ENV_FILE = config/.env
@@ -24,6 +24,10 @@ help:
 	@echo "  analyze-feedback Analyze feedback logs and generate CSV/JSON reports"
 	@echo "  analyze-queries  List all search/route queries with RAG results"
 	@echo "  manage-users     Manage users (ARGS='create-user --username x --password y')"
+	@echo "  db-export        Export database (local, port 15432)"
+	@echo "  db-export-docker Export database (Docker container)"
+	@echo "  db-import        Import database (local, FILE=path/to/dump)"
+	@echo "  db-import-docker Import database (Docker, FILE=path/to/dump)"
 
 dev: infra
 	uv run fastapi dev src/main.py --port 18080
@@ -78,3 +82,15 @@ analyze-queries:
 
 manage-users:
 	uv run python -m scripts.manage_users $(ARGS)
+
+db-export:
+	bash scripts/db_backup.sh export
+
+db-export-docker:
+	bash scripts/db_backup.sh export --docker
+
+db-import:
+	bash scripts/db_backup.sh import $(FILE)
+
+db-import-docker:
+	bash scripts/db_backup.sh import --docker $(FILE)
