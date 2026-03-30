@@ -12,6 +12,7 @@ from src.application.search.use_cases.similarity_search_use_case import (
 from src.application.search.use_cases.suggestion_use_case import (
     SuggestionUseCase,
 )
+from src.composition.token_provider_composition import build_token_provider
 from src.config import settings
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
 from src.domain.rag.services.neural_reranking_service import (
@@ -49,7 +50,8 @@ def build_search_application_service(
 ) -> SearchApplicationService:
     """Wire all search adapters and return the application service."""
     # Reuse RAG infrastructure adapters
-    embedding_adapter = HttpEmbeddingAdapter()
+    token_provider = build_token_provider(settings.embedding_service_url)
+    embedding_adapter = HttpEmbeddingAdapter(token_provider=token_provider)
     vector_search_adapter = PgVectorSearchAdapter(db)
     text_search_adapter = PgTextSearchAdapter(db)
 
@@ -60,7 +62,8 @@ def build_search_application_service(
     )
     # Neural reranker (cross-encoder) or heuristic fallback
     if settings.reranker_enabled:
-        reranker_adapter = HttpRerankerAdapter()
+        reranker_token_provider = build_token_provider(settings.reranker_service_url)
+        reranker_adapter = HttpRerankerAdapter(token_provider=reranker_token_provider)
         reranking_service = NeuralRerankingService(
             reranker_port=reranker_adapter,
             instruction=settings.reranker_instruction,

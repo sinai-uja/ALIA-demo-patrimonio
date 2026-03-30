@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from dataclasses import replace
 
@@ -6,6 +8,7 @@ import httpx
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.reranker_port import RerankerPort
+from src.infrastructure.shared.auth.token_provider import TokenProvider
 
 logger = logging.getLogger("iaph.reranker")
 
@@ -13,8 +16,13 @@ logger = logging.getLogger("iaph.reranker")
 class HttpRerankerAdapter(RerankerPort):
     """Calls the reranker microservice via HTTP to score query-document pairs."""
 
-    def __init__(self, base_url: str | None = None) -> None:
+    def __init__(
+        self,
+        base_url: str | None = None,
+        token_provider: TokenProvider | None = None,
+    ) -> None:
         self._base_url = base_url or settings.reranker_service_url
+        self._token_provider = token_provider
 
     async def rerank(
         self,
@@ -28,8 +36,10 @@ class HttpRerankerAdapter(RerankerPort):
 
         documents = [chunk.content for chunk in chunks]
         headers = {}
-        if settings.reranker_api_key:
-            headers["Authorization"] = f"Bearer {settings.reranker_api_key}"
+        if self._token_provider:
+            token = await self._token_provider.get_token()
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
 
         payload = {
             "query": query,

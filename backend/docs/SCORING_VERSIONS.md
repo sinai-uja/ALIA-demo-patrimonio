@@ -301,7 +301,6 @@ El reranker neuronal reemplaza al heuristico en la misma posicion del pipeline:
 |---|---|---|
 | `RERANKER_ENABLED` | `false` | Activa reranking neuronal |
 | `RERANKER_SERVICE_URL` | `http://localhost:18001` | URL del servicio (misma que embedding) |
-| `RERANKER_API_KEY` | *(vacio)* | API key (comparte `EMBEDDING_API_KEY`) |
 | `RERANKER_INSTRUCTION` | `Given a heritage search query, retrieve relevant heritage documents.` | Instruccion para el cross-encoder |
 | `RERANKER_TOP_N` | `50` | Maximo de candidatos enviados al reranker (control de latencia) |
 

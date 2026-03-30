@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import logging
 
 import httpx
 
 from src.config import settings
 from src.domain.documents.ports.embedding_port import EmbeddingPort
+from src.infrastructure.shared.auth.token_provider import TokenProvider
 
 logger = logging.getLogger("iaph.embedding")
 
@@ -11,8 +14,9 @@ logger = logging.getLogger("iaph.embedding")
 class HttpEmbeddingAdapter(EmbeddingPort):
     """HTTP client adapter for the MrBERT embedding service."""
 
-    def __init__(self) -> None:
+    def __init__(self, token_provider: TokenProvider | None = None) -> None:
         self._base_url = settings.embedding_service_url
+        self._token_provider = token_provider
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         preview = texts[0][:120] if texts else ""
@@ -21,8 +25,10 @@ class HttpEmbeddingAdapter(EmbeddingPort):
             len(texts), sum(len(t) for t in texts), preview,
         )
         headers = {}
-        if settings.embedding_api_key:
-            headers["Authorization"] = f"Bearer {settings.embedding_api_key}"
+        if self._token_provider:
+            token = await self._token_provider.get_token()
+            if token:
+                headers["Authorization"] = f"Bearer {token}"
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 f"{self._base_url}/embed",

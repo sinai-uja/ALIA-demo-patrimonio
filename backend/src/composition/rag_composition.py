@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.rag.services.rag_application_service import RAGApplicationService
 from src.application.rag.use_cases.rag_query_use_case import RAGQueryUseCase
+from src.composition.token_provider_composition import build_token_provider
 from src.config import settings
 from src.domain.rag.services.context_assembly_service import ContextAssemblyService
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
@@ -18,7 +19,8 @@ from src.infrastructure.rag.adapters.vector_search_adapter import PgVectorSearch
 
 def build_rag_application_service(db: AsyncSession) -> RAGApplicationService:
     """Wire all RAG adapters and return the application service."""
-    embedding_adapter = HttpEmbeddingAdapter()
+    token_provider = build_token_provider(settings.embedding_service_url)
+    embedding_adapter = HttpEmbeddingAdapter(token_provider=token_provider)
     vector_search_adapter = PgVectorSearchAdapter(db)
     text_search_adapter = PgTextSearchAdapter(db)
     llm_adapter = (
@@ -33,7 +35,8 @@ def build_rag_application_service(db: AsyncSession) -> RAGApplicationService:
 
     # Neural reranker (cross-encoder) or heuristic fallback
     if settings.reranker_enabled:
-        reranker_adapter = HttpRerankerAdapter()
+        reranker_token_provider = build_token_provider(settings.reranker_service_url)
+        reranker_adapter = HttpRerankerAdapter(token_provider=reranker_token_provider)
         reranking_service = NeuralRerankingService(
             reranker_port=reranker_adapter,
             instruction=settings.reranker_instruction,

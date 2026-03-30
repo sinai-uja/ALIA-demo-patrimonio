@@ -23,7 +23,7 @@ import os
 from contextlib import asynccontextmanager
 
 import torch
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
 
@@ -39,7 +39,6 @@ POOLING_STRATEGY = os.environ.get("POOLING_STRATEGY", "mean")
 MAX_LENGTH = int(os.environ.get("MAX_LENGTH", "8192"))
 RERANKER_MAX_LENGTH = int(os.environ.get("RERANKER_MAX_LENGTH", "8192"))
 RERANKER_BATCH_SIZE = int(os.environ.get("RERANKER_BATCH_SIZE", "4"))
-API_KEY = os.environ.get("API_KEY", "")
 
 # ── Global references set during startup ─────────────────────────────────────
 
@@ -246,14 +245,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Embedding & Reranker Service", lifespan=lifespan)
 
 
-def verify_api_key(authorization: str = Header(default="")):
-    """Validate Bearer token if API_KEY is configured. No-op when API_KEY is empty."""
-    if not API_KEY:
-        return
-    if authorization != f"Bearer {API_KEY}":
-        raise HTTPException(status_code=401, detail="Invalid API key")
-
-
 # ── POST /embed ──────────────────────────────────────────────────────────────
 
 class EmbedRequest(BaseModel):
@@ -264,7 +255,7 @@ class EmbedResponse(BaseModel):
     embeddings: list[list[float]]
 
 
-@app.post("/embed", response_model=EmbedResponse, dependencies=[Depends(verify_api_key)])
+@app.post("/embed", response_model=EmbedResponse, )
 async def embed(request: EmbedRequest):
     """Generate embeddings for a batch of texts."""
     if not request.texts:
@@ -319,7 +310,7 @@ class RerankResponse(BaseModel):
     results: list[RerankResult]
 
 
-@app.post("/rerank", response_model=RerankResponse, dependencies=[Depends(verify_api_key)])
+@app.post("/rerank", response_model=RerankResponse, )
 async def rerank(request: RerankRequest):
     """Rerank documents by relevance to a query using cross-encoder scoring."""
     if not reranker_available:

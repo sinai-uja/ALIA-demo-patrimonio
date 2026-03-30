@@ -11,7 +11,6 @@ class Settings(BaseSettings):
 
     # Embedding service
     embedding_service_url: str = "http://localhost:8001"
-    embedding_api_key: str = ""
     embedding_dim: int = 768
 
     # LLM service
@@ -50,11 +49,13 @@ class Settings(BaseSettings):
     # Reranker (served by the embedding service at /rerank)
     reranker_enabled: bool = False
     reranker_service_url: str = "http://localhost:18001"
-    reranker_api_key: str = ""
     reranker_instruction: str = (
         "Given a heritage search query, retrieve relevant heritage documents."
     )
     reranker_top_n: int = 50
+
+    # GCP (for Cloud Run IAM authentication from non-GCP servers)
+    gcp_service_account_json: str = ""
 
     # API
     api_v1_prefix: str = "/api/v1"
