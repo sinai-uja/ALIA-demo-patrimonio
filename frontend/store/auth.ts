@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  hydrate: () => {
+  hydrate: async () => {
     const token = getCookie("token");
     const refreshToken =
       typeof localStorage !== "undefined"
@@ -122,18 +122,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         : null;
     if (token) {
       set({ token, refreshToken, isAuthenticated: true });
-      get().fetchUser();
+      try {
+        await get().fetchUser();
+      } catch {
+        removeCookie("token");
+        if (typeof localStorage !== "undefined") localStorage.removeItem("refreshToken");
+        set({ token: null, refreshToken: null, isAuthenticated: false, username: null, profileType: null, isRootAdmin: false });
+      }
     }
     set({ hydrated: true });
   },
 
   fetchUser: async () => {
-    try {
-      const user = await authApi.getMe();
-      set({ username: user.username, profileType: user.profile_type, isRootAdmin: user.is_root_admin ?? false });
-    } catch {
-      // If fetching user fails, keep existing auth state
-    }
+    const user = await authApi.getMe();
+    set({ username: user.username, profileType: user.profile_type, isRootAdmin: user.is_root_admin ?? false });
   },
 
   setProfileType: async (type: string) => {

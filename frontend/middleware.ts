@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const DISABLED_ROUTES = ["/chat", "/accessibility"];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (DISABLED_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
