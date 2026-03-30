@@ -13,21 +13,25 @@ from src.infrastructure.documents.repositories.document_repository import (
     SqlAlchemyDocumentRepository,
 )
 
+# Module-level singletons
+_loader = ParquetDocumentLoader()
+_embedding_adapter = HttpEmbeddingAdapter(
+    token_provider=build_token_provider(settings.embedding_service_url),
+)
+_chunking_service = ChunkingService()
+
 
 def build_documents_application_service(
     db: AsyncSession,
 ) -> DocumentsApplicationService:
     """Wire all dependencies for the documents bounded context."""
-    loader = ParquetDocumentLoader()
-    token_provider = build_token_provider(settings.embedding_service_url)
-    embedding_adapter = HttpEmbeddingAdapter(token_provider=token_provider)
+    # Per-request (need DB session)
     repository = SqlAlchemyDocumentRepository(session=db)
-    chunking_service = ChunkingService()
 
     ingest_use_case = IngestDocumentsUseCase(
-        document_loader=loader,
-        chunking_service=chunking_service,
-        embedding_port=embedding_adapter,
+        document_loader=_loader,
+        chunking_service=_chunking_service,
+        embedding_port=_embedding_adapter,
         document_repository=repository,
         chunks_version=settings.chunks_table_version,
     )

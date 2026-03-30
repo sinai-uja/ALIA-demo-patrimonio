@@ -44,52 +44,50 @@ from src.infrastructure.search.adapters.heritage_asset_lookup_adapter import (
     PgHeritageAssetLookupAdapter,
 )
 
+# Module-level singletons — these don't depend on the DB session
+_embedding_adapter = HttpEmbeddingAdapter(
+    token_provider=build_token_provider(settings.embedding_service_url),
+)
+_hybrid_search_service = HybridSearchService()
+_entity_detection_service = EntityDetectionService()
+
+if settings.reranker_enabled:
+    _reranking_service = NeuralRerankingService(
+        reranker_port=HttpRerankerAdapter(
+            token_provider=build_token_provider(settings.reranker_service_url),
+        ),
+        instruction=settings.reranker_instruction,
+        top_n=settings.reranker_top_n,
+    )
+else:
+    _reranking_service = RerankingService(
+        weight_base=0.6,
+        weight_title=0.2,
+        weight_coverage=0.15,
+        weight_position=0.05,
+    )
+
 
 def build_search_application_service(
     db: AsyncSession,
 ) -> SearchApplicationService:
     """Wire all search adapters and return the application service."""
-    # Reuse RAG infrastructure adapters
-    token_provider = build_token_provider(settings.embedding_service_url)
-    embedding_adapter = HttpEmbeddingAdapter(token_provider=token_provider)
+    # Per-request (need DB session)
     vector_search_adapter = PgVectorSearchAdapter(db)
     text_search_adapter = PgTextSearchAdapter(db)
-
-    # Reuse RAG domain services
-    hybrid_search_service = HybridSearchService()
+    filter_metadata_adapter = PgFilterMetadataAdapter(db)
+    heritage_asset_lookup_adapter = PgHeritageAssetLookupAdapter(db)
     relevance_filter_service = RelevanceFilterService(
         score_threshold=settings.search_score_threshold,
     )
-    # Neural reranker (cross-encoder) or heuristic fallback
-    if settings.reranker_enabled:
-        reranker_token_provider = build_token_provider(settings.reranker_service_url)
-        reranker_adapter = HttpRerankerAdapter(token_provider=reranker_token_provider)
-        reranking_service = NeuralRerankingService(
-            reranker_port=reranker_adapter,
-            instruction=settings.reranker_instruction,
-            top_n=settings.reranker_top_n,
-        )
-    else:
-        reranking_service = RerankingService(
-            weight_base=0.6,
-            weight_title=0.2,
-            weight_coverage=0.15,
-            weight_position=0.05,
-        )
 
-    # Search-specific adapters and services
-    filter_metadata_adapter = PgFilterMetadataAdapter(db)
-    heritage_asset_lookup_adapter = PgHeritageAssetLookupAdapter(db)
-    entity_detection_service = EntityDetectionService()
-
-    # Wire use cases
     similarity_use_case = SimilaritySearchUseCase(
-        embedding_port=embedding_adapter,
+        embedding_port=_embedding_adapter,
         vector_search_port=vector_search_adapter,
         text_search_port=text_search_adapter,
-        hybrid_search_service=hybrid_search_service,
+        hybrid_search_service=_hybrid_search_service,
         relevance_filter_service=relevance_filter_service,
-        reranking_service=reranking_service,
+        reranking_service=_reranking_service,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
         retrieval_k=settings.search_retrieval_k,
         similarity_only=settings.rag_similarity_only,
@@ -99,7 +97,7 @@ def build_search_application_service(
 
     suggestion_use_case = SuggestionUseCase(
         filter_metadata_port=filter_metadata_adapter,
-        entity_detection_service=entity_detection_service,
+        entity_detection_service=_entity_detection_service,
     )
 
     filter_values_use_case = FilterValuesUseCase(

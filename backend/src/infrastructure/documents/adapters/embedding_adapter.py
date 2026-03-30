@@ -17,6 +17,7 @@ class HttpEmbeddingAdapter(EmbeddingPort):
     def __init__(self, token_provider: TokenProvider | None = None) -> None:
         self._base_url = settings.embedding_service_url
         self._token_provider = token_provider
+        self._client = httpx.AsyncClient(timeout=120.0)
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
         preview = texts[0][:120] if texts else ""
@@ -29,17 +30,16 @@ class HttpEmbeddingAdapter(EmbeddingPort):
             token = await self._token_provider.get_token()
             if token:
                 headers["Authorization"] = f"Bearer {token}"
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(
-                f"{self._base_url}/embed",
-                json={"texts": texts},
-                headers=headers,
-            )
-            response.raise_for_status()
-            data = response.json()
-            embeddings = data["embeddings"]
-            logger.info(
-                "Embed response (documents): %d embeddings, dim=%d",
-                len(embeddings), len(embeddings[0]) if embeddings else 0,
-            )
-            return embeddings
+        response = await self._client.post(
+            f"{self._base_url}/embed",
+            json={"texts": texts},
+            headers=headers,
+        )
+        response.raise_for_status()
+        data = response.json()
+        embeddings = data["embeddings"]
+        logger.info(
+            "Embed response (documents): %d embeddings, dim=%d",
+            len(embeddings), len(embeddings[0]) if embeddings else 0,
+        )
+        return embeddings

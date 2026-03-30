@@ -23,6 +23,7 @@ class HttpRerankerAdapter(RerankerPort):
     ) -> None:
         self._base_url = base_url or settings.reranker_service_url
         self._token_provider = token_provider
+        self._client = httpx.AsyncClient(timeout=120.0)
 
     async def rerank(
         self,
@@ -54,14 +55,13 @@ class HttpRerankerAdapter(RerankerPort):
             len(documents), query[:60],
         )
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(
-                f"{self._base_url}/rerank",
-                json=payload,
-                headers=headers,
-            )
-            response.raise_for_status()
-            data = response.json()
+        response = await self._client.post(
+            f"{self._base_url}/rerank",
+            json=payload,
+            headers=headers,
+        )
+        response.raise_for_status()
+        data = response.json()
 
         results = data["results"]
         logger.info("Rerank response: %d results", len(results))
