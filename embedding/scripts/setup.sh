@@ -9,6 +9,7 @@
 #   ./embedding/scripts/setup.sh                          # from monorepo root
 #   ./embedding/scripts/setup.sh --upload-models          # also upload models
 #   ./embedding/scripts/setup.sh --bake-models            # bake models into image (faster cold start)
+#   ./embedding/scripts/setup.sh --generate-sa-key        # generate service account key for external servers
 #   make cloud-setup                                      # via Makefile
 # =============================================================================
 set -euo pipefail
@@ -21,6 +22,8 @@ REGION="europe-west1"
 SERVICE_NAME="uja-embedding"
 REPO_NAME="iaph-rag"
 BUCKET_NAME="${PROJECT_ID}-iaph-models"
+SA_NAME="embedding-invoker"
+SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/embedding"
 
 # Cloud Run service settings
@@ -41,10 +44,12 @@ RERANKER_MODEL_DIR="${MONOREPO_ROOT}/backend/models/Qwen3-Reranker-0.6B"
 # Flags
 UPLOAD_MODELS=false
 BAKE_MODELS=false
+GENERATE_SA_KEY=false
 for arg in "$@"; do
   case "$arg" in
-    --upload-models) UPLOAD_MODELS=true ;;
-    --bake-models)   BAKE_MODELS=true ;;
+    --upload-models)    UPLOAD_MODELS=true ;;
+    --bake-models)      BAKE_MODELS=true ;;
+    --generate-sa-key)  GENERATE_SA_KEY=true ;;
   esac
 done
 
@@ -66,7 +71,7 @@ step()  { echo -e "\n${GREEN}━━━ $* ━━━${NC}"; }
 # ---------------------------------------------------------------------------
 # Preflight
 # ---------------------------------------------------------------------------
-step "1/8 Preflight checks"
+step "1/9 Preflight checks"
 
 if ! command -v gcloud &>/dev/null; then
   err "gcloud CLI not found. Install: https://cloud.google.com/sdk/docs/install"
@@ -89,12 +94,12 @@ ok "Project: ${PROJECT_ID}"
 # ---------------------------------------------------------------------------
 # Enable APIs
 # ---------------------------------------------------------------------------
-step "2/8 Enabling APIs"
+step "2/9 Enabling APIs"
 
 APIS=(
   run.googleapis.com
   artifactregistry.googleapis.com
-  secretmanager.googleapis.com
+  iam.googleapis.com
   cloudbuild.googleapis.com
   compute.googleapis.com
 )
@@ -112,7 +117,7 @@ done
 # ---------------------------------------------------------------------------
 # Artifact Registry
 # ---------------------------------------------------------------------------
-step "3/8 Artifact Registry repository"
+step "3/9 Artifact Registry repository"
 
 if gcloud artifacts repositories describe "${REPO_NAME}" --location="${REGION}" &>/dev/null; then
   skip "Repository ${REPO_NAME} already exists"
@@ -129,7 +134,7 @@ fi
 # ---------------------------------------------------------------------------
 # GCS bucket for models
 # ---------------------------------------------------------------------------
-step "4/8 GCS bucket for models"
+step "4/9 GCS bucket for models"
 
 if gcloud storage buckets describe "gs://${BUCKET_NAME}" &>/dev/null; then
   skip "Bucket ${BUCKET_NAME} already exists"
@@ -145,7 +150,7 @@ fi
 # ---------------------------------------------------------------------------
 # Upload models (optional / required for --bake-models)
 # ---------------------------------------------------------------------------
-step "5/8 Upload models to GCS"
+step "5/9 Upload models to GCS"
 
 if [[ "${UPLOAD_MODELS}" == "true" || "${BAKE_MODELS}" == "true" ]]; then
   for model_dir in "${EMBEDDING_MODEL_DIR}" "${RERANKER_MODEL_DIR}"; do
@@ -170,9 +175,50 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Service account for external callers
+# ---------------------------------------------------------------------------
+step "6/9 Service account (embedding-invoker)"
+
+if gcloud iam service-accounts describe "${SA_EMAIL}" --project="${PROJECT_ID}" &>/dev/null; then
+  skip "Service account ${SA_NAME} already exists"
+else
+  info "Creating service account ${SA_NAME}..."
+  gcloud iam service-accounts create "${SA_NAME}" \
+    --project="${PROJECT_ID}" \
+    --display-name="Embedding Service Invoker" \
+    --description="Used by external backend servers to call the Cloud Run embedding service" \
+    --quiet
+  ok "Created ${SA_EMAIL}"
+fi
+
+# Ensure run.invoker role (idempotent — gcloud won't duplicate the binding)
+info "Ensuring ${SA_NAME} has roles/run.invoker on ${SERVICE_NAME}..."
+gcloud run services add-iam-policy-binding "${SERVICE_NAME}" \
+  --region="${REGION}" \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/run.invoker" \
+  --quiet &>/dev/null 2>&1 || skip "Service not yet deployed — will bind after deploy"
+ok "${SA_NAME} has roles/run.invoker"
+
+# Generate key if requested
+if [[ "${GENERATE_SA_KEY}" == "true" ]]; then
+  SA_KEY_FILE="${MONOREPO_ROOT}/embedding-invoker-key.json"
+  info "Generating service account key..."
+  gcloud iam service-accounts keys create "${SA_KEY_FILE}" \
+    --iam-account="${SA_EMAIL}" \
+    --project="${PROJECT_ID}" \
+    --quiet
+  ok "Key saved to ${SA_KEY_FILE}"
+  echo ""
+  info "Add this to the backend .env on your external server:"
+  echo -e "  ${CYAN}GCP_SERVICE_ACCOUNT_JSON=$(python3 -c "import json; print(json.dumps(json.load(open('${SA_KEY_FILE}'))))")${NC}"
+  echo ""
+fi
+
+# ---------------------------------------------------------------------------
 # Build image
 # ---------------------------------------------------------------------------
-step "6/8 Building container image (Cloud Build)"
+step "7/9 Building container image (Cloud Build)"
 
 if [[ "${BAKE_MODELS}" == "true" ]]; then
   info "Building BAKED image (base + models from GCS)..."
@@ -193,7 +239,7 @@ fi
 # ---------------------------------------------------------------------------
 # Deploy to Cloud Run
 # ---------------------------------------------------------------------------
-step "7/8 Deploying to Cloud Run"
+step "8/9 Deploying to Cloud Run"
 
 info "Deploying ${SERVICE_NAME} with GPU (${GPU_TYPE})..."
 
@@ -243,7 +289,7 @@ ok "Deployed ${SERVICE_NAME}"
 # ---------------------------------------------------------------------------
 # Verification
 # ---------------------------------------------------------------------------
-step "8/8 Verification"
+step "9/9 Verification"
 
 SERVICE_URL=$(gcloud run services describe "${SERVICE_NAME}" \
   --region="${REGION}" \

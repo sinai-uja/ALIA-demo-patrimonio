@@ -2,7 +2,7 @@
        docker-up docker-up-llm docker-down \
        build-backend build-frontend build-embedding build-all \
        push-backend push-frontend push-embedding push-all \
-       cloud-setup cloud-setup-baked cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
+       cloud-setup cloud-setup-baked cloud-generate-sa-key cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
        migrate test lint help
 
 COMPOSE = docker compose
@@ -41,6 +41,7 @@ help:
 	@echo "  cloud-setup              First-time infra setup + deploy (GCS FUSE)"
 	@echo "  cloud-setup-models       Setup + upload models to GCS"
 	@echo "  cloud-setup-baked        Setup + bake models into image (fast cold start)"
+	@echo "  cloud-generate-sa-key    Generate service account key for external servers"
 	@echo "  cloud-deploy             Rebuild and redeploy (GCS FUSE)"
 	@echo "  cloud-deploy-baked       Rebuild with models baked in (fast cold start)"
 	@echo "  cloud-deploy-skip-build  Redeploy without rebuilding image"
@@ -129,6 +130,9 @@ cloud-setup-models:
 
 cloud-setup-baked:
 	./embedding/scripts/setup.sh --bake-models
+
+cloud-generate-sa-key:
+	./embedding/scripts/setup.sh --generate-sa-key
 
 cloud-deploy:
 	./embedding/scripts/deploy.sh
