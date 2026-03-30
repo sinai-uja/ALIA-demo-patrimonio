@@ -62,5 +62,74 @@ como singletons a nivel de modulo en las composiciones. Solo los adapters que ne
 | Latencia tipica (p50) | 7194 ms | 6659 ms | **-7%** |
 | Media | 8984 ms | 6657 ms | **-26%** |
 
-El grueso de los ~6.5s restantes es latencia de red + inferencia en Cloud Run (GPU L4).
-Eso es irreducible desde el backend.
+El grueso de los ~6.5s restantes es latencia de red + reranking de 50 documentos en Cloud Run (GPU L4).
+
+---
+
+## Reranker batch size
+
+Con el reranker activado (`RERANKER_ENABLED=true`, `RERANKER_TOP_N=50`, Qwen3-Reranker-0.6B en L4),
+se testeo el impacto del `RERANKER_BATCH_SIZE` en el servicio de embedding.
+
+### Resultados
+
+| Batch size | p50 (ms) | p95 (ms) | Media (ms) | Min (ms) | Max (ms) |
+|---:|---:|---:|---:|---:|---:|
+| **1** | **3606** | **6597** | **3905** | **3589** | **6597** |
+| 2 | 4691 | 7561 | 4969 | 4633 | 7561 |
+| 4 | 6455 | 9029 | 6705 | 6385 | 9029 |
+| 8 | 9664 | 12671 | 9952 | 9575 | 12671 |
+| 16 | OOM | OOM | OOM | OOM | OOM |
+
+### Por que batch mayor es mas lento
+
+Resultado contraintuitivo: mas paralelismo GPU deberia ser mas rapido. Pero el codigo actual
+usa `padding=True` en `apply_chat_template()`, lo que rellena **todas las secuencias del batch
+a la longitud de la mas larga**. Con chunks de ~1000-1200 tokens con varianza alta en longitud:
+
+- Un chunk corto de 200 tokens se infla a 1200 tokens de padding
+- El computo de atencion es O(n^2) en la longitud de secuencia
+- Mas pares por batch = mas padding desperdiciado = mas VRAM y computo inutil
+- Con batch=16, el padding inflado causa CUDA OOM (intenta alocar 19.25 GB)
+
+Con batch=1 no hay padding: cada forward pass procesa exactamente los tokens necesarios.
+50 forward passes minimos son mas rapidos que 13 batches inflados (batch=4) o 7 (batch=8).
+
+### Propuestas de mejora
+
+Para que el batching funcione y se aproveche el paralelismo de la GPU, hay dos enfoques:
+
+**1. Sorted batching** — cambio en `_score_pairs()` de `embedding/main.py`:
+
+1. Pre-tokenizar los pares para conocer su longitud real
+2. Ordenar por longitud de tokens antes de agrupar en batches
+3. Los pares de longitud similar caen en el mismo batch → padding minimo
+4. Tras el scoring, reordenar los resultados al orden original
+
+Con esto, batch=4-8 tendria padding despreciable y ganaria paralelismo real.
+
+**2. Dynamic padding con buckets** — cambio mas ambicioso:
+
+1. Definir buckets de longitud (ej. 0-256, 256-512, 512-1024, 1024+)
+2. Asignar cada par a su bucket
+3. Procesar cada bucket con su propio batch y padding ajustado al bucket
+4. Combinar resultados
+
+Mas complejo pero optimo: cada par se rellena como maximo hasta el techo de su bucket,
+no hasta el maximo del batch.
+
+Ambos enfoques requieren cambios en el servicio de embedding (`embedding/main.py`),
+no en la configuracion. El beneficio esperado: batch=4-8 con rendimiento similar o
+mejor que batch=1 actual, gracias a paralelismo GPU sin overhead de padding.
+
+### Configuracion optima actual
+
+`RERANKER_BATCH_SIZE=1` — sin padding, minimo computo por forward pass.
+
+### Resumen final (con todas las optimizaciones)
+
+| Metrica | Baseline original | Final (opts + batch=1) | Mejora |
+|---------|------------------:|-----------------------:|-------:|
+| Primera peticion (p95) | 25161 ms | 6597 ms | **-74%** |
+| Latencia tipica (p50) | 7194 ms | 3606 ms | **-50%** |
+| Media | 8984 ms | 3905 ms | **-57%** |
