@@ -54,6 +54,8 @@ class VLLMRoutesAdapter(LLMPort):
             "vLLM routes request: model=%s, max_tokens=%d, prompt=%d chars",
             self._model_name, effective_max_tokens, len(user_prompt),
         )
+        logger.debug("vLLM routes system_prompt:\n%s", system_prompt)
+        logger.debug("vLLM routes user_prompt:\n%s", user_prompt)
 
         payload = {
             "model": self._model_name,
@@ -73,4 +75,5 @@ class VLLMRoutesAdapter(LLMPort):
             data = response.json()
             content = data["choices"][0]["message"]["content"]
             logger.info("vLLM routes response: %d chars", len(content))
+            logger.debug("vLLM routes full response:\n%s", content)
             return content

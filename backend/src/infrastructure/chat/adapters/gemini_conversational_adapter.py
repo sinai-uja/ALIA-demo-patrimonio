@@ -34,6 +34,9 @@ class GeminiConversationalAdapter(ConversationalLLMPort):
             len(user_message),
         )
 
+        logger.debug("Gemini conversational system_prompt:\n%s", system_prompt)
+        logger.debug("Gemini conversational user_message:\n%s", user_message)
+
         payload = {
             "system_instruction": {"parts": [{"text": system_prompt}]},
             "contents": [{"parts": [{"text": user_message}]}],
@@ -58,4 +61,5 @@ class GeminiConversationalAdapter(ConversationalLLMPort):
             logger.info(
                 "Gemini conversational response: %d chars", len(content),
             )
+            logger.debug("Gemini conversational full response:\n%s", content)
             return content

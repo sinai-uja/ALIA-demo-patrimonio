@@ -43,6 +43,9 @@ class GeminiRAGAdapter(LLMPort):
             len(context_chunks),
         )
 
+        logger.debug("Gemini RAG system_prompt:\n%s", system_prompt)
+        logger.debug("Gemini RAG user_prompt:\n%s", user_prompt)
+
         payload = {
             "system_instruction": {"parts": [{"text": system_prompt}]},
             "contents": [{"parts": [{"text": user_prompt}]}],
@@ -65,4 +68,5 @@ class GeminiRAGAdapter(LLMPort):
                 data["candidates"][0]["content"]["parts"][0]["text"]
             )
             logger.info("Gemini RAG response: %d chars", len(content))
+            logger.debug("Gemini RAG full response:\n%s", content)
             return content

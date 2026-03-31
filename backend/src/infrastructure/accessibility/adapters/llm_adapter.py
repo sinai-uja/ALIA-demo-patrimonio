@@ -55,6 +55,8 @@ class AccessibilityLLMAdapter(LLMPort):
             "Accessibility LLM request: model=%s, level=%s, text=%d chars",
             self._model_name, level.value, len(text),
         )
+        logger.debug("Accessibility LLM system_prompt:\n%s", system_prompt)
+        logger.debug("Accessibility LLM user_prompt:\n%s", user_prompt)
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -79,4 +81,5 @@ class AccessibilityLLMAdapter(LLMPort):
             data = response.json()
             content = data["choices"][0]["message"]["content"]
             logger.info("Accessibility LLM response: %d chars", len(content))
+            logger.debug("Accessibility LLM full response:\n%s", content)
             return content

@@ -42,6 +42,9 @@ class GeminiRoutesAdapter(LLMPort):
             len(user_prompt),
         )
 
+        logger.debug("Gemini routes system_prompt:\n%s", system_prompt)
+        logger.debug("Gemini routes user_prompt:\n%s", user_prompt)
+
         contents: list[dict] = []
         if history:
             for msg in history:
@@ -73,4 +76,5 @@ class GeminiRoutesAdapter(LLMPort):
             logger.info(
                 "Gemini routes response: %d chars", len(content),
             )
+            logger.debug("Gemini routes full response:\n%s", content)
             return content
