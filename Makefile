@@ -1,8 +1,10 @@
 .PHONY: dev backend frontend infra infra-llm infra-down \
        docker-up docker-up-llm docker-down \
-       build-backend build-frontend build-embedding build-all \
-       push-backend push-frontend push-embedding push-all \
+       build-backend build-frontend build-embedding build-llm build-all \
+       push-backend push-frontend push-embedding push-llm push-all \
        cloud-setup cloud-setup-baked cloud-generate-sa-key cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
+       cloud-llm-setup cloud-llm-setup-model cloud-llm-setup-baked cloud-llm-generate-sa-key \
+       cloud-llm-deploy cloud-llm-deploy-baked cloud-llm-deploy-skip-build \
        migrate test lint db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose
@@ -29,12 +31,14 @@ help:
 	@echo "  build-backend    Build backend image"
 	@echo "  build-frontend   Build frontend image"
 	@echo "  build-embedding  Build embedding image"
+	@echo "  build-llm        Build LLM service image"
 	@echo "  build-all        Build all images"
 	@echo ""
 	@echo "Docker Push (REGISTRY=<registry>, current: $(REGISTRY)):"
 	@echo "  push-backend     Push backend image"
 	@echo "  push-frontend    Push frontend image"
 	@echo "  push-embedding   Push embedding image"
+	@echo "  push-llm         Push LLM service image"
 	@echo "  push-all         Push all images"
 	@echo ""
 	@echo "Cloud Run (embedding service):"
@@ -45,6 +49,15 @@ help:
 	@echo "  cloud-deploy             Rebuild and redeploy (GCS FUSE)"
 	@echo "  cloud-deploy-baked       Rebuild with models baked in (fast cold start)"
 	@echo "  cloud-deploy-skip-build  Redeploy without rebuilding image"
+	@echo ""
+	@echo "Cloud Run (LLM service — ALIA-40b):"
+	@echo "  cloud-llm-setup              First-time LLM infra setup + deploy"
+	@echo "  cloud-llm-setup-model        Setup + upload model to GCS"
+	@echo "  cloud-llm-setup-baked        Setup + bake model into image"
+	@echo "  cloud-llm-generate-sa-key    Generate service account key"
+	@echo "  cloud-llm-deploy             Rebuild and redeploy"
+	@echo "  cloud-llm-deploy-baked       Rebuild with model baked in"
+	@echo "  cloud-llm-deploy-skip-build  Redeploy without rebuilding"
 	@echo ""
 	@echo "Database:"
 	@echo "  db-export        Export database (local)"
@@ -104,7 +117,10 @@ build-frontend:
 build-embedding:
 	docker build --tag $(REGISTRY)/embedding:$(VERSION) --tag $(REGISTRY)/embedding:latest -f embedding/Dockerfile embedding
 
-build-all: build-backend build-frontend build-embedding
+build-llm:
+	docker build --tag $(REGISTRY)/llm:$(VERSION) --tag $(REGISTRY)/llm:latest -f llm/Dockerfile llm
+
+build-all: build-backend build-frontend build-embedding build-llm
 
 # ---------------------------------------------------------------------------
 # Docker Push
@@ -122,7 +138,11 @@ push-embedding: build-embedding
 	docker push $(REGISTRY)/embedding:$(VERSION)
 	docker push $(REGISTRY)/embedding:latest
 
-push-all: push-backend push-frontend push-embedding
+push-llm: build-llm
+	docker push $(REGISTRY)/llm:$(VERSION)
+	docker push $(REGISTRY)/llm:latest
+
+push-all: push-backend push-frontend push-embedding push-llm
 
 # ---------------------------------------------------------------------------
 # Cloud Run (embedding service)
@@ -151,6 +171,31 @@ cloud-deploy-skip-build:
 
 cloud-deploy-baked-skip-build:
 	./embedding/scripts/deploy.sh --bake-models --skip-build
+
+# ---------------------------------------------------------------------------
+# Cloud Run (LLM service — ALIA-40b)
+# ---------------------------------------------------------------------------
+
+cloud-llm-setup:
+	./llm/scripts/setup.sh
+
+cloud-llm-setup-model:
+	./llm/scripts/setup.sh --upload-model
+
+cloud-llm-setup-baked:
+	./llm/scripts/setup.sh --bake-model
+
+cloud-llm-generate-sa-key:
+	./llm/scripts/setup.sh --generate-sa-key
+
+cloud-llm-deploy:
+	./llm/scripts/deploy.sh
+
+cloud-llm-deploy-baked:
+	./llm/scripts/deploy.sh --bake-model
+
+cloud-llm-deploy-skip-build:
+	./llm/scripts/deploy.sh --skip-build
 
 # ---------------------------------------------------------------------------
 # Other

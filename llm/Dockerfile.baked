@@ -1,0 +1,19 @@
+# =============================================================================
+# Dockerfile.baked — vLLM with model weights baked into image
+#
+# Uses model files pre-downloaded by Cloud Build (see cloudbuild-baked.yaml).
+# The model directory is passed as build context, not downloaded at build time.
+#
+# Result: larger image (~25-30 GB), but cold start drops significantly because
+# no HuggingFace download or GCS FUSE reads are needed at runtime.
+#
+# Build via Cloud Build:
+#   gcloud builds submit ./llm --config=llm/cloudbuild-baked.yaml
+# =============================================================================
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Model files provided in the build context (downloaded by Cloud Build step).
+# Place in the HF cache structure so vLLM finds them without re-downloading.
+COPY models/ALIA-40b-instruct-2601 /app/model

@@ -71,9 +71,17 @@ services:
 
   # ---------------------------------------------------------------------------
   # LLM service — vLLM (optional, requires GPU)
+  #
+  # Supports multiple models via .env configuration:
+  #   - BSC-LT/salamandra-7b-instruct (default, no quantization)
+  #   - BSC-LT/ALIA-40b-instruct-2601 (requires LLM_QUANTIZATION_ARGS)
+  #
+  # Start with: docker compose --profile llm up -d
   # ---------------------------------------------------------------------------
   llm-service:
-    image: vllm/vllm-openai:latest
+    build:
+      context: ./llm
+      dockerfile: Dockerfile
     container_name: uja-llm-service
     profiles:
       - llm
@@ -84,9 +92,10 @@ services:
     command: >
       --model ${LLM_MODEL_NAME}
       --dtype bfloat16
-      --max-model-len 4096
+      --max-model-len ${LLM_MAX_MODEL_LEN:-4096}
       --gpu-memory-utilization 0.9
       --api-key ${LLM_API_KEY}
+      ${LLM_QUANTIZATION_ARGS}
     deploy:
       resources:
         reservations:

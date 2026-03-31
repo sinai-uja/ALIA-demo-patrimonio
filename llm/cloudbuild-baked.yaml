@@ -1,0 +1,68 @@
+# =============================================================================
+# cloudbuild-baked.yaml — Build LLM service image with model baked in
+#
+# Three-step build:
+#   1. Build base image (Dockerfile — vLLM + bitsandbytes, no model)
+#   2. Download model from GCS into workspace (Cloud Build has bucket access)
+#   3. Build baked image (base + model from workspace context)
+#
+# Usage:
+#   gcloud builds submit ./llm \
+#     --config=llm/cloudbuild-baked.yaml \
+#     --timeout=3600
+#
+# Or via scripts: ./llm/scripts/deploy.sh --bake-model
+# =============================================================================
+
+substitutions:
+  _IMAGE: 'europe-west1-docker.pkg.dev/innovasur-uja-alia/iaph-rag/llm'
+  _GCS_BUCKET: 'innovasur-uja-alia-iaph-models'
+
+steps:
+  # Step 1: Build base image (vLLM + bitsandbytes, no model)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:base'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+  # Step 2: Download model from GCS into workspace
+  # Cloud Build service account has storage access; docker build does not.
+  # NOTE: ALIA-40b is ~80GB in bf16. This step may take 10-15 minutes.
+  - name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p models
+        gsutil -m cp -r gs://${_GCS_BUCKET}/ALIA-40b-instruct-2601 models/
+
+  # Step 3: Build baked image (base + model now in workspace/models/)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:baked'
+      - '--build-arg'
+      - 'BASE_IMAGE=${_IMAGE}:base'
+      - '-f'
+      - 'Dockerfile.baked'
+      - '.'
+
+images:
+  - '${_IMAGE}:latest'
+  - '${_IMAGE}:baked'
+  - '${_IMAGE}:base'
+
+# 1 hour timeout (model download + image build is large)
+timeout: '3600s'
+
+options:
+  # Use a larger machine for building (model is ~80GB)
+  machineType: 'E2_HIGHCPU_32'
+  diskSizeGb: '200'
