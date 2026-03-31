@@ -6,11 +6,11 @@ and produces CSV reports in logs/analysis/ with every execution and its results.
 Works both inside Docker and locally — auto-detects log directory via LOG_DIR env var
 or falls back to ../logs relative to this script.
 
-Usage:
-    uv run python scripts/analyze_queries.py                     # all queries
-    uv run python scripts/analyze_queries.py --since 2026-03-25  # from date
-    uv run python scripts/analyze_queries.py --type search       # only searches
-    uv run python scripts/analyze_queries.py --type route        # only routes
+Usage (run from backend/):
+    uv run python -m scripts.analyze_queries                     # all queries
+    uv run python -m scripts.analyze_queries --since 2026-03-25  # from date
+    uv run python -m scripts.analyze_queries --type search       # only searches
+    uv run python -m scripts.analyze_queries --type route        # only routes
 """
 
 import argparse
