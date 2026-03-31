@@ -69,6 +69,8 @@ class GuideQueryUseCase:
         user_prompt = build_guide_prompt(
             question=dto.question,
             route_context=route_context,
+            route_title=route.title,
+            num_stops=len(route.stops),
         )
         answer = await self._llm_port.generate_structured(
             system_prompt=GUIDE_SYSTEM_PROMPT,

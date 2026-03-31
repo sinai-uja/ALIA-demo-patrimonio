@@ -119,9 +119,14 @@ GUIDE_SYSTEM_PROMPT = (
 
 
 def build_guide_prompt(
-    question: str, route_context: str,
+    question: str,
+    route_context: str,
+    route_title: str = "",
+    num_stops: int = 0,
 ) -> str:
+    header = f"Ruta: {route_title}\nNumero total de paradas: {num_stops}\n\n" if route_title else ""
     return (
+        f"{header}"
         f"Informacion detallada de las paradas de la ruta:\n\n"
         f"{route_context}\n\n"
         f"Pregunta del visitante: {question}\n\n"
