@@ -1,4 +1,4 @@
-.PHONY: dev backend frontend infra infra-llm infra-down \
+.PHONY: dev backend frontend infra infra-db infra-embedding infra-llm infra-down \
        docker-up docker-up-llm docker-down \
        build-backend build-frontend build-embedding build-llm build-all \
        push-backend push-frontend push-embedding push-llm push-all \
@@ -18,8 +18,10 @@ help:
 	@echo "  dev              Start backend (infra + API) and frontend concurrently"
 	@echo "  backend          Start backend infra services + FastAPI dev server"
 	@echo "  frontend         Start Next.js dev server"
-	@echo "  infra            Start Docker infra only (postgres + embedding service)"
-	@echo "  infra-llm        Start all Docker services including LLM (requires GPU)"
+	@echo "  infra            Start all infra (postgres + embedding + LLM)"
+	@echo "  infra-db         Start postgres only"
+	@echo "  infra-embedding  Start embedding service only"
+	@echo "  infra-llm        Start LLM service only (requires GPU)"
 	@echo "  infra-down       Stop all Docker services"
 	@echo ""
 	@echo "Docker Compose:"
@@ -87,10 +89,16 @@ frontend:
 	$(MAKE) -C frontend dev
 
 infra:
-	$(COMPOSE) up -d postgres embedding-service
+	$(COMPOSE) --profile llm up -d postgres embedding-service llm-service
+
+infra-db:
+	$(COMPOSE) up -d postgres
+
+infra-embedding:
+	$(COMPOSE) up -d embedding-service
 
 infra-llm:
-	$(COMPOSE) --profile llm up -d postgres embedding-service llm-service
+	$(COMPOSE) --profile llm up -d llm-service
 
 infra-down:
 	$(COMPOSE) down

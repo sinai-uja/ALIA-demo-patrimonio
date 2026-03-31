@@ -87,14 +87,13 @@ services:
       - llm
     volumes:
       - hf_cache:/root/.cache/huggingface
+      - ./backend/models/${LLM_MODEL_DIR:-salamandra-7b-instruct}:/app/model:ro
     environment:
       HF_HUB_CACHE: /root/.cache/huggingface
     command: >
-      --model ${LLM_MODEL_NAME}
-      --dtype bfloat16
+      --model ${LLM_MODEL_PATH:-/app/model}
       --max-model-len ${LLM_MAX_MODEL_LEN:-4096}
-      --gpu-memory-utilization 0.9
-      --api-key ${LLM_API_KEY}
+      --gpu-memory-utilization ${LLM_GPU_MEMORY_UTILIZATION:-0.85}
       ${LLM_QUANTIZATION_ARGS}
     deploy:
       resources:

@@ -28,7 +28,7 @@ SA_NAME="llm-invoker"
 SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
 
-# Cloud Run service settings — A100 40GB for 4-bit quantized ALIA-40b
+# Cloud Run service settings — A100 40GB for GPTQ-quantized ALIA-40b
 CPU=8
 MEMORY="32Gi"
 GPU_TYPE="nvidia-a100-40gb"
@@ -36,10 +36,12 @@ MAX_INSTANCES=1
 MIN_INSTANCES=0
 PORT=8000
 
-# Model configuration
-MODEL_NAME="BSC-LT/ALIA-40b-instruct-2601"
-MODEL_DIR_NAME="ALIA-40b-instruct-2601"
+# Model configuration (GPTQ for Cloud Run — fits on A100 40GB, fast cold start)
+# For local development use bitsandbytes instead (see .env.example presets)
+MODEL_NAME="agustim/ALIA-40b-GPTQ-INT4"
+MODEL_DIR_NAME="ALIA-40b-GPTQ-INT4"
 MAX_MODEL_LEN=8192
+QUANTIZATION_ARGS="--quantization,gptq,--dtype,float16"
 
 # Paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -157,33 +159,41 @@ fi
 # ---------------------------------------------------------------------------
 step "5/9 Upload model to GCS"
 
+LOCAL_MODEL_DIR="${MONOREPO_ROOT}/backend/models/${MODEL_DIR_NAME}"
+
 if [[ "${UPLOAD_MODEL}" == "true" || "${BAKE_MODEL}" == "true" ]]; then
   # Check if model already exists in GCS
   if gcloud storage ls "gs://${BUCKET_NAME}/${MODEL_DIR_NAME}/config.json" &>/dev/null; then
     skip "${MODEL_DIR_NAME} already in GCS"
   else
-    info "Downloading ${MODEL_NAME} from HuggingFace and uploading to GCS..."
-    info "This may take a while (~80GB in bf16)..."
-
-    # Download model using huggingface-cli if available, otherwise instruct user
-    TEMP_DIR=$(mktemp -d)
-    if command -v huggingface-cli &>/dev/null; then
-      huggingface-cli download "${MODEL_NAME}" --local-dir "${TEMP_DIR}/${MODEL_DIR_NAME}"
-      gcloud storage cp -r "${TEMP_DIR}/${MODEL_DIR_NAME}" "gs://${BUCKET_NAME}/" --quiet
-      rm -rf "${TEMP_DIR}"
+    # Prefer local model from backend/models/ (downloaded via make download-alia-gptq)
+    if [[ -d "${LOCAL_MODEL_DIR}" && -f "${LOCAL_MODEL_DIR}/config.json" ]]; then
+      info "Uploading ${MODEL_DIR_NAME} from local backend/models/ to GCS (~27GB)..."
+      gcloud storage cp -r "${LOCAL_MODEL_DIR}" "gs://${BUCKET_NAME}/" --quiet
       ok "Uploaded ${MODEL_DIR_NAME} to GCS"
     else
-      err "huggingface-cli not found. Install with: pip install huggingface_hub"
-      err "Then download the model manually:"
-      err "  huggingface-cli download ${MODEL_NAME} --local-dir /path/to/${MODEL_DIR_NAME}"
-      err "  gcloud storage cp -r /path/to/${MODEL_DIR_NAME} gs://${BUCKET_NAME}/"
-      rm -rf "${TEMP_DIR}"
-      exit 1
+      info "Local model not found at ${LOCAL_MODEL_DIR}"
+      info "Download it first:  cd backend && make download-alia-gptq"
+      info "Falling back to HuggingFace download..."
+
+      TEMP_DIR=$(mktemp -d)
+      if command -v huggingface-cli &>/dev/null; then
+        huggingface-cli download "${MODEL_NAME}" --local-dir "${TEMP_DIR}/${MODEL_DIR_NAME}"
+        gcloud storage cp -r "${TEMP_DIR}/${MODEL_DIR_NAME}" "gs://${BUCKET_NAME}/" --quiet
+        rm -rf "${TEMP_DIR}"
+        ok "Uploaded ${MODEL_DIR_NAME} to GCS"
+      else
+        err "huggingface-cli not found. Install with: pip install huggingface_hub"
+        err "Or download the model first:  cd backend && make download-alia-gptq"
+        rm -rf "${TEMP_DIR}"
+        exit 1
+      fi
     fi
   fi
 else
   skip "Model upload skipped (use --upload-model or --bake-model)"
   info "Ensure model is already in gs://${BUCKET_NAME}/${MODEL_DIR_NAME}/"
+  info "Or download locally first:  cd backend && make download-alia-gptq"
 fi
 
 # ---------------------------------------------------------------------------
@@ -279,7 +289,7 @@ if [[ "${BAKE_MODEL}" == "true" ]]; then
     --clear-volume-mounts
     --clear-volumes
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--quantization,bitsandbytes,--load-format,bitsandbytes,--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--dtype,bfloat16,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
   )
   info "Deploy mode: BAKED (model in image, no GCS volumes)"
 else
@@ -289,7 +299,7 @@ else
     --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
     --add-volume-mount="volume=models,mount-path=/gcs-models"
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},--quantization,bitsandbytes,--load-format,bitsandbytes,--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--dtype,bfloat16,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
   )
   info "Deploy mode: GCS FUSE (model mounted from gs://${BUCKET_NAME})"
 fi

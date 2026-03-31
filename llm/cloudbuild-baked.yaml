@@ -38,7 +38,7 @@ steps:
       - '-c'
       - |
         mkdir -p models
-        gsutil -m cp -r gs://${_GCS_BUCKET}/ALIA-40b-instruct-2601 models/
+        gsutil -m cp -r gs://${_GCS_BUCKET}/ALIA-40b-GPTQ-INT4 models/
 
   # Step 3: Build baked image (base + model now in workspace/models/)
   - name: 'gcr.io/cloud-builders/docker'

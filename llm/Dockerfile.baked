@@ -16,4 +16,4 @@ FROM ${BASE_IMAGE}
 
 # Model files provided in the build context (downloaded by Cloud Build step).
 # Place in the HF cache structure so vLLM finds them without re-downloading.
-COPY models/ALIA-40b-instruct-2601 /app/model
+COPY models/ALIA-40b-GPTQ-INT4 /app/model

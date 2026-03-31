@@ -32,10 +32,11 @@ MAX_INSTANCES=1
 MIN_INSTANCES=0
 PORT=8000
 
-# Model configuration
-MODEL_NAME="BSC-LT/ALIA-40b-instruct-2601"
-MODEL_DIR_NAME="ALIA-40b-instruct-2601"
+# Model configuration (GPTQ for Cloud Run — fits on A100 40GB, fast cold start)
+MODEL_NAME="agustim/ALIA-40b-GPTQ-INT4"
+MODEL_DIR_NAME="ALIA-40b-GPTQ-INT4"
 MAX_MODEL_LEN=8192
+QUANTIZATION_ARGS="--quantization,gptq,--dtype,float16"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LLM_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -120,7 +121,7 @@ if [[ "${BAKE_MODEL}" == "true" ]]; then
     --clear-volume-mounts
     --clear-volumes
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--quantization,bitsandbytes,--load-format,bitsandbytes,--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--dtype,bfloat16,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
   )
   info "Deploy mode: BAKED (model in image, no GCS volumes)"
 else
@@ -130,7 +131,7 @@ else
     --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
     --add-volume-mount="volume=models,mount-path=/gcs-models"
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},--quantization,bitsandbytes,--load-format,bitsandbytes,--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--dtype,bfloat16,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
   )
   info "Deploy mode: GCS FUSE (model mounted from gs://${BUCKET_NAME})"
 fi

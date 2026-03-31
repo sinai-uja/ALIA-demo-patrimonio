@@ -1,4 +1,4 @@
-.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 download-reranker analyze-feedback analyze-queries manage-users db-export db-export-docker db-import db-import-docker help
+.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 download-reranker download-salamandra download-alia-gptq analyze-feedback analyze-queries manage-users db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose -f ../docker-compose.yml -f ../docker-compose.override.yml
 ENV_FILE = config/.env
@@ -19,8 +19,10 @@ help:
 	@echo "  reingest     Delete all chunks and re-ingest from scratch"
 	@echo "  load-assets  Load IAPH API data from ZIP into heritage_assets"
 	@echo "  fetch-assets Fetch IAPH API data live (requires IAPH_API_TOKEN)"
-	@echo "  download-qwen3    Download Qwen3-Embedding-0.6B model"
-	@echo "  download-reranker Download Qwen3-Reranker-0.6B model"
+	@echo "  download-qwen3       Download Qwen3-Embedding-0.6B model"
+	@echo "  download-reranker    Download Qwen3-Reranker-0.6B model"
+	@echo "  download-salamandra  Download salamandra-7b-instruct (~14GB, local dev)"
+	@echo "  download-alia-gptq   Download ALIA-40b-GPTQ-INT4 (~27GB, Cloud Run)"
 	@echo "  analyze-feedback Analyze feedback logs and generate CSV/JSON reports"
 	@echo "  analyze-queries  List all search/route queries with RAG results"
 	@echo "  manage-users     Manage users (ARGS='create-user --username x --password y')"
@@ -73,6 +75,12 @@ download-qwen3:
 
 download-reranker:
 	bash scripts/download_reranker.sh
+
+download-salamandra:
+	bash scripts/download_salamandra.sh
+
+download-alia-gptq:
+	bash scripts/download_alia_gptq.sh
 
 analyze-feedback:
 	uv run python scripts/analyze_feedback.py
