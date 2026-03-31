@@ -57,6 +57,9 @@ class Settings(BaseSettings):
     # GCP (for Cloud Run IAM authentication from non-GCP servers)
     gcp_service_account_json: str = ""
 
+    # Logging
+    log_retention_days: int = 30
+
     # API
     api_v1_prefix: str = "/api/v1"
     project_name: str = "IAPH Heritage RAG"

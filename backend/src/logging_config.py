@@ -2,11 +2,13 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
+from src.config import settings
+
 LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
 USECASES_LOG_DIR = os.path.join(LOG_DIR, "usecases")
 LOG_FORMAT = "%(asctime)s | %(levelname)-7s | %(name)s | %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-BACKUP_COUNT = 30  # keep 30 days of daily rotated logs
+BACKUP_COUNT = settings.log_retention_days
 
 # ANSI color codes
 _CYAN = "\033[36m"
