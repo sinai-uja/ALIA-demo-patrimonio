@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 import httpx
@@ -10,6 +12,7 @@ from src.domain.accessibility.prompts import (
     build_simplification_prompt,
 )
 from src.domain.accessibility.value_objects.simplification_level import SimplificationLevel
+from src.infrastructure.shared.auth.token_provider import TokenProvider
 
 logger = logging.getLogger("iaph.llm")
 
@@ -23,11 +26,22 @@ class AccessibilityLLMAdapter(LLMPort):
         model_name: str | None = None,
         max_tokens: int = 1024,
         temperature: float = 0.3,
+        token_provider: TokenProvider | None = None,
     ) -> None:
         self._base_url = base_url or settings.llm_service_url
         self._model_name = model_name or settings.llm_model_name
         self._max_tokens = max_tokens
         self._temperature = temperature
+        self._token_provider = token_provider
+
+    async def _build_auth_headers(self) -> dict[str, str]:
+        if self._token_provider:
+            token = await self._token_provider.get_token()
+            if token:
+                return {"Authorization": f"Bearer {token}"}
+        if settings.llm_api_key:
+            return {"Authorization": f"Bearer {settings.llm_api_key}"}
+        return {}
 
     async def simplify(self, text: str, level: SimplificationLevel) -> str:
         system_prompt = (
@@ -54,9 +68,7 @@ class AccessibilityLLMAdapter(LLMPort):
             "temperature": self._temperature,
         }
 
-        headers = {}
-        if settings.llm_api_key:
-            headers["Authorization"] = f"Bearer {settings.llm_api_key}"
+        headers = await self._build_auth_headers()
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 f"{self._base_url}/chat/completions",

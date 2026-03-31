@@ -22,7 +22,9 @@ _embedding_adapter = HttpEmbeddingAdapter(
 )
 _llm_adapter = (
     GeminiRAGAdapter() if settings.llm_provider == "gemini"
-    else VLLMAdapter()
+    else VLLMAdapter(
+        token_provider=build_token_provider(settings.llm_service_url),
+    )
 )
 _context_assembly_service = ContextAssemblyService()
 _hybrid_search_service = HybridSearchService()

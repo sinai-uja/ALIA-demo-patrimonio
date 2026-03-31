@@ -8,6 +8,7 @@ from src.application.chat.use_cases.list_sessions import ListSessionsUseCase
 from src.application.chat.use_cases.send_message import SendMessageUseCase
 from src.application.chat.use_cases.update_session_title import UpdateSessionTitleUseCase
 from src.composition.rag_composition import build_rag_application_service
+from src.composition.token_provider_composition import build_token_provider
 from src.config import settings
 from src.domain.chat.services.intent_classifier import IntentClassifier
 from src.domain.chat.services.query_reformulator import QueryReformulator
@@ -29,7 +30,9 @@ def build_chat_application_service(db: AsyncSession) -> ChatApplicationService:
     conversational_llm = (
         GeminiConversationalAdapter()
         if settings.llm_provider == "gemini"
-        else ConversationalLLMAdapter()
+        else ConversationalLLMAdapter(
+            token_provider=build_token_provider(settings.llm_service_url),
+        )
     )
     intent_classifier = IntentClassifier(llm_port=conversational_llm)
     query_reformulator = QueryReformulator()

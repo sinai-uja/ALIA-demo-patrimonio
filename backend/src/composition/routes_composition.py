@@ -24,6 +24,7 @@ from src.composition.rag_composition import (
 from src.composition.search_composition import (
     build_search_application_service,
 )
+from src.composition.token_provider_composition import build_token_provider
 from src.config import settings
 from src.domain.routes.services.query_extraction_service import (
     QueryExtractionService,
@@ -63,7 +64,9 @@ def build_routes_application_service(
     rag_adapter = InProcessRAGAdapter(rag_service)
     llm_adapter = (
         GeminiRoutesAdapter() if settings.llm_provider == "gemini"
-        else VLLMRoutesAdapter()
+        else VLLMRoutesAdapter(
+            token_provider=build_token_provider(settings.llm_service_url),
+        )
     )
     route_repository = SqlAlchemyRouteRepository(db)
     heritage_asset_lookup_adapter = PgHeritageAssetLookupAdapter(db)
