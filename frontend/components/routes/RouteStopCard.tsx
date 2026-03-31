@@ -27,10 +27,9 @@ function formatDuration(minutes: number): string {
 
 interface RouteStopCardProps {
   stop: RouteStop;
-  showNarrative?: boolean;
 }
 
-export function RouteStopCard({ stop, showNarrative = true }: RouteStopCardProps) {
+export function RouteStopCard({ stop }: RouteStopCardProps) {
   const openStopDetail = useRoutesStore((s) => s.openStopDetail);
 
   const typeColor =
@@ -67,14 +66,30 @@ export function RouteStopCard({ stop, showNarrative = true }: RouteStopCardProps
           : undefined
       }
     >
-      {/* Image — full width header when available */}
-      {stop.image_url && (
+      {/* Image or placeholder */}
+      {stop.image_url ? (
         <div className="w-full h-36 bg-stone-100 overflow-hidden">
           <img
             src={stop.image_url}
             alt={stop.title}
             className="w-full h-full object-cover"
           />
+        </div>
+      ) : (
+        <div className="w-full h-36 bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+          <svg
+            className="w-12 h-12 text-stone-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1}
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"
+            />
+          </svg>
         </div>
       )}
 
@@ -126,17 +141,10 @@ export function RouteStopCard({ stop, showNarrative = true }: RouteStopCardProps
             </span>
           </div>
 
-          {/* Asset description */}
+          {/* Asset description — inside the card */}
           {stop.description && (
-            <p className="text-xs text-stone-500 mt-2 leading-relaxed line-clamp-2">
+            <p className="text-xs text-stone-500 mt-2 leading-relaxed line-clamp-3">
               {stop.description}
-            </p>
-          )}
-
-          {/* Narrative segment */}
-          {showNarrative && stop.narrative_segment && (
-            <p className="text-sm text-stone-600 mt-3 leading-relaxed">
-              {stop.narrative_segment}
             </p>
           )}
         </div>
