@@ -4,7 +4,7 @@
        push-backend push-frontend push-embedding push-llm push-all \
        cloud-setup cloud-setup-baked cloud-generate-sa-key cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
        cloud-llm-setup cloud-llm-setup-model cloud-llm-setup-baked cloud-llm-generate-sa-key \
-       cloud-llm-deploy cloud-llm-deploy-baked cloud-llm-deploy-skip-build \
+       cloud-llm-deploy cloud-llm-deploy-baked cloud-llm-deploy-skip-build cloud-llm-deploy-baked-skip-build \
        migrate test lint db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose
@@ -59,7 +59,8 @@ help:
 	@echo "  cloud-llm-generate-sa-key    Generate service account key"
 	@echo "  cloud-llm-deploy             Rebuild and redeploy"
 	@echo "  cloud-llm-deploy-baked       Rebuild with model baked in"
-	@echo "  cloud-llm-deploy-skip-build  Redeploy without rebuilding"
+	@echo "  cloud-llm-deploy-skip-build  Redeploy without rebuilding (GCS FUSE)"
+	@echo "  cloud-llm-deploy-baked-skip-build  Redeploy baked image without rebuilding"
 	@echo ""
 	@echo "Database:"
 	@echo "  db-export        Export database (local)"
@@ -204,6 +205,9 @@ cloud-llm-deploy-baked:
 
 cloud-llm-deploy-skip-build:
 	./llm/scripts/deploy.sh --skip-build
+
+cloud-llm-deploy-baked-skip-build:
+	./llm/scripts/deploy.sh --bake-model --skip-build
 
 # ---------------------------------------------------------------------------
 # Other

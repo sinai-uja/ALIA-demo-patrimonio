@@ -18,16 +18,17 @@ set -euo pipefail
 # Configuration (must match setup.sh)
 # ---------------------------------------------------------------------------
 PROJECT_ID="innovasur-uja-alia"
-REGION="europe-west1"
+REGION="europe-west4"
+AR_REGION="europe-west1"
 SERVICE_NAME="uja-llm"
 REPO_NAME="iaph-rag"
 BUCKET_NAME="${PROJECT_ID}-iaph-models"
-IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
+IMAGE="${AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
 
 # Cloud Run service settings
-CPU=8
-MEMORY="32Gi"
-GPU_TYPE="nvidia-a100-40gb"
+CPU=20
+MEMORY="80Gi"
+GPU_TYPE="nvidia-rtx-pro-6000"
 MAX_INSTANCES=1
 MIN_INSTANCES=0
 PORT=8000
@@ -35,7 +36,7 @@ PORT=8000
 # Model configuration (GPTQ for Cloud Run — fits on A100 40GB, fast cold start)
 MODEL_NAME="agustim/ALIA-40b-GPTQ-INT4"
 MODEL_DIR_NAME="ALIA-40b-GPTQ-INT4"
-MAX_MODEL_LEN=8192
+MAX_MODEL_LEN=32768
 QUANTIZATION_ARGS="--quantization,gptq,--dtype,float16"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -69,9 +70,14 @@ step()  { echo -e "\n${GREEN}━━━ $* ━━━${NC}"; }
 # ---------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------
+IMAGE_TAG="latest"
+if [[ "${BAKE_MODEL}" == "true" ]]; then
+  IMAGE_TAG="baked"
+fi
+
 if [[ "${SKIP_BUILD}" == "true" ]]; then
   step "1/3 Build (skipped)"
-  skip "Using existing image ${IMAGE}:latest"
+  skip "Using existing image ${IMAGE}:${IMAGE_TAG}"
 elif [[ "${BAKE_MODEL}" == "true" ]]; then
   step "1/3 Building BAKED image (Cloud Build)"
   info "Building base + baking model from GCS..."
@@ -98,7 +104,7 @@ step "2/3 Deploying to Cloud Run"
 info "Deploying ${SERVICE_NAME}..."
 
 DEPLOY_ARGS=(
-  --image="${IMAGE}:latest"
+  --image="${IMAGE}:${IMAGE_TAG}"
   --region="${REGION}"
   --port="${PORT}"
   --cpu="${CPU}"
@@ -110,7 +116,9 @@ DEPLOY_ARGS=(
   --no-cpu-throttling
   --cpu-boost
   --execution-environment=gen2
+  --update-annotations=run.googleapis.com/launch-stage=BETA
   --no-allow-unauthenticated
+  --no-gpu-zonal-redundancy
   --quiet
 )
 
@@ -121,13 +129,13 @@ if [[ "${BAKE_MODEL}" == "true" ]]; then
     --clear-volume-mounts
     --clear-volumes
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--served-model-name,${MODEL_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
   )
   info "Deploy mode: BAKED (model in image, no GCS volumes)"
 else
   # GCS FUSE: mount bucket, model loaded from GCS
   DEPLOY_ARGS+=(
-    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=30,timeoutSeconds=10,periodSeconds=15,failureThreshold=40"
+    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=60,timeoutSeconds=10,periodSeconds=15,failureThreshold=80"
     --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
     --add-volume-mount="volume=models,mount-path=/gcs-models"
     --command="python3"

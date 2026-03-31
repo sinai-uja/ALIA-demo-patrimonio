@@ -20,18 +20,19 @@ set -euo pipefail
 # Configuration
 # ---------------------------------------------------------------------------
 PROJECT_ID="innovasur-uja-alia"
-REGION="europe-west1"
+REGION="europe-west4"
 SERVICE_NAME="uja-llm"
+AR_REGION="europe-west1"                     # Artifact Registry region
 REPO_NAME="iaph-rag"                        # shared with embedding service
 BUCKET_NAME="${PROJECT_ID}-iaph-models"      # shared with embedding service
 SA_NAME="llm-invoker"
 SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
-IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
+IMAGE="${AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
 
-# Cloud Run service settings — A100 40GB for GPTQ-quantized ALIA-40b
-CPU=8
-MEMORY="32Gi"
-GPU_TYPE="nvidia-a100-40gb"
+# Cloud Run service settings — RTX PRO 6000 48GB for GPTQ-quantized ALIA-40b
+CPU=20
+MEMORY="80Gi"
+GPU_TYPE="nvidia-rtx-pro-6000"
 MAX_INSTANCES=1
 MIN_INSTANCES=0
 PORT=8000
@@ -40,7 +41,7 @@ PORT=8000
 # For local development use bitsandbytes instead (see .env.example presets)
 MODEL_NAME="agustim/ALIA-40b-GPTQ-INT4"
 MODEL_DIR_NAME="ALIA-40b-GPTQ-INT4"
-MAX_MODEL_LEN=8192
+MAX_MODEL_LEN=32768
 QUANTIZATION_ARGS="--quantization,gptq,--dtype,float16"
 
 # Paths
@@ -278,24 +279,26 @@ DEPLOY_ARGS=(
   --no-cpu-throttling
   --cpu-boost
   --execution-environment=gen2
+  --update-annotations=run.googleapis.com/launch-stage=BETA
   --no-allow-unauthenticated
+  --no-gpu-zonal-redundancy
   --quiet
 )
 
 if [[ "${BAKE_MODEL}" == "true" ]]; then
   # Baked: model inside image at /app/model, pass as local path
   DEPLOY_ARGS+=(
-    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=30,timeoutSeconds=10,periodSeconds=15,failureThreshold=40"
+    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=60,timeoutSeconds=10,periodSeconds=15,failureThreshold=80"
     --clear-volume-mounts
     --clear-volumes
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--served-model-name,${MODEL_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
   )
   info "Deploy mode: BAKED (model in image, no GCS volumes)"
 else
   # GCS FUSE: mount bucket, model loaded from GCS
   DEPLOY_ARGS+=(
-    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=30,timeoutSeconds=10,periodSeconds=15,failureThreshold=40"
+    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=60,timeoutSeconds=10,periodSeconds=15,failureThreshold=80"
     --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
     --add-volume-mount="volume=models,mount-path=/gcs-models"
     --command="python3"
