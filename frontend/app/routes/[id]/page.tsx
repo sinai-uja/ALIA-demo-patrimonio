@@ -386,7 +386,7 @@ export default function RouteDetailPage() {
 
       {/* Main content */}
       <div
-        className={`absolute top-0 bottom-0 left-0 overflow-y-auto transition-all duration-300 ${
+        className={`absolute top-0 bottom-0 left-0 overflow-y-scroll transition-all duration-300 ${
           hasDetail ? "right-[560px]" : "right-0"
         }`}
       >

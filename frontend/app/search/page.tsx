@@ -59,7 +59,7 @@ export default function SearchPage() {
 
       {/* Main content */}
       <div
-        className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
+        className={`absolute top-0 bottom-0 overflow-y-scroll transition-all duration-300 ${
           drawerOpen ? "left-72" : "left-0"
         } ${hasDetail ? "md:right-[560px]" : "right-0"}`}
       >

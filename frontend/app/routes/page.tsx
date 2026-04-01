@@ -100,7 +100,7 @@ export default function RoutesPage() {
   const routesFilter = useRoutesStore((s) => s.routesFilter);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ready, setReady] = useState(false);
-  const [filterInput, setFilterInput] = useState("");
+  const [filterInput, setFilterInput] = useState(routesFilter);
   const filterTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export default function RoutesPage() {
       </CollapsibleDrawer>
 
       {/* Main content */}
-      <div className={`absolute top-0 bottom-0 overflow-y-auto transition-all duration-300 ${
+      <div className={`absolute top-0 bottom-0 overflow-y-scroll transition-all duration-300 ${
         drawerOpen ? "left-72" : "left-0"
       } ${hasDetail ? "md:right-[560px]" : "right-0"}`}>
 
@@ -250,7 +250,7 @@ export default function RoutesPage() {
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-stone-400 shrink-0 tabular-nums">
+                    <p className="text-xs text-stone-400 shrink-0 tabular-nums min-w-[5.5rem] text-right">
                       {routesFilter ? `${filtered.length} de ${routes.length}` : routes.length} ruta{(routesFilter ? filtered.length : routes.length) !== 1 ? "s" : ""}
                     </p>
                   </div>
@@ -261,7 +261,7 @@ export default function RoutesPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="py-8 text-center text-sm text-stone-400">
+                    <p className="py-20 text-center text-sm text-stone-400">
                       No se encontraron rutas con ese título
                     </p>
                   )}
