@@ -102,20 +102,22 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Stats bar */}
+        {/* Stats */}
         <div
-          className="animate-fade-in-up rounded-2xl bg-gradient-to-r from-stone-800 to-stone-900 p-6 mb-10"
+          className="animate-fade-in-up mb-10"
           style={{ animationDelay: "0.5s" }}
         >
           <p className="text-xs text-stone-400 text-center mb-4">
             134K+ bienes catalogados en el catálogo oficial
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 gap-y-6 text-center">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-1">
-                <span className={`h-2 w-2 rounded-full ${stat.dot}`} />
-                <p className="text-2xl sm:text-xl font-bold text-white">{stat.value}</p>
-                <p className="text-xs text-stone-400">{stat.label}</p>
+              <div key={stat.label} className="rounded-xl border border-stone-200/60 bg-white p-5 shadow-sm text-center">
+                <p className="text-2xl font-bold text-stone-900">{stat.value}</p>
+                <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${stat.dot}`} />
+                  <p className="text-xs text-stone-500">{stat.label}</p>
+                </div>
               </div>
             ))}
           </div>
