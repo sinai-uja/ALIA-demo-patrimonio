@@ -1,33 +1,45 @@
 # IAPH Heritage RAG
 
-Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico (IAPH)**, commissioned by the **Universidad de Jaen**. Users can explore Andalusian cultural heritage through natural language, generate personalized virtual routes, and access simplified (Lectura Facil) versions of heritage texts.
+Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico (IAPH)**, commissioned by the **Universidad de Jaen**. Users can explore Andalusian cultural heritage through natural language, generate personalized virtual routes, perform semantic search over heritage assets, and access simplified (Lectura Facil) versions of heritage texts.
+
+## Project partners
+
+| Partner | Role |
+|---------|------|
+| [Departamento SINAI - Universidad de Jaen](https://sinai.ujaen.es/) | Research department leading the project |
+| [Proyecto ALIA](https://alia.gob.es/) | National AI initiative this work is part of |
+| [Innovasur](https://www.innovasur.com/) | Development partner |
+
+Partner logos are displayed in the frontend footer, navbar, and login page (images in `frontend/public/images/`).
 
 ## Monorepo structure
 
 ```
 /
-├── backend/            # FastAPI API — hexagonal architecture, Python 3.11, uv
-│   ├── src/            # 7 bounded contexts: documents, rag, chat, routes, heritage, search, accessibility
-│   ├── docker/         # Backend Dockerfile
-│   └── alembic/        # DB migrations
-├── frontend/           # Next.js 16 web application
-│   └── docker/         # Frontend Dockerfile
-├── embedding/          # Embedding service (FastAPI + MrBERT / Qwen3)
-├── data/               # IAPH parquet data — not committed
+├── backend/              # FastAPI API -- hexagonal architecture, Python 3.11, uv
+│   ├── src/              # 7 bounded contexts: documents, rag, chat, routes, heritage, search, accessibility
+│   ├── docker/           # Backend Dockerfile
+│   └── alembic/          # DB migrations
+├── frontend/             # Next.js 16 web application
+│   └── docker/           # Frontend Dockerfile
+├── embedding/            # Embedding service (FastAPI + MrBERT / Qwen3)
+├── llm/                  # LLM inference service (vLLM + bitsandbytes quantization)
+├── data/                 # IAPH parquet data -- not committed
 ├── docker-compose.yml          # Full-stack service definitions
 ├── docker-compose.override.yml # Dev port exposure for local development
 ├── .env.example                # Environment configuration template
 ├── .gitlab-ci.yml              # CI/CD pipeline
 ├── Makefile                    # Root development commands
-└── VERSION                     # Semantic version (current: 0.1.0)
+└── VERSION                     # Semantic version (current: 0.1.5)
 ```
 
 ## Use cases
 
 | Use case | Description |
 |----------|-------------|
-| **Chatbot patrimonial** | Multi-turn RAG conversation over the full IAPH corpus (134,000+ heritage records) |
-| **Rutas virtuales** | Generate personalized routes via smart search with entity detection, LLM query extraction, and multi-filter RAG; interactive per-route guide |
+| **Chatbot patrimonial** | Multi-turn RAG conversation over the full IAPH corpus (134,000+ heritage records) with intent classification and query reformulation |
+| **Busqueda semantica** | Faceted semantic search over heritage assets with filtering by province, municipality, heritage type, and more |
+| **Rutas virtuales** | Generate personalized routes via smart search with entity detection, LLM query extraction, multi-filter RAG, per-stop structured JSON narrative, heritage asset enrichment (images/coordinates), and interactive per-route guide |
 | **Lectura Facil** | Simplify heritage texts for cognitive accessibility (ILSMH guidelines) |
 
 ## AI models
@@ -36,8 +48,11 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 |------|-------|-------|
 | Encoder (default) | `BSC-LT/MrBERT` | 308M params, 768-dim, 8,192 token context, mean pooling, Apache 2.0 |
 | Encoder (alt.) | `Qwen/Qwen3-Embedding-0.6B` | 600M params, 1,024-dim, 32K token context, last-token pooling |
-| Decoder (default) | `BSC-LT/salamandra-7b-instruct` | Spanish-capable LLM, served via vLLM (requires GPU) |
-| Decoder (alt.) | Gemini (`gemini-3.1-flash-lite-preview`) | Cloud LLM backend, selectable via `LLM_PROVIDER=gemini` |
+| Decoder (default) | `BSC-LT/salamandra-7b-instruct` | 7B params, Spanish-capable LLM, served via vLLM, 16 GB VRAM min |
+| Decoder (large) | `BSC-LT/ALIA-40b-instruct-2601` | 40.4B params, 163K token context, bitsandbytes 4-bit quantization, 32 GB VRAM min |
+| Decoder (cloud) | Gemini (`gemini-3.1-flash-lite-preview`) | Cloud LLM backend, selectable via `LLM_PROVIDER=gemini` |
+
+Both encoder models are self-hosted. Decoders are served via **vLLM** from the `llm/` directory (custom Docker image with bitsandbytes support). The Gemini backend is available as a lightweight alternative without GPU requirements.
 
 ## Infrastructure
 
@@ -45,11 +60,13 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 |---------|-------|:---:|:---:|
 | PostgreSQL + pgvector | `pgvector/pgvector:pg16` | 5432 | 15432 |
 | Embedding service | custom (MrBERT / Qwen3 + FastAPI) | 8001 | 18001 |
-| LLM service | `vllm/vllm-openai` *(profile: `llm`)* | 8000 | 18000 |
+| LLM service | custom vLLM *(profile: `llm`)* | 8000 | 18000 |
 | Backend API | custom (FastAPI) | 8080 | 18080 |
 | Frontend | custom (Next.js standalone) | 3000 | 3000 |
 
 > Host ports for postgres, embedding, and LLM are exposed via `docker-compose.override.yml` for local development. The API and frontend expose their host ports directly in the main compose file.
+>
+> The LLM service uses Docker Compose profile `llm` and is not started by default -- use `make infra-llm` when generation endpoints are needed.
 
 ## Quick start
 
@@ -64,8 +81,8 @@ make infra
 make migrate
 
 # 4. Start backend + frontend (dev mode, hot-reload)
-make dev                      # API → http://localhost:18080/api/v1/docs
-                              # Frontend → http://localhost:3000
+make dev                      # API -> http://localhost:18080/api/v1/docs
+                              # Frontend -> http://localhost:3000
 
 # 5. Ingest IAPH data (run once)
 cd backend && make ingest     # loads all 4 parquet datasets from data/
@@ -99,15 +116,40 @@ make migrate                   # apply pending Alembic migrations
 make test                      # run backend test suite
 make lint                      # run ruff linter on backend
 
-# Docker image management
-make build-all REGISTRY=...    # build all Docker images
-make push-all REGISTRY=...     # push all Docker images
+# Database backup
+make db-export                 # export database (uses local pg_dump or Docker fallback)
+make db-import FILE=path.sql   # import database dump (uses local psql or Docker fallback)
 
-# Backend-specific (run from backend/)
-cd backend && make ingest                        # ingest parquet data
-cd backend && make load-assets                   # load heritage assets from ZIP
-cd backend && make migrate-new MSG="description" # generate new Alembic migration
-cd backend && make download-qwen3                # download Qwen3 model
+# Docker image management
+make build-all REGISTRY=...    # build all Docker images (backend, frontend, embedding, llm)
+make push-all REGISTRY=...     # push all Docker images
+make build-llm                 # build LLM service image only
+make push-llm                  # push LLM service image only
+
+# Cloud Run -- LLM service (ALIA-40b)
+make cloud-llm-setup           # first-time LLM infra setup + deploy
+make cloud-llm-deploy          # rebuild and redeploy
+make cloud-llm-deploy-baked    # rebuild with model baked into image
+```
+
+Backend-specific commands (run from `backend/`):
+
+```bash
+make ingest                          # ingest parquet data
+make reingest                        # delete all chunks and re-ingest from scratch
+make load-assets                     # load heritage assets from ZIP
+make fetch-assets                    # fetch IAPH API data live (requires IAPH_API_TOKEN)
+make migrate-new MSG="description"   # generate new Alembic migration
+make download-qwen3                  # download Qwen3 model
+make dev-only                        # start FastAPI without infra (assumes infra running)
+```
+
+Frontend commands (run from `frontend/`):
+
+```bash
+npm run dev    # Next.js dev server (port 3000)
+npm run build  # production build
+npm run lint   # ESLint
 ```
 
 ## Docker
@@ -122,11 +164,28 @@ Two development modes are supported:
 
 The `docker-compose.override.yml` file exposes internal service ports to the host so that locally-run backend/frontend can reach postgres and the embedding service. Remove or rename this file in production.
 
+## Environment variables
+
+Copy `.env.example` to `.env` at the repo root (or `backend/config/.env.example` to `backend/config/.env`). Key variables:
+
+| Variable | Default | Notes |
+|---|---|---|
+| `DATABASE_URL` | `postgresql+asyncpg://uja:uja@localhost:5432/uja_iaph` | Use port 15432 when running locally against Docker |
+| `EMBEDDING_SERVICE_URL` | `http://localhost:8001` | Embedding service endpoint |
+| `EMBEDDING_DIM` | `768` | 768 for MrBERT, 1024 for Qwen3 |
+| `EMBEDDING_MODEL_DIR` | `MrBERT` | Model directory under `backend/models/` |
+| `POOLING_STRATEGY` | `mean` | `mean` (MrBERT) or `last_token` (Qwen3) |
+| `LLM_PROVIDER` | `gemini` | LLM backend: `vllm` or `gemini` |
+| `LLM_SERVICE_URL` | `http://localhost:8000/v1` | vLLM OpenAI-compatible endpoint |
+| `LLM_MODEL_NAME` | `BSC-LT/salamandra-7b-instruct` | Or `BSC-LT/ALIA-40b-instruct-2601` |
+| `GEMINI_API_KEY` | *(empty)* | Required when `LLM_PROVIDER=gemini` |
+| `RAG_TOP_K` | `5` | Chunks retrieved per query |
+
 ## Tech stack
 
 **Backend** -- Python 3.11, FastAPI, SQLAlchemy async, pgvector, Alembic, uv, httpx
-**Frontend** -- Next.js 16, TypeScript, Tailwind CSS, Zustand, react-leaflet (standalone output for Docker)
-**Infrastructure** -- Docker Compose, PostgreSQL 16, vLLM, GitLab CI/CD
+**Frontend** -- Next.js 16, TypeScript, Tailwind CSS v4, Zustand, react-leaflet (standalone output for Docker)
+**Infrastructure** -- Docker Compose, PostgreSQL 16 + pgvector, vLLM (with bitsandbytes), GitLab CI/CD
 
 ## Sub-READMEs
 
