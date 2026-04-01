@@ -1,16 +1,26 @@
 # IAPH Heritage RAG
 
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=FastAPI&logoColor=white)
+![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
+![Swagger](https://img.shields.io/badge/-Swagger-%23Clojure?style=for-the-badge&logo=swagger&logoColor=white)
+![Google Cloud](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)
+
 Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico (IAPH)**, commissioned by the **Universidad de Jaen**. Users can explore Andalusian cultural heritage through natural language, generate personalized virtual routes, perform semantic search over heritage assets, and access simplified (Lectura Facil) versions of heritage texts.
 
 ## Project partners
 
-| Partner | Role |
-|---------|------|
-| [Departamento SINAI - Universidad de Jaen](https://sinai.ujaen.es/) | Research department leading the project |
-| [Proyecto ALIA](https://alia.gob.es/) | National AI initiative this work is part of |
-| [Innovasur](https://www.innovasur.com/) | Development partner |
-
-Partner logos are displayed in the frontend footer, navbar, and login page (images in `frontend/public/images/`).
+<p align="center">
+  <a href="https://sinai.ujaen.es/"><img src="frontend/public/images/sinai.png" alt="Departamento SINAI - Universidad de Jaén" height="50"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://alia.gob.es/"><img src="frontend/public/images/alia.png" alt="Proyecto ALIA" height="50"></a>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <a href="https://www.innovasur.com/"><img src="frontend/public/images/innovasur.png" alt="Innovasur" height="38"></a>
+</p>
 
 ## Monorepo structure
 
