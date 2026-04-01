@@ -6,7 +6,7 @@ from src.domain.chat.entities.message_role import MessageRole
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
 from src.domain.chat.prompts import INTENT_SYSTEM_PROMPT, build_intent_prompt
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.query")
 
 _HISTORY_WINDOW = 4
 

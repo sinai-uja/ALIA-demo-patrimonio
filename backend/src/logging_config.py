@@ -18,7 +18,7 @@ _RESET = "\033[0m"
 # Prefixes that mark user input lines (colored cyan)
 _INPUT_PREFIXES = ("Processing message", "RAG pipeline start", "POST /")
 # Prefixes that mark LLM output lines (colored green)
-_OUTPUT_PREFIXES = ("Conversational LLM response", "RAG LLM response", "RAG pipeline complete")
+_OUTPUT_PREFIXES = ("LLM response:", "RAG pipeline complete", "Gemini")
 
 
 class _ColorConsoleFormatter(logging.Formatter):
@@ -32,17 +32,6 @@ class _ColorConsoleFormatter(logging.Formatter):
         if any(msg.startswith(p) for p in _OUTPUT_PREFIXES):
             return f"{_GREEN}{result}{_RESET}"
         return result
-
-
-class _ExcludeLoggerFilter(logging.Filter):
-    """Exclude logs from a specific logger and its children."""
-
-    def __init__(self, excluded: str) -> None:
-        super().__init__()
-        self._excluded = excluded
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        return not record.name.startswith(self._excluded)
 
 
 class _OnlyLoggerFilter(logging.Filter):
@@ -92,8 +81,8 @@ def setup_logging() -> None:
 
     Loggers:
         iaph            — general info, lifecycle, execution flow
-        iaph.query      — API requests, search results, response summaries
-        iaph.llm        — intent classification, LLM calls, RAG pipeline, responses
+        iaph.query      — RAG pipeline orchestration, intent, reformulation, search results
+        iaph.llm        — LLM inference calls and responses (latency tracking)
         iaph.embedding  — embedding service requests/responses
         iaph.auth       — login, token refresh, auth failures
         iaph.usecases.routes — route generation and guide queries
@@ -111,7 +100,7 @@ def setup_logging() -> None:
         logs/usecases/search.log  ← iaph.usecases.search at DEBUG+
 
     Console:
-        iaph + iaph.llm + iaph.embedding + iaph.auth at INFO+ (excludes iaph.query)
+        iaph.* at INFO+ (all loggers)
     """
     os.makedirs(LOG_DIR, exist_ok=True)
     os.makedirs(USECASES_LOG_DIR, exist_ok=True)
@@ -171,12 +160,12 @@ def setup_logging() -> None:
         log_filter=_OnlyLoggerFilter("iaph.usecases.search"),
     )
 
-    # --- Console handler (info + llm + embedding + auth, NOT queries) ---
+    # --- Console handler (all iaph.* loggers at INFO+) ---
     color_formatter = _ColorConsoleFormatter(LOG_FORMAT, datefmt=DATE_FORMAT)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(color_formatter)
-    console_handler.addFilter(_ExcludeLoggerFilter("iaph.query"))
+    # iaph.query logs now include RAG pipeline messages — show them in console
 
     # --- Configure loggers ---
 

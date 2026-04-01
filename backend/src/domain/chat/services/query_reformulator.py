@@ -3,7 +3,7 @@ import logging
 from src.domain.chat.entities.message import Message
 from src.domain.chat.entities.message_role import MessageRole
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.query")
 
 _STOPWORDS = {
     "de", "del", "la", "el", "los", "las", "un", "una", "en", "y", "a",

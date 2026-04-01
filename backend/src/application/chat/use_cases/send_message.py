@@ -10,7 +10,7 @@ from src.domain.chat.prompts import CONVERSATIONAL_SYSTEM_PROMPT
 from src.domain.chat.services.intent_classifier import IntentClassifier, MessageIntent
 from src.domain.chat.services.query_reformulator import QueryReformulator
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.query")
 
 
 class SendMessageUseCase:
