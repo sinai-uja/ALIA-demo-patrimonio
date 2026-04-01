@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { chat as chatApi, type Session, type Message } from "@/lib/api";
+import { minDelay } from "@/lib/minDelay";
 
 function defaultTitle(): string {
   return new Date().toLocaleString("es-ES", {
@@ -36,7 +37,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   loadSessions: async () => {
     set({ loading: true });
     try {
-      const sessions = await chatApi.listSessions();
+      const sessions = await minDelay(chatApi.listSessions());
       set({ sessions });
     } finally {
       set({ loading: false });
@@ -52,7 +53,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   selectSession: async (id) => {
     set({ loading: true, activeSessionId: id });
     try {
-      const messages = await chatApi.getMessages(id);
+      const messages = await minDelay(chatApi.getMessages(id));
       set({ messages });
     } finally {
       set({ loading: false });

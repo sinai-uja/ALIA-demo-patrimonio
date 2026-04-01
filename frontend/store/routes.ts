@@ -8,29 +8,8 @@ import {
   type FilterValues,
   type DetectedEntity,
 } from "@/lib/api";
-
-export interface ActiveFilter {
-  type: "province" | "municipality" | "heritage_type";
-  value: string;
-  label: string;
-  matchedText: string;
-}
-
-function collectFilters(filters: ActiveFilter[]) {
-  const heritage: string[] = [];
-  const provinces: string[] = [];
-  const municipalities: string[] = [];
-  for (const f of filters) {
-    if (f.type === "heritage_type") heritage.push(f.value);
-    if (f.type === "province") provinces.push(f.value);
-    if (f.type === "municipality") municipalities.push(f.value);
-  }
-  return {
-    heritage_type_filter: heritage.length ? heritage : null,
-    province_filter: provinces.length ? provinces : null,
-    municipality_filter: municipalities.length ? municipalities : null,
-  };
-}
+import { type ActiveFilter, collectFilters } from "@/lib/filterUtils";
+import { minDelay } from "@/lib/minDelay";
 
 interface RoutesState {
   // Smart input
@@ -50,6 +29,8 @@ interface RoutesState {
   routes: VirtualRoute[];
   activeRoute: VirtualRoute | null;
   loading: boolean;
+  routesPage: number;
+  routesPageSize: number;
 
   // Stop detail panel
   selectedStopAssetId: string | null;
@@ -67,6 +48,9 @@ interface RoutesState {
   removeFilter: (filter: ActiveFilter) => void;
   clearFilters: () => void;
   clearSuggestions: () => void;
+  routesTotalPages: () => number;
+  paginatedRoutes: () => VirtualRoute[];
+  goToRoutesPage: (page: number) => void;
   generateRoute: () => Promise<VirtualRoute>;
   loadRoutes: () => Promise<void>;
   selectRoute: (id: string) => Promise<void>;
@@ -95,6 +79,8 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   routes: [],
   activeRoute: null,
   loading: false,
+  routesPage: 1,
+  routesPageSize: 6,
 
   // Stop detail panel
   selectedStopAssetId: null,
@@ -193,6 +179,22 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   clearSuggestions: () => set({ suggestions: null }),
 
+  routesTotalPages: () => {
+    const { routes, routesPageSize } = get();
+    return Math.max(1, Math.ceil(routes.length / routesPageSize));
+  },
+
+  paginatedRoutes: () => {
+    const { routes, routesPage, routesPageSize } = get();
+    const start = (routesPage - 1) * routesPageSize;
+    return routes.slice(start, start + routesPageSize);
+  },
+
+  goToRoutesPage: (page) => {
+    const totalPages = get().routesTotalPages();
+    set({ routesPage: Math.max(1, Math.min(page, totalPages)) });
+  },
+
   generateRoute: async () => {
     const { query, activeFilters, numStops, generating } = get();
     if (!query.trim()) throw new Error("La consulta no puede estar vacia");
@@ -233,7 +235,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   loadRoutes: async () => {
     set({ loading: true });
     try {
-      const routes = await routesApi.list();
+      const routes = await minDelay(routesApi.list());
       set({ routes });
     } finally {
       set({ loading: false });
@@ -243,7 +245,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   selectRoute: async (id) => {
     set({ loading: true });
     try {
-      const route = await routesApi.get(id);
+      const route = await minDelay(routesApi.get(id));
       set({ activeRoute: route });
     } finally {
       set({ loading: false });
@@ -262,7 +264,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   openStopDetail: async (heritageAssetId) => {
     set({ selectedStopAssetId: heritageAssetId, detailLoading: true, selectedAsset: null });
     try {
-      const asset = await heritageApi.get(heritageAssetId);
+      const asset = await minDelay(heritageApi.get(heritageAssetId));
       set({ selectedAsset: asset, detailLoading: false });
     } catch {
       set({ selectedStopAssetId: null, detailLoading: false });

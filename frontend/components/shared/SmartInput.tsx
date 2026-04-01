@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { DetectedEntity } from "@/lib/api";
+import type { ActiveFilter } from "@/lib/filterUtils";
 
 // ── Shared constants ─────────────────────────────────────────────────────────
 
@@ -50,12 +51,7 @@ export interface EntityInfo {
   matchedText: string;
 }
 
-export interface ActiveFilter {
-  type: "province" | "municipality" | "heritage_type";
-  value: string;
-  label: string;
-  matchedText: string;
-}
+export type { ActiveFilter } from "@/lib/filterUtils";
 
 export interface Segment {
   kind: "text" | "potential" | "active";

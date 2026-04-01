@@ -8,13 +8,8 @@ import {
   type DetectedEntity,
   type FilterValues,
 } from "@/lib/api";
-
-export interface ActiveFilter {
-  type: "province" | "municipality" | "heritage_type";
-  value: string;
-  label: string;
-  matchedText: string;
-}
+import { type ActiveFilter, collectFilters } from "@/lib/filterUtils";
+import { minDelay } from "@/lib/minDelay";
 
 interface SearchState {
   query: string;
@@ -64,22 +59,6 @@ function extractAssetId(documentId: string): string {
 /** Clean query whitespace for API submission. */
 function buildCleanQuery(query: string): string {
   return query.replace(/\s{2,}/g, " ").trim();
-}
-
-function collectFilters(filters: ActiveFilter[]) {
-  const heritage: string[] = [];
-  const provinces: string[] = [];
-  const municipalities: string[] = [];
-  for (const f of filters) {
-    if (f.type === "heritage_type") heritage.push(f.value);
-    if (f.type === "province") provinces.push(f.value);
-    if (f.type === "municipality") municipalities.push(f.value);
-  }
-  return {
-    heritage_type_filter: heritage.length ? heritage : null,
-    province_filter: provinces.length ? provinces : null,
-    municipality_filter: municipalities.length ? municipalities : null,
-  };
 }
 
 let _searchController: AbortController | null = null;
@@ -143,12 +122,12 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     });
     try {
       const filters = collectFilters(activeFilters);
-      const res = await searchApi.similarity({
+      const res = await minDelay(searchApi.similarity({
         query: cleanQuery,
         page: targetPage,
         page_size: pageSize,
         ...filters,
-      }, controller.signal);
+      }, controller.signal));
       if (controller.signal.aborted) return;
       set({
         results: res.results,
@@ -258,7 +237,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     const assetId = extractAssetId(documentId);
     set({ selectedAssetId: assetId, selectedAsset: null, detailLoading: true });
     try {
-      const asset = await heritageApi.get(assetId);
+      const asset = await minDelay(heritageApi.get(assetId));
       set({ selectedAsset: asset, detailLoading: false });
     } catch {
       set({ detailLoading: false });
