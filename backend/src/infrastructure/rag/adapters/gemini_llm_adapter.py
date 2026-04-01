@@ -1,4 +1,5 @@
 import logging
+import time
 
 import httpx
 
@@ -61,12 +62,14 @@ class GeminiRAGAdapter(LLMPort):
         )
 
         async with httpx.AsyncClient(timeout=120.0) as client:
+            t0 = time.perf_counter()
             response = await client.post(url, json=payload)
+            latency = time.perf_counter() - t0
             response.raise_for_status()
             data = response.json()
             content = (
                 data["candidates"][0]["content"]["parts"][0]["text"]
             )
-            logger.info("Gemini RAG response: %d chars", len(content))
+            logger.info("Gemini RAG response: %d chars, latency=%.2fs", len(content), latency)
             logger.debug("Gemini RAG full response:\n%s", content)
             return content

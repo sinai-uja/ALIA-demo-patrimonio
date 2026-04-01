@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 
 import httpx
 
@@ -52,11 +53,11 @@ class VLLMAdapter(LLMPort):
         ]
 
         logger.info(
-            "RAG LLM request: model=%s, max_tokens=%d, prompt=%d chars, chunks=%d",
+            "LLM request: model=%s, max_tokens=%d, prompt=%d chars, chunks=%d",
             self._model_name, self._max_tokens, len(user_prompt), len(context_chunks),
         )
-        logger.debug("RAG LLM system_prompt:\n%s", system_prompt)
-        logger.debug("RAG LLM user_prompt:\n%s", user_prompt)
+        logger.debug("LLM system_prompt:\n%s", system_prompt)
+        logger.debug("LLM user_prompt:\n%s", user_prompt)
 
         payload = {
             "model": self._model_name,
@@ -67,6 +68,7 @@ class VLLMAdapter(LLMPort):
 
         headers = await self._build_auth_headers()
         async with httpx.AsyncClient(timeout=120.0) as client:
+            t0 = time.perf_counter()
             response = await client.post(
                 f"{self._base_url}/chat/completions",
                 json=payload,
@@ -86,9 +88,10 @@ class VLLMAdapter(LLMPort):
                     headers=headers,
                 )
 
+            latency = time.perf_counter() - t0
             response.raise_for_status()
             data = response.json()
             content = data["choices"][0]["message"]["content"]
-            logger.info("RAG LLM response: %d chars", len(content))
-            logger.debug("RAG LLM full response:\n%s", content)
+            logger.info("LLM response: %d chars, latency=%.2fs", len(content), latency)
+            logger.debug("LLM full response:\n%s", content)
             return content

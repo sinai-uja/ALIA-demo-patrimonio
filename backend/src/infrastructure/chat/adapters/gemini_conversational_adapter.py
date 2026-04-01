@@ -1,4 +1,5 @@
 import logging
+import time
 
 import httpx
 
@@ -52,14 +53,17 @@ class GeminiConversationalAdapter(ConversationalLLMPort):
         )
 
         async with httpx.AsyncClient(timeout=60.0) as client:
+            t0 = time.perf_counter()
             response = await client.post(url, json=payload)
+            latency = time.perf_counter() - t0
             response.raise_for_status()
             data = response.json()
             content = (
                 data["candidates"][0]["content"]["parts"][0]["text"]
             )
             logger.info(
-                "Gemini conversational response: %d chars", len(content),
+                "Gemini conversational response: %d chars, latency=%.2fs",
+                len(content), latency,
             )
             logger.debug("Gemini conversational full response:\n%s", content)
             return content
