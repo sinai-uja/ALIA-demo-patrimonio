@@ -292,7 +292,7 @@ if [[ "${BAKE_MODEL}" == "true" ]]; then
     --clear-volume-mounts
     --clear-volumes
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--served-model-name,${MODEL_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--served-model-name,${MODEL_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--enforce-eager,--port,${PORT}"
   )
   info "Deploy mode: BAKED (model in image, no GCS volumes)"
 else
@@ -302,7 +302,7 @@ else
     --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
     --add-volume-mount="volume=models,mount-path=/gcs-models"
     --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--port,${PORT}"
+    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--enforce-eager,--port,${PORT}"
   )
   info "Deploy mode: GCS FUSE (model mounted from gs://${BUCKET_NAME})"
 fi

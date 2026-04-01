@@ -20,7 +20,7 @@
 #   --api-key             — API key for Bearer auth (optional)
 # =============================================================================
 
-FROM vllm/vllm-openai:latest
+FROM vllm/vllm-openai:v0.18.1
 
 # bitsandbytes enables 4-bit/8-bit quantization at load time,
 # allowing 40B+ models to fit on a single 32-40GB GPU.
