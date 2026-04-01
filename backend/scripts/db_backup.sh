@@ -58,12 +58,21 @@ check_container() {
   fi
 }
 
+# Auto-detect: if pg_dump is not installed locally, fall back to Docker mode
+auto_docker_fallback() {
+  if ! $DOCKER_MODE && ! command -v pg_dump &>/dev/null; then
+    echo "pg_dump not found locally, falling back to Docker mode..."
+    DOCKER_MODE=true
+  fi
+}
+
 timestamp() {
   date +%Y%m%d_%H%M%S
 }
 
 # ── Export ────────────────────────────────────────────────────────────────────
 do_export() {
+  auto_docker_fallback
   mkdir -p "$BACKUP_DIR"
   local outfile="${BACKUP_DIR}/uja_iaph_$(timestamp).dump"
 
@@ -88,6 +97,7 @@ do_export() {
 
 # ── Import ───────────────────────────────────────────────────────────────────
 do_import() {
+  auto_docker_fallback
   if [[ -z "$IMPORT_FILE" ]]; then
     echo "Error: no dump file specified."
     usage
