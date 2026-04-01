@@ -6,10 +6,12 @@ import { useFeedbackStore } from "@/store/feedback";
 import { RouteSmartInput } from "@/components/routes/RouteSmartInput";
 import { RouteResult } from "@/components/routes/RouteResult";
 import { RouteCard } from "@/components/routes/RouteCard";
+import { RoutesPagination } from "@/components/routes/RoutesPagination";
 import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
 import { FilterChipsBase } from "@/components/shared/FilterChips";
 import { FilterSidebarBase } from "@/components/shared/FilterSidebar";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
+import { minDelay } from "@/lib/minDelay";
 
 function NumStopsSelector() {
   const numStops = useRoutesStore((s) => s.numStops);
@@ -86,16 +88,18 @@ export default function RoutesPage() {
   const loadRoutes = useRoutesStore((s) => s.loadRoutes);
   const loadFilterValues = useRoutesStore((s) => s.loadFilterValues);
   const routes = useRoutesStore((s) => s.routes);
+  const routesPage = useRoutesStore((s) => s.routesPage);
+  const routesPageSize = useRoutesStore((s) => s.routesPageSize);
   const generatedRoute = useRoutesStore((s) => s.generatedRoute);
   const generating = useRoutesStore((s) => s.generating);
   const loading = useRoutesStore((s) => s.loading);
   const hasDetail = useRoutesStore((s) => s.selectedStopAssetId !== null);
   const activeFilters = useRoutesStore((s) => s.activeFilters);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    loadRoutes();
-    loadFilterValues();
+    minDelay(Promise.all([loadRoutes(), loadFilterValues()])).finally(() => setReady(true));
   }, [loadRoutes, loadFilterValues]);
 
   useEffect(() => {
@@ -105,6 +109,12 @@ export default function RoutesPage() {
   }, [routes]);
 
   return (
+    !ready ? (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-3.625rem)] gap-3">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-green-600" />
+        <span className="text-sm text-stone-400">Cargando rutas...</span>
+      </div>
+    ) : (
     <div className="relative h-[calc(100vh-3.625rem)] overflow-hidden">
       {/* Filter drawer */}
       <CollapsibleDrawer open={drawerOpen} width="w-72">
@@ -142,9 +152,9 @@ export default function RoutesPage() {
                 <svg className="mx-auto w-12 h-12 text-stone-200" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
                 </svg>
-                <p className="text-base font-semibold text-stone-700">Rutas Virtuales</p>
+                <p className="text-lg font-semibold text-stone-700">Rutas Virtuales</p>
                 <p className="text-sm text-stone-400">
-                  Describe una ruta para explorar el patrimonio historico andaluz
+                  Describe una ruta para explorar el patrimonio histórico andaluz
                 </p>
               </div>
               <RouteSmartInput numStopsSelector={<NumStopsSelector />} />
@@ -153,11 +163,11 @@ export default function RoutesPage() {
           </div>
         ) : (
           /* Normal layout with content */
-          <div className="max-w-4xl mx-auto px-6 pt-6 pb-8 space-y-6">
+          <div className="max-w-4xl mx-auto px-6 pt-8 pb-8 space-y-6">
             <div className="flex items-start gap-4">
               <button
                 onClick={() => setDrawerOpen((v) => !v)}
-                className="mt-1.5 shrink-0 relative flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:text-stone-700 hover:border-stone-300 transition-colors"
+                className="mt-2 shrink-0 relative flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:text-stone-700 hover:border-stone-300 transition-colors"
                 aria-label={drawerOpen ? "Cerrar filtros" : "Abrir filtros"}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -170,8 +180,8 @@ export default function RoutesPage() {
                 )}
               </button>
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-stone-900">Rutas Virtuales</h1>
-                <p className="text-stone-500 mt-1">Planifica una ruta patrimonial por Andalucia</p>
+                <h1 className="text-3xl font-bold tracking-tight text-stone-900">Rutas Virtuales</h1>
+                <p className="text-stone-500 mt-1.5 text-sm sm:text-base">Planifica una ruta patrimonial por Andalucía</p>
               </div>
             </div>
 
@@ -196,13 +206,19 @@ export default function RoutesPage() {
 
             {/* Previous routes */}
             {routes.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-stone-800">Rutas anteriores</h2>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {routes.map((r) => (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-stone-800">Rutas anteriores</h2>
+                  <p className="text-xs text-stone-400">
+                    {routes.length} ruta{routes.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {routes.slice((routesPage - 1) * routesPageSize, routesPage * routesPageSize).map((r) => (
                     <RouteCard key={r.id} route={r} />
                   ))}
                 </div>
+                <RoutesPagination />
               </div>
             )}
 
@@ -227,5 +243,6 @@ export default function RoutesPage() {
         </aside>
       )}
     </div>
+    )
   );
 }

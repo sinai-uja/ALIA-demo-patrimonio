@@ -8,6 +8,7 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { FilterSidebar } from "@/components/search/FilterSidebar";
 import { AssetDetailPanel } from "@/components/search/AssetDetailPanel";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
+import { minDelay } from "@/lib/minDelay";
 
 export default function SearchPage() {
   const loadFilterValues = useSearchStore((s) => s.loadFilterValues);
@@ -15,9 +16,10 @@ export default function SearchPage() {
   const activeFilters = useSearchStore((s) => s.activeFilters);
   const hasSearched = useSearchStore((s) => s.hasSearched);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    loadFilterValues();
+    minDelay(loadFilterValues()).finally(() => setReady(true));
   }, [loadFilterValues]);
 
   const filterButton = (
@@ -36,6 +38,15 @@ export default function SearchPage() {
       )}
     </button>
   );
+
+  if (!ready) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-3.625rem)] gap-3">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-green-600" />
+        <span className="text-sm text-stone-400">Cargando búsqueda...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-[calc(100vh-3.625rem)] overflow-hidden">
@@ -61,9 +72,9 @@ export default function SearchPage() {
                 <svg className="mx-auto w-12 h-12 text-stone-200" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                 </svg>
-                <p className="text-base font-semibold text-stone-700">Busqueda por Similaridad</p>
+                <p className="text-lg font-semibold text-stone-700">Búsqueda por Similaridad</p>
                 <p className="text-sm text-stone-400">
-                  Escribe una consulta para buscar en el patrimonio historico andaluz
+                  Escribe una consulta para buscar en el patrimonio histórico andaluz
                 </p>
               </div>
               <SearchInput />
@@ -72,13 +83,13 @@ export default function SearchPage() {
           </div>
         ) : (
           /* Normal layout with results */
-          <div className="max-w-4xl mx-auto px-6 pt-6 pb-3 space-y-6">
+          <div className="max-w-4xl mx-auto px-6 pt-8 pb-3 space-y-6">
             <div className="flex items-start gap-4">
-              <div className="mt-1.5">{filterButton}</div>
+              <div className="mt-2">{filterButton}</div>
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-stone-900">Busqueda por Similaridad</h1>
-                <p className="text-stone-500 mt-1">
-                  Encuentra bienes patrimoniales mediante busqueda semantica en el catalogo de Patrimonio de Andalucia
+                <h1 className="text-3xl font-bold tracking-tight text-stone-900">Búsqueda por Similaridad</h1>
+                <p className="text-stone-500 mt-1.5 text-sm sm:text-base">
+                  Encuentra bienes patrimoniales mediante búsqueda semántica en el catálogo de Patrimonio de Andalucía
                 </p>
               </div>
             </div>

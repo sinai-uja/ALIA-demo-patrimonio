@@ -8,7 +8,7 @@ import { auth as authApi } from "@/lib/api";
 import type { ProfileType } from "@/lib/api";
 
 const baseLinks = [
-  { href: "/search", label: "Busqueda" },
+  { href: "/search", label: "Búsqueda" },
   { href: "/routes", label: "Rutas" },
 ];
 
