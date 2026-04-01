@@ -50,6 +50,7 @@ yarn-error.log*
 **/.env
 **/.env.local
 **/.env.*.local
+.env.prod
 
 # ===== Docker =====
 **/.docker/
