@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRoutesStore } from "@/store/routes";
 import { useFeedbackStore } from "@/store/feedback";
 import { RouteSmartInput } from "@/components/routes/RouteSmartInput";
@@ -95,8 +95,13 @@ export default function RoutesPage() {
   const loading = useRoutesStore((s) => s.loading);
   const hasDetail = useRoutesStore((s) => s.selectedStopAssetId !== null);
   const activeFilters = useRoutesStore((s) => s.activeFilters);
+  const setRoutesFilter = useRoutesStore((s) => s.setRoutesFilter);
+  const filteredRoutes = useRoutesStore((s) => s.filteredRoutes);
+  const routesFilter = useRoutesStore((s) => s.routesFilter);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [filterInput, setFilterInput] = useState("");
+  const filterTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     minDelay(Promise.all([loadRoutes(), loadFilterValues()])).finally(() => setReady(true));
@@ -107,6 +112,17 @@ export default function RoutesPage() {
       useFeedbackStore.getState().loadFeedbackBatch("route", routes.map((r) => r.id));
     }
   }, [routes]);
+
+  const handleFilterChange = (value: string) => {
+    setFilterInput(value);
+    if (filterTimer.current) clearTimeout(filterTimer.current);
+    filterTimer.current = setTimeout(() => setRoutesFilter(value), 300);
+  };
+
+  const clearFilter = () => {
+    setFilterInput("");
+    setRoutesFilter("");
+  };
 
   return (
     !ready ? (
@@ -205,22 +221,54 @@ export default function RoutesPage() {
             )}
 
             {/* Previous routes */}
-            {routes.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-stone-800">Rutas anteriores</h2>
-                  <p className="text-xs text-stone-400">
-                    {routes.length} ruta{routes.length !== 1 ? "s" : ""}
-                  </p>
-                </div>
+            {routes.length > 0 && (() => {
+              const filtered = filteredRoutes();
+              const paginated = filtered.slice((routesPage - 1) * routesPageSize, routesPage * routesPageSize);
+              return (
                 <div className="space-y-3">
-                  {routes.slice((routesPage - 1) * routesPageSize, routesPage * routesPageSize).map((r) => (
-                    <RouteCard key={r.id} route={r} />
-                  ))}
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-semibold text-stone-800 shrink-0 mr-auto">Rutas anteriores</h2>
+                    <div className="relative max-w-48 shrink-0">
+                      <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400 pointer-events-none" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={filterInput}
+                        onChange={(e) => handleFilterChange(e.target.value)}
+                        placeholder="Buscar..."
+                        className="w-full rounded-lg border border-stone-200 bg-stone-50 py-1.5 pl-8 pr-8 text-xs text-stone-700 placeholder:text-stone-400 focus:border-green-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-green-500/20 transition-colors"
+                      />
+                      {filterInput && (
+                        <button
+                          onClick={clearFilter}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-stone-400 shrink-0 tabular-nums">
+                      {routesFilter ? `${filtered.length} de ${routes.length}` : routes.length} ruta{(routesFilter ? filtered.length : routes.length) !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  {paginated.length > 0 ? (
+                    <div className="space-y-3">
+                      {paginated.map((r) => (
+                        <RouteCard key={r.id} route={r} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="py-8 text-center text-sm text-stone-400">
+                      No se encontraron rutas con ese título
+                    </p>
+                  )}
+                  <RoutesPagination />
                 </div>
-                <RoutesPagination />
-              </div>
-            )}
+              );
+            })()}
 
             {/* Loading routes list */}
             {loading && !generating && (

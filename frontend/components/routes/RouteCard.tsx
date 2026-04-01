@@ -7,6 +7,26 @@ import type { VirtualRoute } from "@/lib/api";
 import { useRoutesStore } from "@/store/routes";
 import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 
+function normalize(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+/** Highlight matching portions of text, accent-insensitive. */
+function HighlightTitle({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const normText = normalize(text);
+  const normQuery = normalize(query);
+  const idx = normText.indexOf(normQuery);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <span className="underline decoration-green-500 decoration-2 underline-offset-2">{text.slice(idx, idx + query.length)}</span>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 function DeleteConfirmModal({
   routeTitle,
   onConfirm,
@@ -73,6 +93,7 @@ function DeleteConfirmModal({
 
 export function RouteCard({ route }: { route: VirtualRoute }) {
   const deleteRoute = useRoutesStore((s) => s.deleteRoute);
+  const routesFilter = useRoutesStore((s) => s.routesFilter);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -124,7 +145,7 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
         {/* Content */}
         <div className="flex-1 min-w-0 p-4 pr-10">
           <h3 className="font-semibold text-stone-900 text-sm leading-snug mb-1.5 group-hover:text-green-700 transition-colors line-clamp-1">
-            {route.title}
+            <HighlightTitle text={route.title} query={routesFilter} />
           </h3>
 
           <div className="flex items-center gap-3 text-xs text-stone-400 mb-2">

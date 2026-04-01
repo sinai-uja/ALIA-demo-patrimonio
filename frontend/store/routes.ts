@@ -11,6 +11,11 @@ import {
 import { type ActiveFilter, collectFilters } from "@/lib/filterUtils";
 import { minDelay } from "@/lib/minDelay";
 
+/** Strip diacritics and lowercase for accent-insensitive matching. */
+function normalize(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 interface RoutesState {
   // Smart input
   query: string;
@@ -31,6 +36,7 @@ interface RoutesState {
   loading: boolean;
   routesPage: number;
   routesPageSize: number;
+  routesFilter: string;
 
   // Stop detail panel
   selectedStopAssetId: string | null;
@@ -48,6 +54,8 @@ interface RoutesState {
   removeFilter: (filter: ActiveFilter) => void;
   clearFilters: () => void;
   clearSuggestions: () => void;
+  setRoutesFilter: (q: string) => void;
+  filteredRoutes: () => VirtualRoute[];
   routesTotalPages: () => number;
   paginatedRoutes: () => VirtualRoute[];
   goToRoutesPage: (page: number) => void;
@@ -81,6 +89,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   loading: false,
   routesPage: 1,
   routesPageSize: 6,
+  routesFilter: "",
 
   // Stop detail panel
   selectedStopAssetId: null,
@@ -179,15 +188,25 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   clearSuggestions: () => set({ suggestions: null }),
 
+  setRoutesFilter: (q) => set({ routesFilter: q, routesPage: 1 }),
+
+  filteredRoutes: () => {
+    const { routes, routesFilter } = get();
+    if (!routesFilter.trim()) return routes;
+    const norm = normalize(routesFilter);
+    return routes.filter((r) => normalize(r.title).includes(norm));
+  },
+
   routesTotalPages: () => {
-    const { routes, routesPageSize } = get();
-    return Math.max(1, Math.ceil(routes.length / routesPageSize));
+    const filtered = get().filteredRoutes();
+    return Math.max(1, Math.ceil(filtered.length / get().routesPageSize));
   },
 
   paginatedRoutes: () => {
-    const { routes, routesPage, routesPageSize } = get();
+    const { routesPage, routesPageSize } = get();
+    const filtered = get().filteredRoutes();
     const start = (routesPage - 1) * routesPageSize;
-    return routes.slice(start, start + routesPageSize);
+    return filtered.slice(start, start + routesPageSize);
   },
 
   goToRoutesPage: (page) => {
