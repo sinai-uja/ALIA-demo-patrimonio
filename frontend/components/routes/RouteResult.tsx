@@ -145,9 +145,9 @@ function InterleavedLayout({ route }: { route: VirtualRoute }) {
       )}
 
       {/* Stop cards with narrative outside */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {route.stops.map((stop) => (
-          <div key={stop.order} className="space-y-2">
+          <div key={stop.order} className="space-y-3">
             {stop.narrative_segment && (
               <p className="text-sm text-stone-600 leading-relaxed px-1">
                 {stop.narrative_segment}

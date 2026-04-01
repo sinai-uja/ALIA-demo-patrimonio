@@ -128,7 +128,7 @@ function InterleavedStopsLayout({
                   }`}
                 >
                   <div className="w-1/2">
-                    <RouteStopCard stop={stop} showNarrative={false} />
+                    <RouteStopCard stop={stop}  />
                   </div>
                   {stop.narrative_segment && (
                     <div className="w-1/2">
@@ -140,7 +140,7 @@ function InterleavedStopsLayout({
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  <RouteStopCard stop={stop} showNarrative={false} />
+                  <RouteStopCard stop={stop}  />
                   {stop.narrative_segment && (
                     <p className="text-sm text-stone-600 leading-relaxed px-1">
                       {stop.narrative_segment}

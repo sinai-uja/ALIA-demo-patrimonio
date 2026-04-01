@@ -27,9 +27,10 @@ function formatDuration(minutes: number): string {
 
 interface RouteStopCardProps {
   stop: RouteStop;
+  compact?: boolean;
 }
 
-export function RouteStopCard({ stop }: RouteStopCardProps) {
+export function RouteStopCard({ stop, compact = false }: RouteStopCardProps) {
   const openStopDetail = useRoutesStore((s) => s.openStopDetail);
 
   const typeColor =
@@ -66,89 +67,108 @@ export function RouteStopCard({ stop }: RouteStopCardProps) {
           : undefined
       }
     >
-      {/* Image or placeholder */}
-      {stop.image_url ? (
-        <div className="w-full h-36 bg-stone-100 overflow-hidden">
-          <img
-            src={stop.image_url}
-            alt={stop.title}
-            className="w-full h-full object-cover"
-          />
+      {compact ? (
+        /* ── Compact: horizontal layout (image left, content right) ── */
+        <div className="flex">
+          {/* Thumbnail */}
+          {stop.image_url ? (
+            <div className="w-28 shrink-0 bg-stone-100 overflow-hidden">
+              <img
+                src={stop.image_url}
+                alt={stop.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-28 shrink-0 bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+              <svg className="w-8 h-8 text-stone-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
+              </svg>
+            </div>
+          )}
+
+          <div className="p-3 flex gap-2.5 flex-1 min-w-0">
+            {/* Order badge */}
+            <div className="shrink-0">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-xs shadow-sm">
+                {stop.order}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <h4 className={`font-semibold text-sm text-stone-900 leading-snug line-clamp-1 ${isClickable ? "hover:text-green-700 transition-colors" : ""}`}>
+                {stop.title}
+              </h4>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${typeColor}`}>{typeLabel}</span>
+                <span className="text-[10px] text-stone-400 truncate">
+                  {stop.municipality ? `${stop.municipality}, ` : ""}{stop.province}
+                </span>
+                <span className="inline-flex items-center gap-0.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500 shrink-0">
+                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  {formatDuration(stop.visit_duration_minutes)}
+                </span>
+              </div>
+              {stop.description && (
+                <p className="text-xs text-stone-500 mt-1.5 leading-relaxed line-clamp-2">
+                  {stop.description}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       ) : (
-        <div className="w-full h-36 bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
-          <svg
-            className="w-12 h-12 text-stone-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z"
-            />
-          </svg>
-        </div>
-      )}
-
-      <div className="p-4 flex gap-3">
-        {/* Order badge */}
-        <div className="shrink-0">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-sm shadow-sm">
-            {stop.order}
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          {/* Title */}
-          <h4
-            className={`font-semibold text-stone-900 leading-snug line-clamp-2 ${
-              isClickable ? "hover:text-green-700 transition-colors" : ""
-            }`}
-          >
-            {stop.title}
-          </h4>
-
-          {/* Metadata row */}
-          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}
-            >
-              {typeLabel}
-            </span>
-            <span className="text-xs text-stone-400 truncate">
-              {stop.municipality ? `${stop.municipality}, ` : ""}
-              {stop.province}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500 shrink-0">
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
+        /* ── Full: vertical layout (image top, content below) ── */
+        <>
+          {stop.image_url ? (
+            <div className="w-full h-36 bg-stone-100 overflow-hidden">
+              <img src={stop.image_url} alt={stop.title} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-full h-36 bg-gradient-to-br from-stone-50 to-stone-100 flex items-center justify-center">
+              <svg className="w-12 h-12 text-stone-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75Z" />
               </svg>
-              {formatDuration(stop.visit_duration_minutes)}
-            </span>
-          </div>
-
-          {/* Asset description — inside the card */}
-          {stop.description && (
-            <p className="text-xs text-stone-500 mt-2 leading-relaxed line-clamp-3">
-              {stop.description}
-            </p>
+            </div>
           )}
-        </div>
-      </div>
+
+          <div className="p-4 flex gap-3">
+            {/* Order badge */}
+            <div className="shrink-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-green-600 to-emerald-700 text-white font-semibold text-sm shadow-sm">
+                {stop.order}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <h4 className={`font-semibold text-stone-900 leading-snug line-clamp-2 ${isClickable ? "hover:text-green-700 transition-colors" : ""}`}>
+                {stop.title}
+              </h4>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}>{typeLabel}</span>
+                <span className="text-xs text-stone-400 truncate">
+                  {stop.municipality ? `${stop.municipality}, ` : ""}{stop.province}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500 shrink-0">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  {formatDuration(stop.visit_duration_minutes)}
+                </span>
+              </div>
+              {stop.description && (
+                <p className="text-xs text-stone-500 mt-2 leading-relaxed line-clamp-3">
+                  {stop.description}
+                </p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
