@@ -27,7 +27,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 
 # Install production dependencies only (skip dev group: pytest, ruff, etc.)
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --extra gcp
 
 # Copy application source, migration files, and analysis scripts
 COPY src/ ./src/
