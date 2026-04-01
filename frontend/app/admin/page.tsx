@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { admin, auth as authApi, ValidationError } from "@/lib/api";
 import { minDelay } from "@/lib/minDelay";
+import DeleteConfirmModal from "@/components/shared/DeleteConfirmModal";
 import type { AdminProfileType, AdminUser, ProfileType } from "@/lib/api";
 
 const PROFILE_BADGE_COLORS: Record<string, string> = {
@@ -152,8 +153,10 @@ export default function AdminPage() {
   // Edit modal state
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
-  // Delete confirmation state
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Delete modal state
+  const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
 
   // Profile types panel state
   const [adminProfileTypes, setAdminProfileTypes] = useState<AdminProfileType[]>([]);
@@ -163,7 +166,7 @@ export default function AdminPage() {
   const [renamingPtId, setRenamingPtId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [ptRenameError, setPtRenameError] = useState<string | null>(null);
-  const [deletingPtId, setDeletingPtId] = useState<string | null>(null);
+  const [deletingPt, setDeletingPt] = useState<AdminProfileType | null>(null);
   const [showCreatePt, setShowCreatePt] = useState(false);
   const [ptError, setPtError] = useState<string | null>(null);
 
@@ -245,15 +248,19 @@ export default function AdminPage() {
     await fetchProfileTypes();
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete() {
+    if (!deletingUser) return;
+    setDeleteInProgress(true);
+    setDeleteError(null);
     try {
-      await admin.deleteUser(id);
-      setDeletingId(null);
+      await admin.deleteUser(deletingUser.id);
+      setDeletingUser(null);
       await fetchUsers();
       await fetchProfileTypes();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al eliminar usuario");
-      setDeletingId(null);
+      setDeleteError(err instanceof Error ? err.message : "Error al eliminar usuario");
+    } finally {
+      setDeleteInProgress(false);
     }
   }
 
@@ -291,16 +298,19 @@ export default function AdminPage() {
     }
   }
 
-  async function handleDeletePt(id: string) {
-    setPtError(null);
+  async function handleDeletePt() {
+    if (!deletingPt) return;
+    setDeleteInProgress(true);
+    setDeleteError(null);
     try {
-      await admin.profileTypes.delete(id);
-      setDeletingPtId(null);
+      await admin.profileTypes.delete(deletingPt.id);
+      setDeletingPt(null);
       await fetchProfileTypes();
       authApi.getProfileTypes().then(setProfileTypes).catch(() => {});
     } catch (err) {
-      setPtError(err instanceof Error ? err.message : "Error al eliminar tipo de perfil");
-      setDeletingPtId(null);
+      setDeleteError(err instanceof Error ? err.message : "Error al eliminar tipo de perfil");
+    } finally {
+      setDeleteInProgress(false);
     }
   }
 
@@ -343,7 +353,6 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Error banner */}
           {error && (
             <div className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-xs text-red-700">
               {error}
@@ -373,7 +382,6 @@ export default function AdminPage() {
               <tbody className="divide-y divide-stone-100">
                 {users.map((user) => {
                   const editable = canEditUser(user);
-                  const isDeleting = deletingId === user.id;
                   return (
                     <tr key={user.id} className="hover:bg-stone-50/50 transition-colors">
                       <td className="px-5 py-3">
@@ -385,25 +393,18 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {editable && !isDeleting && (
+                        {editable && (
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={() => setEditingUser(user)} className="rounded-lg p-1.5 text-stone-400 hover:text-green-700 hover:bg-green-50 transition-colors" title="Editar">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
                             </button>
-                            <button onClick={() => setDeletingId(user.id)} className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
+                            <button onClick={() => setDeletingUser(user)} className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
-                          </div>
-                        )}
-                        {isDeleting && (
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-xs text-stone-500">¿Eliminar?</span>
-                            <button onClick={() => handleDelete(user.id)} className="rounded-lg px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">Sí</button>
-                            <button onClick={() => setDeletingId(null)} className="rounded-lg px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100 transition-colors">No</button>
                           </div>
                         )}
                       </td>
@@ -428,7 +429,6 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Error banner */}
           {ptError && (
             <div className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-xs text-red-700">
               {ptError}
@@ -456,7 +456,6 @@ export default function AdminPage() {
               <tbody className="divide-y divide-stone-100">
                 {adminProfileTypes.map((pt) => {
                   const isAdmin = pt.name === "admin";
-                  const isDeleting = deletingPtId === pt.id;
                   return (
                     <tr key={pt.id} className="hover:bg-stone-50/50 transition-colors">
                       <td className="px-5 py-3">
@@ -468,25 +467,18 @@ export default function AdminPage() {
                         {pt.user_count}
                       </td>
                       <td className="px-5 py-3 text-right">
-                        {!isAdmin && !isDeleting && (
+                        {!isAdmin && (
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={() => { setRenamingPtId(pt.id); setRenameDraft(pt.name); setPtRenameError(null); }} className="rounded-lg p-1.5 text-stone-400 hover:text-green-700 hover:bg-green-50 transition-colors" title="Renombrar">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                               </svg>
                             </button>
-                            <button onClick={() => setDeletingPtId(pt.id)} className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
+                            <button onClick={() => setDeletingPt(pt)} className="rounded-lg p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Eliminar">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
-                          </div>
-                        )}
-                        {isDeleting && (
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-xs text-stone-500">¿Eliminar?</span>
-                            <button onClick={() => handleDeletePt(pt.id)} className="rounded-lg px-2.5 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">Sí</button>
-                            <button onClick={() => setDeletingPtId(null)} className="rounded-lg px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-100 transition-colors">No</button>
                           </div>
                         )}
                       </td>
@@ -611,6 +603,30 @@ export default function AdminPage() {
           isRootAdmin={isRootAdmin}
           onSave={handleEditSave}
           onClose={() => setEditingUser(null)}
+        />
+      )}
+
+      {/* Delete user modal */}
+      {deletingUser && (
+        <DeleteConfirmModal
+          title="Eliminar usuario"
+          entityName={deletingUser.username}
+          onConfirm={handleDelete}
+          onCancel={() => { setDeletingUser(null); setDeleteError(null); }}
+          deleting={deleteInProgress}
+          error={deleteError}
+        />
+      )}
+
+      {/* Delete profile type modal */}
+      {deletingPt && (
+        <DeleteConfirmModal
+          title="Eliminar tipo de perfil"
+          entityName={deletingPt.name}
+          onConfirm={handleDeletePt}
+          onCancel={() => { setDeletingPt(null); setDeleteError(null); }}
+          deleting={deleteInProgress}
+          error={deleteError}
         />
       )}
     </div>
