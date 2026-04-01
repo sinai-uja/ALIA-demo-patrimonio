@@ -50,9 +50,7 @@ export function NavBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
         {/* Left: logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-green-600 to-emerald-700 text-white text-sm font-bold shadow-sm">
-            PA
-          </div>
+          <img src="/images/alia-navbar.png" alt="ALIA" className="h-7 w-auto" />
           <span className="font-semibold text-stone-800 group-hover:text-green-700 transition-colors">
             Patrimonio de Andalucía
           </span>
