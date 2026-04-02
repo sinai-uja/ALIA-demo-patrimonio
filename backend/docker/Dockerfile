@@ -39,4 +39,4 @@ ENV PORT=20000
 EXPOSE ${PORT}
 
 # Production server (fastapi run = uvicorn with auto-workers)
-CMD uv run fastapi run src/main.py --host 0.0.0.0 --port ${PORT}
+CMD uv run --no-sync fastapi run src/main.py --host 0.0.0.0 --port ${PORT}
