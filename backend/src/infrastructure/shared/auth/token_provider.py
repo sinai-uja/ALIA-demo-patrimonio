@@ -58,11 +58,12 @@ class GcpIdentityTokenProvider:
         return token
 
     def _fetch_token(self) -> str:
-        from google.auth.transport.requests import Request
+        from google.auth.transport._http_client import Request
 
+        request = Request()
         if self._service_account_json:
-            return self._fetch_with_service_account(Request())
-        return self._fetch_with_default_credentials(Request())
+            return self._fetch_with_service_account(request)
+        return self._fetch_with_default_credentials(request)
 
     def _fetch_with_service_account(self, request) -> str:
         from google.oauth2 import service_account
