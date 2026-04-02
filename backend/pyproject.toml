@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-gcp = ["google-auth>=2.20.0"]
+gcp = ["google-auth>=2.20.0", "requests>=2.20.0"]
 
 [dependency-groups]
 dev = [
