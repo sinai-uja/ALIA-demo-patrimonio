@@ -12,9 +12,6 @@ const allowedDevOrigins = combinedEnv.ALLOWED_DEV_ORIGINS
 const nextConfig: NextConfig = {
   output: 'standalone',
   ...(allowedDevOrigins.length > 0 && { allowedDevOrigins }),
-  env: {
-    NEXT_PUBLIC_API_URL: combinedEnv.NEXT_PUBLIC_API_URL ?? "http://localhost:18080/api/v1",
-  },
 };
 
 export default nextConfig;

@@ -2,11 +2,12 @@
 # Frontend — Next.js (standalone output)
 #
 # Build context: frontend/
-# Multi-stage build: deps → builder → runner
+# Multi-stage build: deps -> builder -> runner
 #
 # Produces a minimal standalone Node.js server (~50 MB) with all pages
-# pre-rendered. NEXT_PUBLIC_API_URL is read from the API_URL file at build
-# time. Edit frontend/API_URL before building for each environment.
+# pre-rendered. NEXT_PUBLIC_API_URL uses a placeholder at build time that
+# is replaced at runtime by entrypoint.sh, allowing a single image to
+# work in any environment.
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -25,8 +26,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Read API URL from API_URL file (edit this file before building for each environment)
-RUN export NEXT_PUBLIC_API_URL=$(cat API_URL | tr -d '\n') && npm run build
+# Build with a known placeholder — replaced at runtime by entrypoint.sh
+ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL_PLACEHOLDER__
+
+RUN npm run build
 
 # ---------------------------------------------------------------------------
 # Stage 3: runner — minimal production image
@@ -41,11 +44,15 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Copy only the standalone server output + static assets + public files
 COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy entrypoint script
+COPY --chown=nextjs:nodejs scripts/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 USER nextjs
 ENV PORT=80
 EXPOSE ${PORT}
 
-CMD ["node", "server.js"]
+ENTRYPOINT ["./entrypoint.sh"]
