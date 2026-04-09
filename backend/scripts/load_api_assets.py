@@ -14,7 +14,7 @@ import time
 import zipfile
 
 from sqlalchemy import text as sql_text
-from src.db.base import AsyncSessionLocal
+from src.infrastructure.shared.persistence.engine import AsyncSessionLocal
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

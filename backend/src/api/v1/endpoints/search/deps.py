@@ -7,7 +7,7 @@ from src.application.search.services.search_application_service import (
 from src.composition.search_composition import (
     build_search_application_service,
 )
-from src.db.deps import get_db
+from src.composition.database import get_db
 
 
 async def get_search_service(

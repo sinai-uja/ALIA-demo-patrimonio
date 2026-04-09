@@ -5,7 +5,7 @@ from src.application.feedback.services.feedback_application_service import (
     FeedbackApplicationService,
 )
 from src.composition.feedback_composition import build_feedback_application_service
-from src.db.deps import get_db
+from src.composition.database import get_db
 
 
 async def get_feedback_service(

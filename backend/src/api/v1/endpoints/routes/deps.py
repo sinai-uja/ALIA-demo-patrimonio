@@ -5,7 +5,7 @@ from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
 from src.composition.routes_composition import build_routes_application_service
-from src.db.deps import get_db
+from src.composition.database import get_db
 
 
 async def get_routes_service(

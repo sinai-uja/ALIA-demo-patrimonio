@@ -16,7 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.config import settings
-from src.db.base import Base
+from src.infrastructure.shared.persistence.base import Base
 
 
 class DocumentChunkModel(Base):

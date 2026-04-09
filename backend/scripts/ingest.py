@@ -8,7 +8,7 @@ import time
 from src.application.documents.dto.ingest_dto import IngestDocumentsCommand
 from src.composition.documents_composition import build_documents_application_service
 from src.config import settings
-from src.db.base import AsyncSessionLocal
+from src.infrastructure.shared.persistence.engine import AsyncSessionLocal
 from src.infrastructure.documents.repositories.document_repository import (
     SqlAlchemyDocumentRepository,
 )
