@@ -13,6 +13,14 @@ export function Footer() {
             <img src="/images/sinai.png" alt="Departamento SINAI - Universidad de Jaén" className="h-8 sm:h-10 w-auto" />
           </a>
           <a
+            href="https://www.ujaen.es/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/uja.png" alt="Universidad de Jaén" className="h-6 sm:h-7 w-auto" />
+          </a>
+          <a
             href="https://alia.gob.es/"
             target="_blank"
             rel="noopener noreferrer"
@@ -30,7 +38,10 @@ export function Footer() {
           </a>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-stone-100">
+        <div className="mt-4 pt-4 border-t border-stone-100 space-y-1">
+          <p className="text-[11px] text-stone-400 text-center">
+            Funded by: Ministerio para la Transformación Digital y de la Función Pública — EU NextGenerationEU, within the project Desarrollo de Modelos ALIA
+          </p>
           <p className="text-[11px] text-stone-300 text-center">
             © {new Date().getFullYear()} Instituto Andaluz de Patrimonio Histórico · Universidad de Jaén
           </p>
