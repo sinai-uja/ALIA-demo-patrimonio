@@ -99,10 +99,11 @@ async def update_session(
 @router.get("/sessions/{session_id}/messages", response_model=list[MessageResponse])
 async def get_session_messages(
     session_id: str,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> list[MessageResponse]:
     """Get all messages for a chat session."""
-    results = await service.get_history(session_id)
+    results = await service.get_history(session_id, user_id=str(user.id))
     return [
         MessageResponse(
             id=m.id,
