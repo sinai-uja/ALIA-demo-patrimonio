@@ -10,7 +10,7 @@ from src.domain.documents.services.chunking_service import ChunkingService
 from src.domain.documents.services.document_enrichment_service import (
     DocumentEnrichmentService,
 )
-from src.infrastructure.documents.adapters.embedding_adapter import HttpEmbeddingAdapter
+from src.infrastructure.shared.adapters.embedding_adapter import HttpEmbeddingAdapter
 from src.infrastructure.documents.adapters.parquet_loader import ParquetDocumentLoader
 from src.infrastructure.documents.repositories.document_repository import (
     SqlAlchemyDocumentRepository,

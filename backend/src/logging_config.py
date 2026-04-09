@@ -99,7 +99,7 @@ def setup_logging() -> None:
         logs/info.log       ← iaph.* at INFO+
         logs/queries.log    ← iaph.rag.* + iaph.chat.intent/reformulator/router
         logs/llm.log        ← every iaph.<ctx>.llm adapter
-        logs/embedding.log  ← iaph.rag.embedding + iaph.documents.embedding
+        logs/embedding.log  ← iaph.shared.embedding
         logs/auth.log       ← iaph.auth at DEBUG+
         logs/feedback.log   ← iaph.feedback at DEBUG+
         logs/errors.log     ← root at WARNING+
@@ -146,8 +146,7 @@ def setup_logging() -> None:
     embedding_handler = _daily_handler(
         os.path.join(LOG_DIR, "embedding.log"), formatter=formatter,
         log_filter=_MultiLoggerFilter([
-            "iaph.rag.embedding",
-            "iaph.documents.embedding",
+            "iaph.shared.embedding",
         ]),
     )
 

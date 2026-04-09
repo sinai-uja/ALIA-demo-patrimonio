@@ -10,7 +10,7 @@ from src.application.search.dto.search_dto import (
     SimilaritySearchResponseDTO,
 )
 from src.config import settings
-from src.domain.rag.ports.embedding_port import EmbeddingPort
+from src.domain.shared.ports.embedding_port import EmbeddingPort
 from src.domain.rag.ports.text_search_port import TextSearchPort
 from src.domain.rag.ports.vector_search_port import VectorSearchPort
 from src.domain.rag.services.hybrid_search_service import HybridSearchService
