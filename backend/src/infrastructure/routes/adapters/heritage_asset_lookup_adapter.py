@@ -1,5 +1,4 @@
 import logging
-import re
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,20 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.routes.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
 )
+from src.domain.routes.value_objects.asset_id import extract_asset_id
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 
 logger = logging.getLogger("iaph.routes")
 
-_PREFIX_RE = re.compile(r"^ficha-\w+-")
-
-
-def extract_asset_id(document_id: str) -> str:
-    """Extract the numeric heritage asset ID from a chunk document_id.
-
-    Chunk document_ids use the format 'ficha-{type}-{number}' while
-    heritage_assets.id stores just the numeric part.
-    """
-    return _PREFIX_RE.sub("", document_id)
+# Re-exported for backward compatibility; canonical definition lives in
+# src.domain.routes.value_objects.asset_id.
+__all__ = ["PgHeritageAssetLookupAdapter", "extract_asset_id"]
 
 
 class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):

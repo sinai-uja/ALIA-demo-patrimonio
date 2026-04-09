@@ -27,9 +27,7 @@ from src.domain.routes.services.query_extraction_service import (
 from src.domain.routes.services.route_builder_service import (
     RouteBuilderService,
 )
-from src.infrastructure.routes.adapters.heritage_asset_lookup_adapter import (
-    extract_asset_id,
-)
+from src.domain.routes.value_objects.asset_id import extract_asset_id
 
 logger = logging.getLogger("iaph.usecases.routes")
 
