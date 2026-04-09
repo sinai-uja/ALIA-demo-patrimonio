@@ -17,14 +17,15 @@ from src.application.auth.dto.auth_dto import (
     UpdateProfileTypeDTO,
     UpdateUserDTO,
 )
-from src.config import settings
+from src.application.auth.dto.user_dto import UserDTO
 from src.domain.auth.entities.user import User
-from src.domain.auth.ports.auth_port import ProfileTypeInUseError
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    # Admin-access gate is a pure HTTP-layer authorization rule (who can hit
+    # the admin router at all). Business-level rules live inside the use cases.
     if current_user.profile_type is None or current_user.profile_type.name != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -33,13 +34,9 @@ def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-def _is_root(username: str) -> bool:
-    return username == settings.admin_username
-
-
-def _to_response(u) -> AdminUserResponse:
+def _to_response(u: UserDTO) -> AdminUserResponse:
     return AdminUserResponse(
-        id=str(u.id),
+        id=u.id,
         username=u.username,
         profile_type=u.profile_type,
         created_at=u.created_at or "",
@@ -51,8 +48,7 @@ def list_users(
     admin: User = Depends(get_current_admin),
     service=Depends(get_auth_service),
 ):
-    users = service.list_users()
-    return [_to_response(u) for u in users]
+    return [_to_response(u) for u in service.list_users()]
 
 
 @router.post(
@@ -65,23 +61,14 @@ def create_user(
     admin: User = Depends(get_current_admin),
     service=Depends(get_auth_service),
 ):
-    if req.profile_type == "admin" and not _is_root(admin.username):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el administrador raíz puede crear otros administradores",
-        )
-    try:
-        user = service.create_user(
-            CreateUserDTO(
-                username=req.username,
-                password=req.password,
-                profile_type_name=req.profile_type,
-            )
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+    user = service.create_user(
+        CreateUserDTO(
+            username=req.username,
+            password=req.password,
+            profile_type_name=req.profile_type,
+        ),
+        actor=admin,
+    )
     return _to_response(user)
 
 
@@ -93,33 +80,14 @@ def update_user(
     service=Depends(get_auth_service),
 ):
     uid = _uuid.UUID(user_id)
-    target = service.get_user_by_id(uid)
-    if target is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    if _is_root(target.username):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No se puede modificar el administrador raíz",
-        )
-    if req.profile_type == "admin" and not _is_root(admin.username):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el administrador raíz puede asignar el perfil admin",
-        )
-    try:
-        user = service.update_user(
-            UpdateUserDTO(
-                user_id=uid,
-                password=req.password,
-                profile_type_name=req.profile_type,
-            )
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+    user = service.update_user(
+        UpdateUserDTO(
+            user_id=uid,
+            password=req.password,
+            profile_type_name=req.profile_type,
+        ),
+        actor=admin,
+    )
     return _to_response(user)
 
 
@@ -133,22 +101,7 @@ def delete_user(
     service=Depends(get_auth_service),
 ):
     uid = _uuid.UUID(user_id)
-    target = service.get_user_by_id(uid)
-    if target is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-        )
-    if _is_root(target.username):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No se puede eliminar el administrador raíz",
-        )
-    if target.profile_type == "admin" and not _is_root(admin.username):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el administrador raíz puede eliminar otros administradores",
-        )
-    service.delete_user(uid)
+    service.delete_user(uid, actor=admin)
 
 
 def _to_pt_response(pt) -> ProfileTypeResponse:
@@ -173,10 +126,7 @@ def create_profile_type(
     admin: User = Depends(get_current_admin),
     service=Depends(get_auth_service),
 ):
-    try:
-        pt = service.create_profile_type(CreateProfileTypeDTO(name=req.name))
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    pt = service.create_profile_type(CreateProfileTypeDTO(name=req.name))
     return _to_pt_response(pt)
 
 
@@ -187,23 +137,12 @@ def rename_profile_type(
     admin: User = Depends(get_current_admin),
     service=Depends(get_auth_service),
 ):
-    existing = service.list_profile_types_admin()
-    target = next((pt for pt in existing if pt.id == profile_type_id), None)
-    if target is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tipo de perfil no encontrado"
+    pt = service.rename_profile_type(
+        UpdateProfileTypeDTO(
+            profile_type_id=_uuid.UUID(profile_type_id),
+            name=req.name,
         )
-    if target.name == "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El perfil 'admin' no puede ser renombrado",
-        )
-    try:
-        pt = service.rename_profile_type(
-            UpdateProfileTypeDTO(profile_type_id=_uuid.UUID(profile_type_id), name=req.name)
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    )
     return _to_pt_response(pt)
 
 
@@ -213,18 +152,4 @@ def delete_profile_type(
     admin: User = Depends(get_current_admin),
     service=Depends(get_auth_service),
 ):
-    existing = service.list_profile_types_admin()
-    target = next((pt for pt in existing if pt.id == profile_type_id), None)
-    if target is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Tipo de perfil no encontrado"
-        )
-    if target.name == "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El perfil 'admin' no puede ser eliminado",
-        )
-    try:
-        service.delete_profile_type(_uuid.UUID(profile_type_id))
-    except ProfileTypeInUseError as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    service.delete_profile_type(_uuid.UUID(profile_type_id))

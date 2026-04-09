@@ -5,8 +5,15 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from src.application.auth.exceptions import (
+    ProfileTypeAlreadyExistsError,
+    ProfileTypeInUseError,
+    ProfileTypeNotFoundError,
+    UserAlreadyExistsError,
+    UserNotFoundError,
+)
 from src.domain.auth.entities.user import User, UserProfileType
-from src.domain.auth.ports.auth_port import AuthPort, ProfileTypeInUseError
+from src.domain.auth.ports.auth_port import AuthPort
 from src.infrastructure.auth.models import UserModel, UserProfileTypeModel
 
 
@@ -43,13 +50,15 @@ class DbAuthAdapter(AuthPort):
                 .where(UserProfileTypeModel.name == profile_type_name)
             ).scalar_one_or_none()
             if pt is None:
-                raise ValueError(f"Profile type '{profile_type_name}' not found")
+                raise ProfileTypeNotFoundError(
+                    f"Profile type '{profile_type_name}' not found"
+                )
 
             user = session.execute(
                 select(UserModel).where(UserModel.id == user_id)
             ).scalar_one_or_none()
             if user is None:
-                raise ValueError("User not found")
+                raise UserNotFoundError("User not found")
 
             user.profile_type_id = pt.id
             session.commit()
@@ -90,7 +99,9 @@ class DbAuthAdapter(AuthPort):
                 select(UserModel).where(UserModel.username == username)
             ).scalar_one_or_none()
             if existing is not None:
-                raise ValueError(f"Username '{username}' already exists")
+                raise UserAlreadyExistsError(
+                    f"Username '{username}' already exists"
+                )
 
             profile_type_id = None
             if profile_type_name is not None:
@@ -99,7 +110,9 @@ class DbAuthAdapter(AuthPort):
                     .where(UserProfileTypeModel.name == profile_type_name)
                 ).scalar_one_or_none()
                 if pt is None:
-                    raise ValueError(f"Profile type '{profile_type_name}' not found")
+                    raise ProfileTypeNotFoundError(
+                        f"Profile type '{profile_type_name}' not found"
+                    )
                 profile_type_id = pt.id
 
             pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -126,7 +139,7 @@ class DbAuthAdapter(AuthPort):
                 select(UserModel).where(UserModel.id == user_id)
             ).scalar_one_or_none()
             if user is None:
-                raise ValueError("User not found")
+                raise UserNotFoundError("User not found")
 
             if password is not None:
                 user.password_hash = bcrypt.hashpw(
@@ -139,7 +152,9 @@ class DbAuthAdapter(AuthPort):
                     .where(UserProfileTypeModel.name == profile_type_name)
                 ).scalar_one_or_none()
                 if pt is None:
-                    raise ValueError(f"Profile type '{profile_type_name}' not found")
+                    raise ProfileTypeNotFoundError(
+                        f"Profile type '{profile_type_name}' not found"
+                    )
                 user.profile_type_id = pt.id
 
             session.commit()
@@ -152,7 +167,7 @@ class DbAuthAdapter(AuthPort):
                 select(UserModel).where(UserModel.id == user_id)
             ).scalar_one_or_none()
             if user is None:
-                raise ValueError("User not found")
+                raise UserNotFoundError("User not found")
             session.delete(user)
             session.commit()
 
@@ -181,7 +196,9 @@ class DbAuthAdapter(AuthPort):
                 select(UserProfileTypeModel).where(UserProfileTypeModel.name == name)
             ).scalar_one_or_none()
             if existing is not None:
-                raise ValueError(f"El tipo de perfil '{name}' ya existe")
+                raise ProfileTypeAlreadyExistsError(
+                    f"El tipo de perfil '{name}' ya existe"
+                )
             pt = UserProfileTypeModel(id=uuid.uuid4(), name=name)
             session.add(pt)
             session.commit()
@@ -194,7 +211,7 @@ class DbAuthAdapter(AuthPort):
                 select(UserProfileTypeModel).where(UserProfileTypeModel.id == profile_type_id)
             ).scalar_one_or_none()
             if pt is None:
-                raise ValueError("Tipo de perfil no encontrado")
+                raise ProfileTypeNotFoundError("Tipo de perfil no encontrado")
             conflict = session.execute(
                 select(UserProfileTypeModel).where(
                     UserProfileTypeModel.name == new_name,
@@ -202,7 +219,9 @@ class DbAuthAdapter(AuthPort):
                 )
             ).scalar_one_or_none()
             if conflict is not None:
-                raise ValueError(f"El tipo de perfil '{new_name}' ya existe")
+                raise ProfileTypeAlreadyExistsError(
+                    f"El tipo de perfil '{new_name}' ya existe"
+                )
             pt.name = new_name
             session.commit()
             session.refresh(pt)
@@ -214,7 +233,7 @@ class DbAuthAdapter(AuthPort):
                 select(UserProfileTypeModel).where(UserProfileTypeModel.id == profile_type_id)
             ).scalar_one_or_none()
             if pt is None:
-                raise ValueError("Tipo de perfil no encontrado")
+                raise ProfileTypeNotFoundError("Tipo de perfil no encontrado")
             session.delete(pt)
             try:
                 session.commit()

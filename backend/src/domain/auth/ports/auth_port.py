@@ -4,10 +4,6 @@ from abc import ABC, abstractmethod
 from src.domain.auth.entities.user import User, UserProfileType
 
 
-class ProfileTypeInUseError(Exception):
-    """Raised when trying to delete a profile type that has users assigned."""
-
-
 class AuthPort(ABC):
     @abstractmethod
     def authenticate(self, username: str, password: str) -> User | None: ...

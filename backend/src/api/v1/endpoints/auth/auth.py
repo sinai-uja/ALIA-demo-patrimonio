@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 
 from src.api.v1.endpoints.auth.deps import get_auth_service, get_current_user
 from src.api.v1.endpoints.auth.schemas import (
@@ -28,25 +28,18 @@ def login(
 ):
     client_ip = raw_request.client.host if raw_request.client else "unknown"
     logger.info("Login attempt: user=%r, ip=%s", request.username, client_ip)
-    try:
-        result = service.login(
-            LoginDTO(
-                username=request.username,
-                password=request.password,
-            )
+    result = service.login(
+        LoginDTO(
+            username=request.username,
+            password=request.password,
         )
-        logger.info("Login success: user=%r, ip=%s", request.username, client_ip)
-        return TokenResponse(
-            access_token=result.access_token,
-            refresh_token=result.refresh_token,
-            token_type=result.token_type,
-        )
-    except ValueError:
-        logger.warning("Login failed: user=%r, ip=%s", request.username, client_ip)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas",
-        )
+    )
+    logger.info("Login success: user=%r, ip=%s", request.username, client_ip)
+    return TokenResponse(
+        access_token=result.access_token,
+        refresh_token=result.refresh_token,
+        token_type=result.token_type,
+    )
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -57,20 +50,13 @@ def refresh(
 ):
     client_ip = raw_request.client.host if raw_request.client else "unknown"
     logger.info("Token refresh attempt: ip=%s", client_ip)
-    try:
-        result = service.refresh(request.refresh_token)
-        logger.info("Token refresh success: ip=%s", client_ip)
-        return TokenResponse(
-            access_token=result.access_token,
-            refresh_token=result.refresh_token,
-            token_type=result.token_type,
-        )
-    except ValueError:
-        logger.warning("Token refresh failed: ip=%s", client_ip)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token de refresco inválido o expirado",
-        )
+    result = service.refresh(request.refresh_token)
+    logger.info("Token refresh success: ip=%s", client_ip)
+    return TokenResponse(
+        access_token=result.access_token,
+        refresh_token=result.refresh_token,
+        token_type=result.token_type,
+    )
 
 
 @router.get("/me", response_model=UserInfoResponse)
@@ -93,10 +79,7 @@ def update_profile_type(
     user: User = Depends(get_current_user),
     service=Depends(get_auth_service),
 ):
-    try:
-        info = service.update_profile_type(user.id, request.profile_type)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    info = service.update_profile_type(user.id, request.profile_type)
     logger.info(
         "Profile type updated: user=%s profile_type=%s",
         user.username, request.profile_type,

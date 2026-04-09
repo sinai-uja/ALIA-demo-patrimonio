@@ -12,6 +12,10 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from src.application.auth.exceptions import (
+    InvalidCredentialsError,
+    InvalidTokenError,
+)
 from src.application.shared.exceptions import (
     ApplicationError,
     ConflictError,
@@ -75,6 +79,28 @@ def register_exception_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         logger.error("LLM response parse error: %s", exc)
         return JSONResponse(status_code=502, content=_body(exc))
+
+    @app.exception_handler(InvalidCredentialsError)
+    async def _handle_invalid_credentials(
+        request: Request, exc: InvalidCredentialsError
+    ) -> JSONResponse:
+        logger.warning("Invalid credentials: %s", exc)
+        return JSONResponse(
+            status_code=401,
+            content=_body(exc),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @app.exception_handler(InvalidTokenError)
+    async def _handle_invalid_token(
+        request: Request, exc: InvalidTokenError
+    ) -> JSONResponse:
+        logger.warning("Invalid token: %s", exc)
+        return JSONResponse(
+            status_code=401,
+            content=_body(exc),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     @app.exception_handler(ApplicationError)
     async def _handle_application_error(

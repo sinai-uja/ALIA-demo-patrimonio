@@ -1,12 +1,8 @@
 import logging
-import uuid as _uuid
 from contextlib import asynccontextmanager
 
-import bcrypt
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
 
 from src.api.v1.endpoints.accessibility.accessibility import router as accessibility_router
 from src.api.v1.endpoints.admin.admin import router as admin_router
@@ -20,8 +16,8 @@ from src.api.v1.endpoints.rag.rag import router as rag_router
 from src.api.v1.endpoints.routes.routes import router as routes_router
 from src.api.v1.endpoints.search.search import router as search_router
 from src.api.v1.exception_handlers import register_exception_handlers
+from src.composition.auth_composition import build_auth_application_service
 from src.config import settings
-from src.infrastructure.auth.models import UserModel, UserProfileTypeModel
 from src.logging_config import setup_logging
 
 setup_logging()
@@ -29,44 +25,14 @@ logger = logging.getLogger("iaph")
 logger.info("Starting %s", settings.project_name)
 
 
-def _seed_admin() -> None:
-    """Ensure the admin profile type and root admin user exist."""
-    engine = create_engine(settings.database_url_sync, echo=False)
-    Session = sessionmaker(bind=engine)
-    with Session() as session:
-        pt = session.execute(
-            select(UserProfileTypeModel).where(UserProfileTypeModel.name == "admin")
-        ).scalar_one_or_none()
-        if pt is None:
-            pt = UserProfileTypeModel(id=_uuid.uuid4(), name="admin")
-            session.add(pt)
-            session.flush()
-
-        existing = session.execute(
-            select(UserModel).where(UserModel.username == settings.admin_username)
-        ).scalar_one_or_none()
-        if existing is None:
-            pw_hash = bcrypt.hashpw(
-                settings.admin_password.encode(), bcrypt.gensalt()
-            ).decode()
-            user = UserModel(
-                id=_uuid.uuid4(),
-                username=settings.admin_username,
-                password_hash=pw_hash,
-                profile_type_id=pt.id,
-            )
-            session.add(user)
-        elif existing.profile_type_id != pt.id:
-            existing.profile_type_id = pt.id
-
-        session.commit()
-    engine.dispose()
-    logger.info("Admin seed completed")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _seed_admin()
+    auth_service = build_auth_application_service()
+    auth_service.ensure_root_admin(
+        username=settings.admin_username,
+        password=settings.admin_password,
+    )
+    logger.info("Root admin bootstrap completed")
     yield
 
 

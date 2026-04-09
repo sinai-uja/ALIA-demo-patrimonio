@@ -6,7 +6,13 @@ from unittest.mock import MagicMock
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from src.application.auth.dto.auth_dto import UserInfoDTO
+from src.application.auth.dto.user_dto import UserDTO
+from src.application.auth.exceptions import (
+    AdminOnlyActionError,
+    RootAdminProtectedError,
+    UserAlreadyExistsError,
+    UserNotFoundError,
+)
 from src.domain.auth.entities.user import User, UserProfileType
 from src.main import app
 
@@ -49,8 +55,8 @@ USER_NO_PROFILE = User(
 )
 
 
-def _user_info(user: User) -> UserInfoDTO:
-    return UserInfoDTO(
+def _user_dto(user: User) -> UserDTO:
+    return UserDTO(
         id=str(user.id),
         username=user.username,
         profile_type=user.profile_type.name if user.profile_type else None,
@@ -58,9 +64,9 @@ def _user_info(user: User) -> UserInfoDTO:
     )
 
 
-ROOT_INFO = _user_info(ROOT_ADMIN_USER)
-REGULAR_INFO = _user_info(REGULAR_USER)
-NON_ROOT_ADMIN_INFO = _user_info(NON_ROOT_ADMIN_USER)
+ROOT_DTO = _user_dto(ROOT_ADMIN_USER)
+REGULAR_DTO = _user_dto(REGULAR_USER)
+NON_ROOT_ADMIN_DTO = _user_dto(NON_ROOT_ADMIN_USER)
 
 
 def _override_deps(current_user: User, service: MagicMock):
@@ -87,8 +93,6 @@ def _mock_service() -> MagicMock:
 
 
 class TestNonAdminAccessDenied:
-    """A user without admin profile_type must receive 403 on every endpoint."""
-
     async def test_list_users_returns_403_for_regular_user(self):
         svc = _mock_service()
         _override_deps(REGULAR_USER, svc)
@@ -150,7 +154,7 @@ class TestNonAdminAccessDenied:
 class TestListUsers:
     async def test_admin_can_list_users(self):
         svc = _mock_service()
-        svc.list_users.return_value = [ROOT_INFO, REGULAR_INFO]
+        svc.list_users.return_value = [ROOT_DTO, REGULAR_DTO]
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -165,7 +169,7 @@ class TestListUsers:
 
     async def test_list_users_returns_expected_fields(self):
         svc = _mock_service()
-        svc.list_users.return_value = [REGULAR_INFO]
+        svc.list_users.return_value = [REGULAR_DTO]
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -179,7 +183,7 @@ class TestListUsers:
 
     async def test_non_root_admin_can_also_list_users(self):
         svc = _mock_service()
-        svc.list_users.return_value = [REGULAR_INFO]
+        svc.list_users.return_value = [REGULAR_DTO]
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -189,14 +193,16 @@ class TestListUsers:
 
 
 # ===========================================================================
-# 3. Root-admin protection: cannot modify or delete root admin user
+# 3. Root-admin protection: business rule raised by the use case
 # ===========================================================================
 
 
 class TestRootAdminProtection:
     async def test_update_root_admin_returns_403(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = ROOT_INFO
+        svc.update_user.side_effect = RootAdminProtectedError(
+            "No se puede modificar el administrador raíz"
+        )
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -210,7 +216,9 @@ class TestRootAdminProtection:
 
     async def test_delete_root_admin_returns_403(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = ROOT_INFO
+        svc.delete_user.side_effect = RootAdminProtectedError(
+            "No se puede eliminar el administrador raíz"
+        )
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -218,30 +226,6 @@ class TestRootAdminProtection:
 
         assert resp.status_code == 403
         assert "eliminar el administrador raíz" in resp.json()["detail"]
-
-    async def test_even_root_admin_cannot_update_itself_via_root_protection(self):
-        """Root admin user is also blocked from modifying its own record."""
-        svc = _mock_service()
-        svc.get_user_by_id.return_value = ROOT_INFO
-        _override_deps(ROOT_ADMIN_USER, svc)
-
-        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
-            resp = await c.put(
-                f"{PREFIX}/users/{ROOT_ADMIN_USER.id}",
-                json={"password": "newpw"},
-            )
-
-        assert resp.status_code == 403
-
-    async def test_even_root_admin_cannot_delete_itself(self):
-        svc = _mock_service()
-        svc.get_user_by_id.return_value = ROOT_INFO
-        _override_deps(ROOT_ADMIN_USER, svc)
-
-        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
-            resp = await c.delete(f"{PREFIX}/users/{ROOT_ADMIN_USER.id}")
-
-        assert resp.status_code == 403
 
 
 # ===========================================================================
@@ -252,6 +236,9 @@ class TestRootAdminProtection:
 class TestAdminProfileTypeRestriction:
     async def test_non_root_admin_cannot_create_admin_user(self):
         svc = _mock_service()
+        svc.create_user.side_effect = AdminOnlyActionError(
+            "Solo el administrador raíz puede crear otros administradores"
+        )
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -262,17 +249,16 @@ class TestAdminProfileTypeRestriction:
 
         assert resp.status_code == 403
         assert "administrador raíz" in resp.json()["detail"]
-        svc.create_user.assert_not_called()
 
     async def test_root_admin_can_create_admin_user(self):
         svc = _mock_service()
-        new_info = UserInfoDTO(
+        new_dto = UserDTO(
             id=str(uuid.uuid4()),
             username="new_admin",
             profile_type="admin",
             created_at="2025-01-01T00:00:00",
         )
-        svc.create_user.return_value = new_info
+        svc.create_user.return_value = new_dto
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -287,7 +273,9 @@ class TestAdminProfileTypeRestriction:
 
     async def test_non_root_admin_cannot_assign_admin_profile_on_update(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = REGULAR_INFO
+        svc.update_user.side_effect = AdminOnlyActionError(
+            "Solo el administrador raíz puede asignar el perfil admin"
+        )
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -298,12 +286,10 @@ class TestAdminProfileTypeRestriction:
 
         assert resp.status_code == 403
         assert "administrador raíz" in resp.json()["detail"]
-        svc.update_user.assert_not_called()
 
     async def test_root_admin_can_assign_admin_profile_on_update(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = REGULAR_INFO
-        updated = UserInfoDTO(
+        updated = UserDTO(
             id=str(REGULAR_USER.id),
             username=REGULAR_USER.username,
             profile_type="admin",
@@ -330,13 +316,13 @@ class TestAdminProfileTypeRestriction:
 class TestCRUDHappyPath:
     async def test_create_regular_user(self):
         svc = _mock_service()
-        new_info = UserInfoDTO(
+        new_dto = UserDTO(
             id=str(uuid.uuid4()),
             username="researcher",
             profile_type="investigador",
             created_at="2025-01-01T00:00:00",
         )
-        svc.create_user.return_value = new_info
+        svc.create_user.return_value = new_dto
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -350,8 +336,7 @@ class TestCRUDHappyPath:
 
     async def test_update_regular_user(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = REGULAR_INFO
-        updated = UserInfoDTO(
+        updated = UserDTO(
             id=str(REGULAR_USER.id),
             username=REGULAR_USER.username,
             profile_type="investigador",
@@ -370,7 +355,7 @@ class TestCRUDHappyPath:
 
     async def test_delete_regular_user(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = REGULAR_INFO
+        svc.delete_user.return_value = None
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -381,7 +366,9 @@ class TestCRUDHappyPath:
 
     async def test_non_root_admin_cannot_delete_other_admin(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = NON_ROOT_ADMIN_INFO
+        svc.delete_user.side_effect = AdminOnlyActionError(
+            "Solo el administrador raíz puede eliminar otros administradores"
+        )
         _override_deps(NON_ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -389,7 +376,6 @@ class TestCRUDHappyPath:
 
         assert resp.status_code == 403
         assert "administrador raíz" in resp.json()["detail"]
-        svc.delete_user.assert_not_called()
 
 
 # ===========================================================================
@@ -400,7 +386,7 @@ class TestCRUDHappyPath:
 class TestErrorHandling:
     async def test_update_nonexistent_user_returns_404(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = None
+        svc.update_user.side_effect = UserNotFoundError("User not found")
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -414,7 +400,7 @@ class TestErrorHandling:
 
     async def test_delete_nonexistent_user_returns_404(self):
         svc = _mock_service()
-        svc.get_user_by_id.return_value = None
+        svc.delete_user.side_effect = UserNotFoundError("User not found")
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -422,9 +408,9 @@ class TestErrorHandling:
 
         assert resp.status_code == 404
 
-    async def test_create_user_with_duplicate_username_returns_400(self):
+    async def test_create_user_with_duplicate_username_returns_409(self):
         svc = _mock_service()
-        svc.create_user.side_effect = ValueError("Username already exists")
+        svc.create_user.side_effect = UserAlreadyExistsError("Username already exists")
         _override_deps(ROOT_ADMIN_USER, svc)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
@@ -433,20 +419,5 @@ class TestErrorHandling:
                 json={"username": "existing", "password": "pw"},
             )
 
-        assert resp.status_code == 400
+        assert resp.status_code == 409
         assert "Username already exists" in resp.json()["detail"]
-
-    async def test_update_user_value_error_returns_400(self):
-        svc = _mock_service()
-        svc.get_user_by_id.return_value = REGULAR_INFO
-        svc.update_user.side_effect = ValueError("Invalid profile type")
-        _override_deps(ROOT_ADMIN_USER, svc)
-
-        async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
-            resp = await c.put(
-                f"{PREFIX}/users/{REGULAR_USER.id}",
-                json={"profile_type": "nonexistent"},
-            )
-
-        assert resp.status_code == 400
-        assert "Invalid profile type" in resp.json()["detail"]

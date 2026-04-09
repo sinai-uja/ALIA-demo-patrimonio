@@ -1,4 +1,5 @@
 from src.application.auth.dto.auth_dto import LoginDTO, TokenPairDTO
+from src.application.auth.exceptions import InvalidCredentialsError
 from src.domain.auth.ports.auth_port import AuthPort
 from src.domain.auth.ports.token_port import TokenPort
 
@@ -13,7 +14,7 @@ class LoginUseCase:
     def execute(self, dto: LoginDTO) -> TokenPairDTO:
         user = self._auth_port.authenticate(dto.username, dto.password)
         if user is None:
-            raise ValueError("Invalid credentials")
+            raise InvalidCredentialsError("Invalid credentials")
         return TokenPairDTO(
             access_token=self._token_port.create_access_token(
                 user.username

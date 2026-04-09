@@ -4,6 +4,9 @@ from sqlalchemy.orm import sessionmaker
 from src.application.auth.services.auth_application_service import (
     AuthApplicationService,
 )
+from src.application.auth.use_cases.ensure_root_admin import (
+    EnsureRootAdminUseCase,
+)
 from src.application.auth.use_cases.login_use_case import LoginUseCase
 from src.application.auth.use_cases.refresh_token_use_case import (
     RefreshTokenUseCase,
@@ -39,5 +42,9 @@ def build_auth_application_service() -> AuthApplicationService:
         refresh_token_use_case=RefreshTokenUseCase(
             token_port=token_adapter
         ),
+        ensure_root_admin_use_case=EnsureRootAdminUseCase(
+            auth_port=auth_adapter
+        ),
         auth_port=auth_adapter,
+        root_admin_username=settings.admin_username,
     )
