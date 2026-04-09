@@ -1,4 +1,4 @@
-from fastapi import Header
+from fastapi import Depends, Header, HTTPException, status
 
 from src.application.auth.exceptions import InvalidTokenError
 from src.application.auth.services.auth_application_service import (
@@ -18,3 +18,14 @@ def get_current_user(authorization: str = Header(...)) -> User:
     token = authorization.removeprefix("Bearer ")
     service = build_auth_application_service()
     return service.validate_token(token)
+
+
+def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
+    # Admin-access gate is a pure HTTP-layer authorization rule (who can hit
+    # the admin router at all). Business-level rules live inside the use cases.
+    if current_user.profile_type is None or current_user.profile_type.name != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return current_user

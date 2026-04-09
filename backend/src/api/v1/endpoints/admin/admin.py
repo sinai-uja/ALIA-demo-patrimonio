@@ -1,6 +1,6 @@
 import uuid as _uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from src.api.v1.endpoints.admin.schemas import (
     AdminUserResponse,
@@ -10,7 +10,7 @@ from src.api.v1.endpoints.admin.schemas import (
     UpdateProfileTypeRequest,
     UpdateUserRequest,
 )
-from src.api.v1.endpoints.auth.deps import get_auth_service, get_current_user
+from src.api.v1.endpoints.auth.deps import get_auth_service, get_current_admin
 from src.application.auth.dto.auth_dto import (
     CreateProfileTypeDTO,
     CreateUserDTO,
@@ -21,17 +21,6 @@ from src.application.auth.dto.user_dto import UserDTO
 from src.domain.auth.entities.user import User
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-
-
-def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
-    # Admin-access gate is a pure HTTP-layer authorization rule (who can hit
-    # the admin router at all). Business-level rules live inside the use cases.
-    if current_user.profile_type is None or current_user.profile_type.name != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
-        )
-    return current_user
 
 
 def _to_response(u: UserDTO) -> AdminUserResponse:

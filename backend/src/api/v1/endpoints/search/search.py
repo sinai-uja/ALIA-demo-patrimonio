@@ -96,6 +96,7 @@ async def get_suggestions(
     query: str = Query(
         ..., min_length=1, description="Search query text",
     ),
+    user: User = Depends(get_current_user),
     service: SearchApplicationService = Depends(get_search_service),
 ) -> SuggestionResponse:
     """Detect entities in a search query and return suggestions."""
@@ -124,6 +125,7 @@ async def get_filters(
         default=None,
         description="Filter municipalities by province(s)",
     ),
+    user: User = Depends(get_current_user),
     service: SearchApplicationService = Depends(get_search_service),
 ) -> FilterValuesResponse:
     """Return available filter values for search facets."""
