@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.chat.deps import get_chat_service
@@ -74,10 +74,7 @@ async def update_session(
 ) -> SessionResponse:
     """Update a chat session title."""
     dto = UpdateSessionDTO(session_id=session_id, title=request.title, user_id=str(user.id))
-    try:
-        result = await service.update_session_title(dto)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    result = await service.update_session_title(dto)
     return SessionResponse(
         id=result.id,
         title=result.title,
@@ -113,6 +110,7 @@ async def get_session_messages(
 async def send_message(
     session_id: str,
     request: SendMessageRequest,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> MessageResponse:
     """Send a user message, trigger RAG pipeline, and return assistant response."""
@@ -127,12 +125,10 @@ async def send_message(
         top_k=request.top_k,
         heritage_type_filter=request.heritage_type_filter,
         province_filter=request.province_filter,
+        user_id=str(user.id),
     )
 
-    try:
-        result = await service.send_message(dto)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    result = await service.send_message(dto)
 
     logger.info(
         "Response: %d chars, %d sources",

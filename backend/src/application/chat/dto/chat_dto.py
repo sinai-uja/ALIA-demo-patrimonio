@@ -38,6 +38,7 @@ class SendMessageDTO:
     top_k: int = 3
     heritage_type_filter: str | None = None
     province_filter: str | None = None
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)

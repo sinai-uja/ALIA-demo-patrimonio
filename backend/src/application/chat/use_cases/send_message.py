@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 from src.application.chat.dto.chat_dto import MessageDTO, SendMessageDTO
+from src.application.chat.exceptions import SessionNotFoundError
 from src.domain.chat.entities.message_role import MessageRole
 from src.domain.chat.ports.chat_repository import ChatRepository
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
@@ -10,7 +11,7 @@ from src.domain.chat.prompts import CONVERSATIONAL_SYSTEM_PROMPT
 from src.domain.chat.services.intent_classifier import IntentClassifier, MessageIntent
 from src.domain.chat.services.query_reformulator import QueryReformulator
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.chat.send_message")
 
 
 class SendMessageUseCase:
@@ -32,12 +33,13 @@ class SendMessageUseCase:
 
     async def execute(self, dto: SendMessageDTO) -> MessageDTO:
         session_id = UUID(dto.session_id)
+        user_uuid = UUID(dto.user_id) if dto.user_id else None
         logger.info("Processing message for session %s: %s", dto.session_id, dto.content[:80])
 
-        # 1. Verify session exists
-        session = await self._chat_repository.get_session(session_id)
+        # 1. Verify session exists and is owned by the actor
+        session = await self._chat_repository.get_session(session_id, user_id=user_uuid)
         if session is None:
-            raise ValueError(f"Session {dto.session_id} not found")
+            raise SessionNotFoundError(f"Session {dto.session_id} not found")
 
         # 2. Get recent history for intent classification and context
         history = await self._chat_repository.get_messages(session_id)
