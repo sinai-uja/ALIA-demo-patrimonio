@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from src.application.routes.dto.history_turn_dto import HistoryTurnDTO
+
 
 @dataclass(frozen=True)
 class GenerateRouteDTO:
@@ -54,7 +56,7 @@ class GuideQueryDTO:
 
     route_id: str
     question: str
-    history: list[dict[str, str]] = field(default_factory=list)
+    history: list[HistoryTurnDTO] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

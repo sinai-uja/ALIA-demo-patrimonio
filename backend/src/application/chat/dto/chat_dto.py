@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from src.application.chat.dto.source_dto import SourceDTO
+
 
 @dataclass(frozen=True)
 class CreateSessionDTO:
@@ -49,5 +51,5 @@ class MessageDTO:
     session_id: str
     role: str
     content: str
-    sources: list[dict] = field(default_factory=list)
+    sources: list[SourceDTO] = field(default_factory=list)
     created_at: str = ""

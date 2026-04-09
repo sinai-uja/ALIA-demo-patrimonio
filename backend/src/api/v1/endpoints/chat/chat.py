@@ -12,8 +12,21 @@ from src.api.v1.endpoints.chat.schemas import (
     UpdateSessionRequest,
 )
 from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO, UpdateSessionDTO
+from src.application.chat.dto.source_dto import SourceDTO
 from src.application.chat.services.chat_application_service import ChatApplicationService
 from src.domain.auth.entities.user import User
+
+
+def _source_dto_to_dict(source: SourceDTO) -> dict:
+    return {
+        "title": source.title,
+        "url": source.url,
+        "score": source.score,
+        "heritage_type": source.heritage_type,
+        "province": source.province,
+        "municipality": source.municipality,
+        "metadata": source.metadata,
+    }
 
 logger = logging.getLogger("iaph.query")
 
@@ -95,7 +108,7 @@ async def get_session_messages(
             id=m.id,
             role=m.role,
             content=m.content,
-            sources=m.sources,
+            sources=[_source_dto_to_dict(s) for s in m.sources],
             created_at=m.created_at,
         )
         for m in results
@@ -139,6 +152,6 @@ async def send_message(
         id=result.id,
         role=result.role,
         content=result.content,
-        sources=result.sources,
+        sources=[_source_dto_to_dict(s) for s in result.sources],
         created_at=result.created_at,
     )

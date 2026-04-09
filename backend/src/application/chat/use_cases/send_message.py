@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 from src.application.chat.dto.chat_dto import MessageDTO, SendMessageDTO
+from src.application.chat.dto.source_dto import SourceDTO
 from src.application.chat.exceptions import SessionNotFoundError
 from src.domain.chat.entities.message_role import MessageRole
 from src.domain.chat.ports.chat_repository import ChatRepository
@@ -114,6 +115,19 @@ class SendMessageUseCase:
             session_id=str(assistant_message.session_id),
             role=assistant_message.role.value,
             content=assistant_message.content,
-            sources=assistant_message.sources,
+            sources=[_source_dict_to_dto(s) for s in assistant_message.sources],
             created_at=assistant_message.created_at.isoformat(),
         )
+
+
+def _source_dict_to_dto(source: dict) -> SourceDTO:
+    """Map a raw source dict (as produced by the RAG port) to a typed DTO."""
+    return SourceDTO(
+        title=source.get("title", ""),
+        url=source.get("url", ""),
+        score=float(source.get("score", 0.0)),
+        heritage_type=source.get("heritage_type", ""),
+        province=source.get("province", ""),
+        municipality=source.get("municipality"),
+        metadata=source.get("metadata"),
+    )

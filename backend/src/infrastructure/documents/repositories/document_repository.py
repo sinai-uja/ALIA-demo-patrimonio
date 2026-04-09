@@ -87,6 +87,3 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
         )
         await self._session.commit()
         return result.rowcount
-
-    async def commit(self) -> None:
-        await self._session.commit()

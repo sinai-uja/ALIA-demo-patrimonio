@@ -14,6 +14,7 @@ from src.api.v1.endpoints.routes.schemas import (
     RouteSuggestionResponse,
     VirtualRouteSchema,
 )
+from src.application.routes.dto.history_turn_dto import HistoryTurnDTO
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
     GuideQueryDTO,
@@ -182,7 +183,7 @@ async def guide_query(
         route_id=route_id,
         question=request.question,
         history=[
-            {"role": m.role, "content": m.content}
+            HistoryTurnDTO(role=m.role, content=m.content)
             for m in request.history
         ],
     )

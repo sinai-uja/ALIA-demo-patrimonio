@@ -76,7 +76,11 @@ class GuideQueryUseCase:
         answer = await self._llm_port.generate_structured(
             system_prompt=GUIDE_SYSTEM_PROMPT,
             user_prompt=user_prompt,
-            history=dto.history if dto.history else None,
+            history=(
+                [{"role": t.role, "content": t.content} for t in dto.history]
+                if dto.history
+                else None
+            ),
         )
 
         return GuideResponseDTO(answer=answer)
