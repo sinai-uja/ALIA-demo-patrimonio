@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.api.v1.endpoints.rag.deps import get_rag_service
 from src.api.v1.endpoints.rag.schemas import QueryRequest, QueryResponse, SourceSchema
@@ -31,10 +31,7 @@ async def rag_query(
         province_filter=request.province_filter,
     )
 
-    try:
-        result = await service.query(dto)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"RAG pipeline error: {exc}") from exc
+    result = await service.query(dto)
 
     sources = [
         SourceSchema(

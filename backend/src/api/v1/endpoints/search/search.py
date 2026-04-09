@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.search.deps import get_search_service
@@ -48,14 +48,7 @@ async def similarity_search(
         user_id=user.username,
     )
 
-    try:
-        result = await service.similarity_search(dto)
-    except Exception as exc:
-        logger.error("Search pipeline failed: query=%r, error=%s", request.query[:80], exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Search pipeline error: {exc}",
-        ) from exc
+    result = await service.similarity_search(dto)
 
     logger.info(
         "Search response: search_id=%s query=%r, total_results=%d, page=%d/%d",
@@ -108,13 +101,7 @@ async def get_suggestions(
     """Detect entities in a search query and return suggestions."""
     logger.info("GET /search/suggestions query=%r", query[:80])
 
-    try:
-        result = await service.get_suggestions(query)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Suggestion error: {exc}",
-        ) from exc
+    result = await service.get_suggestions(query)
 
     return SuggestionResponse(
         query=result.query,
@@ -142,13 +129,7 @@ async def get_filters(
     """Return available filter values for search facets."""
     logger.info("GET /search/filters province=%s", province)
 
-    try:
-        result = await service.get_filter_values(province)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Filter values error: {exc}",
-        ) from exc
+    result = await service.get_filter_values(province)
 
     return FilterValuesResponse(
         heritage_types=result.heritage_types,

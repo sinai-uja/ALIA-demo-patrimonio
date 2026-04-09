@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.api.v1.endpoints.accessibility.deps import get_accessibility_service
 from src.api.v1.endpoints.accessibility.schemas import SimplifyRequest, SimplifyResponse
@@ -22,14 +22,7 @@ async def simplify_text(
         document_id=request.document_id,
     )
 
-    try:
-        result = await service.simplify_text(dto)
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502, detail=f"Simplification service error: {exc}"
-        ) from exc
+    result = await service.simplify_text(dto)
 
     return SimplifyResponse(
         original_text=result.original_text,
