@@ -3,12 +3,14 @@ from __future__ import annotations
 import logging
 from dataclasses import replace
 
-import httpx
-
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.reranker_port import RerankerPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
+from src.infrastructure.shared.exceptions import (
+    ExternalServiceUnavailableError,
+)
+from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.reranker")
 
@@ -23,7 +25,6 @@ class HttpRerankerAdapter(RerankerPort):
     ) -> None:
         self._base_url = base_url or settings.reranker_service_url
         self._token_provider = token_provider
-        self._client = httpx.AsyncClient(timeout=120.0)
 
     async def rerank(
         self,
@@ -36,13 +37,13 @@ class HttpRerankerAdapter(RerankerPort):
             return []
 
         documents = [chunk.content for chunk in chunks]
-        headers = {}
+        headers: dict[str, str] = {}
         if self._token_provider:
             token = await self._token_provider.get_token()
             if token:
                 headers["Authorization"] = f"Bearer {token}"
 
-        payload = {
+        payload: dict = {
             "query": query,
             "documents": documents,
             "instruction": instruction,
@@ -55,13 +56,14 @@ class HttpRerankerAdapter(RerankerPort):
             len(documents), query[:60],
         )
 
-        response = await self._client.post(
+        data = await post_json(
             f"{self._base_url}/rerank",
-            json=payload,
-            headers=headers,
+            payload,
+            service_label="reranker",
+            timeout=120.0,
+            headers=headers or None,
+            error_class=ExternalServiceUnavailableError,
         )
-        response.raise_for_status()
-        data = response.json()
 
         results = data["results"]
         logger.info("Rerank response: %d results", len(results))

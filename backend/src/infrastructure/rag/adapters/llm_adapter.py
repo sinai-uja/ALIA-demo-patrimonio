@@ -9,8 +9,11 @@ from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.llm_port import LLMPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
+from src.infrastructure.shared.exceptions import LLMUnavailableError
 
 logger = logging.getLogger("iaph.llm")
+
+_SERVICE_LABEL = "vllm.rag"
 
 
 class VLLMAdapter(LLMPort):
@@ -67,31 +70,40 @@ class VLLMAdapter(LLMPort):
         }
 
         headers = await self._build_auth_headers()
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            t0 = time.perf_counter()
-            response = await client.post(
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
+        url = f"{self._base_url}/chat/completions"
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                t0 = time.perf_counter()
+                response = await client.post(url, json=payload, headers=headers)
+
+                if response.status_code == 400:
+                    body = response.json()
+                    error_msg = body.get("message", str(body))
+                    logger.warning("LLM 400 error: %s", error_msg)
+                    reduced = max(64, self._max_tokens // 2)
+                    payload["max_tokens"] = reduced
+                    logger.info("Retrying with max_tokens=%d", reduced)
+                    response = await client.post(url, json=payload, headers=headers)
+
+                latency = time.perf_counter() - t0
+                response.raise_for_status()
+                data = response.json()
+        except httpx.HTTPStatusError as exc:
+            status = exc.response.status_code
+            logger.warning(
+                "%s HTTP %s on %s — %s",
+                _SERVICE_LABEL, status, url, exc.response.text[:500],
             )
+            raise LLMUnavailableError(
+                f"{_SERVICE_LABEL} returned HTTP {status}",
+            ) from exc
+        except httpx.HTTPError as exc:
+            logger.warning("%s HTTP error on %s — %s", _SERVICE_LABEL, url, exc)
+            raise LLMUnavailableError(
+                f"{_SERVICE_LABEL} unreachable: {exc}",
+            ) from exc
 
-            if response.status_code == 400:
-                body = response.json()
-                error_msg = body.get("message", str(body))
-                logger.warning("LLM 400 error: %s", error_msg)
-                reduced = max(64, self._max_tokens // 2)
-                payload["max_tokens"] = reduced
-                logger.info("Retrying with max_tokens=%d", reduced)
-                response = await client.post(
-                    f"{self._base_url}/chat/completions",
-                    json=payload,
-                    headers=headers,
-                )
-
-            latency = time.perf_counter() - t0
-            response.raise_for_status()
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            logger.info("LLM response: %d chars, latency=%.2fs", len(content), latency)
-            logger.debug("LLM full response:\n%s", content)
-            return content
+        content = data["choices"][0]["message"]["content"]
+        logger.info("LLM response: %d chars, latency=%.2fs", len(content), latency)
+        logger.debug("LLM full response:\n%s", content)
+        return content

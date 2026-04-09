@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 import time
 
-import httpx
-
 from src.config import settings
 from src.domain.routes.ports.llm_port import LLMPort
 from src.domain.routes.value_objects.route_narrative import RouteNarrative
@@ -12,6 +10,8 @@ from src.infrastructure.routes.adapters._narrative_parser import (
     parse_narrative_json,
 )
 from src.infrastructure.shared.auth.token_provider import TokenProvider
+from src.infrastructure.shared.exceptions import LLMUnavailableError
+from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.llm")
 
@@ -70,20 +70,20 @@ class VLLMRoutesAdapter(LLMPort):
         }
 
         headers = await self._build_auth_headers()
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            t0 = time.perf_counter()
-            response = await client.post(
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            )
-            latency = time.perf_counter() - t0
-            response.raise_for_status()
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            logger.info("vLLM routes response: %d chars, latency=%.2fs", len(content), latency)
-            logger.debug("vLLM routes full response:\n%s", content)
-            return content
+        t0 = time.perf_counter()
+        data = await post_json(
+            f"{self._base_url}/chat/completions",
+            payload,
+            service_label="vllm.routes",
+            timeout=120.0,
+            headers=headers or None,
+            error_class=LLMUnavailableError,
+        )
+        latency = time.perf_counter() - t0
+        content = data["choices"][0]["message"]["content"]
+        logger.info("vLLM routes response: %d chars, latency=%.2fs", len(content), latency)
+        logger.debug("vLLM routes full response:\n%s", content)
+        return content
 
     async def generate_route_narrative(
         self,

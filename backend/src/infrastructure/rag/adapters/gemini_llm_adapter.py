@@ -1,11 +1,11 @@
 import logging
 import time
 
-import httpx
-
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.llm_port import LLMPort
+from src.infrastructure.shared.exceptions import LLMUnavailableError
+from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.llm")
 
@@ -61,15 +61,18 @@ class GeminiRAGAdapter(LLMPort):
             f"?key={self._api_key}"
         )
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            t0 = time.perf_counter()
-            response = await client.post(url, json=payload)
-            latency = time.perf_counter() - t0
-            response.raise_for_status()
-            data = response.json()
-            content = (
-                data["candidates"][0]["content"]["parts"][0]["text"]
-            )
-            logger.info("Gemini RAG response: %d chars, latency=%.2fs", len(content), latency)
-            logger.debug("Gemini RAG full response:\n%s", content)
-            return content
+        t0 = time.perf_counter()
+        data = await post_json(
+            url,
+            payload,
+            service_label="gemini.rag",
+            timeout=120.0,
+            error_class=LLMUnavailableError,
+        )
+        latency = time.perf_counter() - t0
+        content = (
+            data["candidates"][0]["content"]["parts"][0]["text"]
+        )
+        logger.info("Gemini RAG response: %d chars, latency=%.2fs", len(content), latency)
+        logger.debug("Gemini RAG full response:\n%s", content)
+        return content
