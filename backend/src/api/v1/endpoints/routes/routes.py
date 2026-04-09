@@ -66,6 +66,7 @@ def _dto_to_schema(result: VirtualRouteDTO) -> VirtualRouteSchema:
 )
 async def get_route_suggestions(
     query: str,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> RouteSuggestionResponse:
     """Get entity-detection suggestions for a route planning query."""
@@ -90,6 +91,7 @@ async def get_route_suggestions(
 )
 async def get_route_filters(
     province: list[str] | None = Query(default=None),
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> RouteFilterValuesResponse:
     """Get available filter values for route planning."""
@@ -172,6 +174,7 @@ async def get_route(
 async def guide_query(
     route_id: str,
     request: GuideQueryRequest,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> GuideResponseSchema:
     """Ask the guide a question about a specific route."""
