@@ -8,6 +8,7 @@ import src.infrastructure.chat.models  # noqa: F401
 # Import all models so their tables appear in Base.metadata
 import src.infrastructure.documents.models  # noqa: F401
 import src.infrastructure.feedback.models  # noqa: F401
+import src.infrastructure.heritage.models  # noqa: F401
 import src.infrastructure.routes.models  # noqa: F401
 from alembic import context
 from sqlalchemy import pool

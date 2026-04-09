@@ -25,16 +25,16 @@ from src.domain.rag.services.reranking_service import RerankingService
 from src.domain.search.services.entity_detection_service import (
     EntityDetectionService,
 )
-from src.infrastructure.rag.adapters.embedding_adapter import (
+from src.infrastructure.shared.adapters.embedding_adapter import (
     HttpEmbeddingAdapter,
 )
-from src.infrastructure.rag.adapters.reranker_adapter import (
+from src.infrastructure.shared.adapters.reranker_adapter import (
     HttpRerankerAdapter,
 )
-from src.infrastructure.rag.adapters.text_search_adapter import (
+from src.infrastructure.shared.adapters.text_search_adapter import (
     PgTextSearchAdapter,
 )
-from src.infrastructure.rag.adapters.vector_search_adapter import (
+from src.infrastructure.shared.adapters.vector_search_adapter import (
     PgVectorSearchAdapter,
 )
 from src.infrastructure.search.adapters.filter_metadata_adapter import (

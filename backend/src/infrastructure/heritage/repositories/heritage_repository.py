@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.heritage.entities.heritage_asset import HeritageAsset
 from src.domain.heritage.ports.heritage_repository import HeritageRepository
 from src.domain.heritage.value_objects.raw_data import parse_raw_data
-from src.infrastructure.documents.models import HeritageAssetModel
+from src.infrastructure.heritage.models import HeritageAssetModel
 
 
 class SqlAlchemyHeritageRepository(HeritageRepository):
