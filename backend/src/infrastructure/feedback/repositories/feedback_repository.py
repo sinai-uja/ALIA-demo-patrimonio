@@ -34,7 +34,7 @@ class SqlAlchemyFeedbackRepository(FeedbackRepository):
             },
         )
         await self._db.execute(stmt)
-        await self._db.commit()
+        await self._db.flush()
 
         row = await self.get(
             feedback.user_id, feedback.target_type, feedback.target_id,
@@ -55,7 +55,7 @@ class SqlAlchemyFeedbackRepository(FeedbackRepository):
             )
         )
         result = await self._db.execute(stmt)
-        await self._db.commit()
+        await self._db.flush()
         return result.rowcount > 0
 
     async def get(

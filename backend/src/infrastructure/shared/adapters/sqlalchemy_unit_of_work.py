@@ -10,7 +10,10 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
 
     Commits on clean exit of the `async with` block, rolls back if an
     exception propagates. The session lifecycle itself is managed by the
-    caller (typically the FastAPI dependency).
+    caller (typically the FastAPI dependency). The commit/rollback calls
+    are intentionally private: the port exposes only the context manager
+    protocol so that application code cannot tamper with transaction
+    boundaries.
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -24,9 +27,3 @@ class SqlAlchemyUnitOfWork(UnitOfWork):
             await self._session.rollback()
             return
         await self._session.commit()
-
-    async def commit(self) -> None:
-        await self._session.commit()
-
-    async def rollback(self) -> None:
-        await self._session.rollback()

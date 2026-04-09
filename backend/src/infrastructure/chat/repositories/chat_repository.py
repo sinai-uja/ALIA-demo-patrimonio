@@ -22,7 +22,7 @@ class ChatRepositoryImpl(ChatRepository):
     ) -> ChatSession:
         model = ChatSessionModel(id=uuid.uuid4(), title=title, user_id=user_id)
         self._db.add(model)
-        await self._db.commit()
+        await self._db.flush()
         await self._db.refresh(model)
         return self._to_session_entity(model)
 
@@ -52,7 +52,6 @@ class ChatRepositoryImpl(ChatRepository):
         if user_id is not None:
             stmt = stmt.where(ChatSessionModel.user_id == user_id)
         await self._db.execute(stmt)
-        await self._db.commit()
 
     async def update_session_title(
         self, session_id: uuid.UUID, title: str, user_id: uuid.UUID | None = None,
@@ -65,7 +64,7 @@ class ChatRepositoryImpl(ChatRepository):
         if user_id is not None:
             stmt = stmt.where(ChatSessionModel.user_id == user_id)
         await self._db.execute(stmt)
-        await self._db.commit()
+        await self._db.flush()
 
         get_stmt = select(ChatSessionModel).where(ChatSessionModel.id == session_id)
         if user_id is not None:
@@ -99,7 +98,7 @@ class ChatRepositoryImpl(ChatRepository):
             .values(updated_at=datetime.now(UTC))
         )
 
-        await self._db.commit()
+        await self._db.flush()
         await self._db.refresh(model)
         return self._to_message_entity(model)
 

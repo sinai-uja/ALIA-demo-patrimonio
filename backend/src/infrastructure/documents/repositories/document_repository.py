@@ -85,5 +85,5 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
         result = await self._session.execute(
             text(f"DELETE FROM {DocumentChunkModel.__tablename__}")
         )
-        await self._session.commit()
+        await self._session.flush()
         return result.rowcount

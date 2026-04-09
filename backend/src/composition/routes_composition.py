@@ -53,6 +53,9 @@ from src.infrastructure.routes.repositories.route_repository import (
 from src.infrastructure.search.adapters.filter_metadata_adapter import (
     PgFilterMetadataAdapter,
 )
+from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
+    SqlAlchemyUnitOfWork,
+)
 
 
 def build_routes_application_service(
@@ -69,6 +72,7 @@ def build_routes_application_service(
         )
     )
     route_repository = SqlAlchemyRouteRepository(db)
+    uow = SqlAlchemyUnitOfWork(session=db)
     heritage_asset_lookup_adapter = PgHeritageAssetLookupAdapter(db)
 
     # Cross-context adapters
@@ -90,6 +94,7 @@ def build_routes_application_service(
         route_builder_service=route_builder_service,
         query_extraction_service=query_extraction_service,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
+        unit_of_work=uow,
     )
     guide_query_use_case = GuideQueryUseCase(
         llm_port=llm_adapter,
@@ -104,6 +109,7 @@ def build_routes_application_service(
     )
     delete_route_use_case = DeleteRouteUseCase(
         route_repository=route_repository,
+        unit_of_work=uow,
     )
     route_suggestions_use_case = RouteSuggestionsUseCase(
         entity_detection_port=entity_detection_adapter,

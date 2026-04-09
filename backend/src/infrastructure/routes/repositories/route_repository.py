@@ -52,7 +52,7 @@ class SqlAlchemyRouteRepository(RouteRepository):
         )
 
         self._db.add(model)
-        await self._db.commit()
+        await self._db.flush()
         await self._db.refresh(model)
 
         return self._to_entity(model)
@@ -99,7 +99,7 @@ class SqlAlchemyRouteRepository(RouteRepository):
             return False
 
         await self._db.delete(model)
-        await self._db.commit()
+        await self._db.flush()
         return True
 
     def _to_entity(self, model: VirtualRouteModel) -> VirtualRoute:

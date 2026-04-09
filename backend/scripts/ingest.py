@@ -12,6 +12,9 @@ from src.db.base import AsyncSessionLocal
 from src.infrastructure.documents.repositories.document_repository import (
     SqlAlchemyDocumentRepository,
 )
+from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
+    SqlAlchemyUnitOfWork,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -40,7 +43,9 @@ async def purge_chunks() -> int:
     """Delete all chunks from the current chunks table."""
     async with AsyncSessionLocal() as db:
         repo = SqlAlchemyDocumentRepository(session=db)
-        deleted = await repo.delete_all_chunks()
+        uow = SqlAlchemyUnitOfWork(session=db)
+        async with uow:
+            deleted = await repo.delete_all_chunks()
     return deleted
 
 

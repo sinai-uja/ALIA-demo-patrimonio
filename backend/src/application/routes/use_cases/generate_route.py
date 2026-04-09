@@ -27,6 +27,7 @@ from src.domain.routes.services.route_builder_service import (
     RouteBuilderService,
 )
 from src.domain.routes.value_objects.asset_id import extract_asset_id
+from src.domain.shared.ports.unit_of_work import UnitOfWork
 
 logger = logging.getLogger("iaph.usecases.routes")
 
@@ -42,6 +43,7 @@ class GenerateRouteUseCase:
         route_builder_service: RouteBuilderService,
         query_extraction_service: QueryExtractionService,
         heritage_asset_lookup_port: HeritageAssetLookupPort,
+        unit_of_work: UnitOfWork,
     ) -> None:
         self._rag_port = rag_port
         self._llm_port = llm_port
@@ -49,6 +51,7 @@ class GenerateRouteUseCase:
         self._route_builder_service = route_builder_service
         self._query_extraction_service = query_extraction_service
         self._heritage_asset_lookup_port = heritage_asset_lookup_port
+        self._uow = unit_of_work
 
     async def execute(self, dto: GenerateRouteDTO) -> VirtualRouteDTO:
         t0 = time.monotonic()
@@ -178,13 +181,17 @@ class GenerateRouteUseCase:
 
         # 12. Save and return
         user_uuid = UUID(dto.user_id) if dto.user_id else None
-        saved_route = await self._route_repository.save_route(route, user_id=user_uuid)
+        async with self._uow:
+            saved_route = await self._route_repository.save_route(
+                route, user_id=user_uuid,
+            )
+            result = self._to_dto(saved_route)
         elapsed_ms = (time.monotonic() - t0) * 1000
         logger.info(
             "Route generation complete: route_id=%s user=%s title=%r stops=%d %.0fms",
             saved_route.id, user_label, title[:60], len(selected_chunks), elapsed_ms,
         )
-        return self._to_dto(saved_route)
+        return result
 
     def _to_dto(self, route) -> VirtualRouteDTO:
         return VirtualRouteDTO(
