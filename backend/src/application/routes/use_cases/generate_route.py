@@ -26,7 +26,7 @@ from src.domain.routes.services.query_extraction_service import (
 from src.domain.routes.services.route_builder_service import (
     RouteBuilderService,
 )
-from src.domain.routes.value_objects.asset_id import extract_asset_id
+from src.domain.shared.value_objects.asset_id import extract_asset_id
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 
 logger = logging.getLogger("iaph.routes.generate_route")

@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from src.domain.routes.value_objects.asset_id import extract_asset_id
+from src.domain.shared.value_objects.asset_id import extract_asset_id
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
