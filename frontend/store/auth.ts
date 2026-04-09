@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { auth as authApi } from "@/lib/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:18080/api/v1";
 
 interface LoginResponse {
   access_token: string;

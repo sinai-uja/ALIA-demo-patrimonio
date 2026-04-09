@@ -115,7 +115,7 @@ uv run alembic upgrade head
 uv run fastapi dev src/main.py
 ```
 
-The API will be available at `http://localhost:8000` in local dev mode, or `http://localhost:8080` when running inside Docker.
+The API will be available at `http://localhost:8000` in local dev mode, or `http://localhost:18080` when running inside Docker.
 
 ### Start with the LLM service (requires NVIDIA GPU)
 
@@ -147,7 +147,7 @@ Heritage types: `PAISAJE_CULTURAL`, `PATRIMONIO_INMATERIAL`, `PATRIMONIO_INMUEBL
 **Ingest example:**
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/documents/ingest \
+curl -X POST http://localhost:18080/api/v1/documents/ingest \
   -H "Content-Type: application/json" \
   -d '{"source_path": "../Guia_Digital_IAPH", "heritage_type": "PATRIMONIO_INMUEBLE", "chunk_size": 512}'
 ```
@@ -159,7 +159,7 @@ curl -X POST http://localhost:8080/api/v1/documents/ingest \
 | `POST` | `/rag/query` | Single-turn RAG query (embed, search, assemble, generate) |
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/rag/query \
+curl -X POST http://localhost:18080/api/v1/rag/query \
   -H "Content-Type: application/json" \
   -d '{"query": "Castillos medievales en Jaen", "province_filter": "Jaen", "top_k": 5}'
 ```

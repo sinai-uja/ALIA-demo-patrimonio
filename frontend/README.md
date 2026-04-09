@@ -60,8 +60,8 @@ store/
 ```bash
 npm install
 
-# Configure backend URL (defaults to http://localhost:8080/api/v1)
-echo "NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1" > .env.local
+# Configure backend URL (defaults to http://localhost:18080/api/v1)
+echo "NEXT_PUBLIC_API_URL=http://localhost:18080/api/v1" > .env.local
 
 npm run dev     # http://localhost:3000
 npm run build   # production build
@@ -71,7 +71,7 @@ npm run build   # production build
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8080/api/v1` | Backend API base URL |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:18080/api/v1` | Backend API base URL |
 
 ## API integration
 
