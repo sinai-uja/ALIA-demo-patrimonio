@@ -9,7 +9,7 @@ from src.domain.search.ports.heritage_asset_lookup_port import (
     HeritageAssetSummaryData,
 )
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.heritage_lookup")
 
 _PREFIX_RE = re.compile(r"^ficha-\w+-")
 

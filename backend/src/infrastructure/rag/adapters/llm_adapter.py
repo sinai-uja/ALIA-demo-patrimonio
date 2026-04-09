@@ -11,7 +11,7 @@ from src.domain.rag.ports.llm_port import LLMPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
 from src.infrastructure.shared.exceptions import LLMUnavailableError
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.rag.llm")
 
 _SERVICE_LABEL = "vllm.rag"
 

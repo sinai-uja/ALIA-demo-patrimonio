@@ -25,7 +25,7 @@ from src.application.routes.services.routes_application_service import (
 )
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.usecases.routes")
+logger = logging.getLogger("iaph.routes.router")
 
 router = APIRouter()
 

@@ -28,7 +28,7 @@ from src.infrastructure.shared.exceptions import (
     LLMResponseParseError,
 )
 
-logger = logging.getLogger("iaph.api.exception_handlers")
+logger = logging.getLogger("iaph.api.exceptions")
 
 
 def _body(exc: Exception) -> dict:

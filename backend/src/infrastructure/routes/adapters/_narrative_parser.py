@@ -14,7 +14,7 @@ import re
 from src.domain.routes.value_objects.route_narrative import RouteNarrative
 from src.infrastructure.shared.exceptions import LLMResponseParseError
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.routes.llm")
 
 
 def _strip_markdown(raw: str) -> str:

@@ -4,7 +4,7 @@ from dataclasses import replace
 
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 
-logger = logging.getLogger("iaph.reranker")
+logger = logging.getLogger("iaph.rag.reranker")
 
 
 class RerankingService:

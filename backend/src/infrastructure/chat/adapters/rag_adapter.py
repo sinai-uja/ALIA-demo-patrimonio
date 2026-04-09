@@ -6,8 +6,8 @@ from src.domain.chat.ports.rag_port import RAGPort
 class InProcessRAGAdapter(RAGPort):
     """Adapts the RAG application service to satisfy the chat domain RAGPort.
 
-    This keeps hexagonal purity: the chat domain depends on its own port,
-    not on the RAG application service directly.
+    The chat domain depends on its own port; this adapter bridges to the
+    RAG application service so the two bounded contexts stay decoupled.
     """
 
     def __init__(self, rag_service: RAGApplicationService) -> None:

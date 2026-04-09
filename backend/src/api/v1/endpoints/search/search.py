@@ -19,7 +19,7 @@ from src.application.search.services.search_application_service import (
 )
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.router")
 
 router = APIRouter()
 

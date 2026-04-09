@@ -13,7 +13,7 @@ from src.domain.rag.services.query_instruction_service import wrap_query_for_emb
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.rag.query")
 
 ABSTENTION_ANSWER = (
     "No he encontrado informacion suficientemente relevante en la base de datos del IAPH "

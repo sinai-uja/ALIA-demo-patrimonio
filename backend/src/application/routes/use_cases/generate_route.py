@@ -29,7 +29,7 @@ from src.domain.routes.services.route_builder_service import (
 from src.domain.routes.value_objects.asset_id import extract_asset_id
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 
-logger = logging.getLogger("iaph.usecases.routes")
+logger = logging.getLogger("iaph.routes.generate_route")
 
 
 class GenerateRouteUseCase:
@@ -167,7 +167,7 @@ class GenerateRouteUseCase:
         narrative_parts.append(conclusion)
         narrative = "\n\n".join(p for p in narrative_parts if p)
 
-        # 11. Build route entity with enriched data
+        # 10. Build route entity with enriched data
         route = self._route_builder_service.build(
             selected_chunks=selected_chunks,
             province=province_label,
@@ -179,7 +179,7 @@ class GenerateRouteUseCase:
             asset_previews=asset_previews,
         )
 
-        # 12. Save and return
+        # 11. Save and return
         user_uuid = UUID(dto.user_id) if dto.user_id else None
         async with self._uow:
             saved_route = await self._route_repository.save_route(

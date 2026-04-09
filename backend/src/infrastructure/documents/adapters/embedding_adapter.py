@@ -10,7 +10,7 @@ from src.domain.documents.ports.embedding_port import EmbeddingPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
 from src.infrastructure.shared.exceptions import EmbeddingServiceUnavailableError
 
-logger = logging.getLogger("iaph.embedding")
+logger = logging.getLogger("iaph.documents.embedding")
 
 
 class HttpEmbeddingAdapter(EmbeddingPort):

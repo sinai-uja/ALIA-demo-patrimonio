@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.feedback.deps import get_feedback_service
@@ -11,6 +11,7 @@ from src.application.feedback.dto.feedback_dto import SubmitFeedbackDTO
 from src.application.feedback.services.feedback_application_service import (
     FeedbackApplicationService,
 )
+from src.application.shared.exceptions import ResourceNotFoundError
 from src.domain.auth.entities.user import User
 
 router = APIRouter()
@@ -49,7 +50,7 @@ async def delete_feedback(
     """Delete feedback for a specific target."""
     deleted = await service.delete_feedback(user.username, target_type, target_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Feedback not found")
+        raise ResourceNotFoundError("Feedback not found")
     return Response(status_code=204)
 
 
@@ -77,7 +78,7 @@ async def get_feedback(
     """Get feedback for a specific target."""
     result = await service.get_feedback(user.username, target_type, target_id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Feedback not found")
+        raise ResourceNotFoundError("Feedback not found")
     return FeedbackResponse(
         id=result.id,
         target_type=result.target_type,

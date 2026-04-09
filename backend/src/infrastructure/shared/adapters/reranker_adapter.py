@@ -12,7 +12,7 @@ from src.infrastructure.shared.exceptions import (
 )
 from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.reranker")
+logger = logging.getLogger("iaph.rag.reranker")
 
 
 class HttpRerankerAdapter(RerankerPort):

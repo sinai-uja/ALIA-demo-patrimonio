@@ -10,7 +10,7 @@ from src.infrastructure.shared.exceptions import (
 )
 from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.embedding")
+logger = logging.getLogger("iaph.rag.embedding")
 
 
 class HttpEmbeddingAdapter(EmbeddingPort):

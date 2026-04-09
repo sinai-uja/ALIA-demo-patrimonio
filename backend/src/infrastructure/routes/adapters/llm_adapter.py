@@ -13,7 +13,7 @@ from src.infrastructure.shared.auth.token_provider import TokenProvider
 from src.infrastructure.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.routes.llm")
 
 
 class VLLMRoutesAdapter(LLMPort):

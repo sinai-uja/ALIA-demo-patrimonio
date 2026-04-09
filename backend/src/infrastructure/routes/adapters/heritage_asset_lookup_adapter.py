@@ -9,7 +9,7 @@ from src.domain.routes.ports.heritage_asset_lookup_port import (
 from src.domain.routes.value_objects.asset_id import extract_asset_id
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 
-logger = logging.getLogger("iaph.routes")
+logger = logging.getLogger("iaph.routes.heritage_lookup")
 
 # Re-exported for backward compatibility; canonical definition lives in
 # src.domain.routes.value_objects.asset_id.

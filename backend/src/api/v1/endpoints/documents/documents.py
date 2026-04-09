@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.api.v1.endpoints.auth.deps import get_current_admin, get_current_user
 from src.api.v1.endpoints.documents.deps import get_documents_service
@@ -7,6 +7,7 @@ from src.application.documents.dto.ingest_dto import IngestDocumentsCommand
 from src.application.documents.services.documents_application_service import (
     DocumentsApplicationService,
 )
+from src.application.shared.exceptions import ResourceNotFoundError
 from src.domain.auth.entities.user import User
 
 router = APIRouter()
@@ -47,7 +48,7 @@ async def get_document_chunks(
     """List all chunks for a given document (useful for debugging)."""
     chunks = await service.get_chunks_by_document(document_id)
     if not chunks:
-        raise HTTPException(status_code=404, detail="No chunks found for this document")
+        raise ResourceNotFoundError("No chunks found for this document")
     return [
         ChunkResponse(
             id=str(chunk.id),

@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.heritage.deps import get_heritage_service
@@ -12,6 +12,7 @@ from src.api.v1.endpoints.heritage.schemas import (
 from src.application.heritage.services.heritage_application_service import (
     HeritageApplicationService,
 )
+from src.application.shared.exceptions import ResourceNotFoundError
 from src.domain.auth.entities.user import User
 
 router = APIRouter()
@@ -69,7 +70,7 @@ async def get_asset(
     """Get a heritage asset by ID with full typed details."""
     result = await service.get_asset(asset_id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Asset not found")
+        raise ResourceNotFoundError("Asset not found")
 
     details_dict = asdict(result.details) if result.details else None
 

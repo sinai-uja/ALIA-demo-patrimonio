@@ -7,7 +7,7 @@ from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.vector_search_port import VectorSearchPort
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.rag.vector_search")
 
 
 def _build_filter_conditions(

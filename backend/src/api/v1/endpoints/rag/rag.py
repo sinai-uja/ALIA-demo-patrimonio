@@ -9,7 +9,7 @@ from src.application.rag.dto.rag_dto import RAGQueryDTO
 from src.application.rag.services.rag_application_service import RAGApplicationService
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.rag.router")
 
 router = APIRouter()
 

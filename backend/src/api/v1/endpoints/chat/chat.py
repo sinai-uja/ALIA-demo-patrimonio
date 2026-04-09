@@ -28,7 +28,7 @@ def _source_dto_to_dict(source: SourceDTO) -> dict:
         "metadata": source.metadata,
     }
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.chat.router")
 
 router = APIRouter()
 

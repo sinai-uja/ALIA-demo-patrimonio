@@ -10,7 +10,7 @@ from src.infrastructure.routes.adapters._narrative_parser import (
 from src.infrastructure.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.routes.llm")
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 

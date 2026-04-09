@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from src.domain.routes.value_objects.asset_id import extract_asset_id
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
@@ -85,7 +86,11 @@ class RouteBuilderService:
             heritage_type = chunk.get("heritage_type", "")
             duration = _DURATION_MAP.get(heritage_type.lower(), _DEFAULT_DURATION)
             document_id = chunk.get("document_id", "")
-            heritage_asset_id = self._extract_asset_id(document_id) if document_id else None
+            heritage_asset_id = None
+            if document_id:
+                extracted = extract_asset_id(document_id)
+                if extracted != document_id:
+                    heritage_asset_id = extracted
 
             preview = asset_previews.get(heritage_asset_id, None) if heritage_asset_id else None
 
@@ -131,10 +136,3 @@ class RouteBuilderService:
             introduction=introduction,
             conclusion=conclusion,
         )
-
-    @staticmethod
-    def _extract_asset_id(document_id: str) -> str | None:
-        """Extract numeric asset ID from 'ficha-{type}-{number}' format."""
-        import re
-        match = re.sub(r"^ficha-\w+-", "", document_id)
-        return match if match != document_id else None

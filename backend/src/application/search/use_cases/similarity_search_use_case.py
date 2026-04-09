@@ -21,7 +21,7 @@ from src.domain.search.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
 )
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.similarity_search")
 
 
 class SimilaritySearchUseCase:

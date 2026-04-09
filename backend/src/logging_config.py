@@ -79,25 +79,32 @@ def _daily_handler(
 def setup_logging() -> None:
     """Configure the application logging system.
 
-    Loggers:
-        iaph            — general info, lifecycle, execution flow
-        iaph.query      — RAG pipeline orchestration, intent, reformulation, search results
-        iaph.llm        — LLM inference calls and responses (latency tracking)
-        iaph.embedding  — embedding service requests/responses
-        iaph.auth       — login, token refresh, auth failures
-        iaph.usecases.routes — route generation and guide queries
-        iaph.usecases.search — similarity search queries
+    Namespaces follow `iaph.<bounded_context>.<concept>`:
+        iaph                  — general info, lifecycle, execution flow
+        iaph.rag.*            — RAG pipeline (query, llm, reranker, embedding,
+                                text_search, vector_search, router)
+        iaph.chat.*           — chat bounded context (intent, reformulator,
+                                llm, router, send_message)
+        iaph.routes.*         — routes bounded context (generate_route, llm,
+                                heritage_lookup, router)
+        iaph.search.*         — similarity search bounded context
+        iaph.documents.*      — documents ingestion (embedding, ingest)
+        iaph.accessibility.*  — accessibility bounded context (llm)
+        iaph.auth             — login, token refresh, auth failures
+        iaph.feedback         — feedback submissions
+        iaph.api.exceptions   — global HTTP exception translation
+        iaph.infra.*          — generic infra-layer diagnostics
 
     File handlers (TimedRotatingFileHandler, daily rotation, 30 days):
         logs/info.log       ← iaph.* at INFO+
-        logs/queries.log    ← iaph.query at DEBUG+
-        logs/llm.log        ← iaph.llm at DEBUG+
-        logs/embedding.log  ← iaph.embedding at DEBUG+
+        logs/queries.log    ← iaph.rag.* + iaph.chat.intent/reformulator/router
+        logs/llm.log        ← every iaph.<ctx>.llm adapter
+        logs/embedding.log  ← iaph.rag.embedding + iaph.documents.embedding
         logs/auth.log       ← iaph.auth at DEBUG+
         logs/feedback.log   ← iaph.feedback at DEBUG+
         logs/errors.log     ← root at WARNING+
-        logs/usecases/routes.log  ← iaph.usecases.routes at DEBUG+
-        logs/usecases/search.log  ← iaph.usecases.search at DEBUG+
+        logs/usecases/routes.log  ← iaph.routes.*
+        logs/usecases/search.log  ← iaph.search.*
 
     Console:
         iaph.* at INFO+ (all loggers)
@@ -113,22 +120,35 @@ def setup_logging() -> None:
         os.path.join(LOG_DIR, "info.log"), level=logging.INFO, formatter=formatter,
     )
 
-    # queries.log — only iaph.query
+    # queries.log — RAG pipeline + chat intent/reformulator
     query_handler = _daily_handler(
         os.path.join(LOG_DIR, "queries.log"), formatter=formatter,
-        log_filter=_OnlyLoggerFilter("iaph.query"),
+        log_filter=_MultiLoggerFilter([
+            "iaph.rag",
+            "iaph.chat.intent",
+            "iaph.chat.reformulator",
+            "iaph.chat.router",
+        ]),
     )
 
-    # llm.log — only iaph.llm
+    # llm.log — all LLM adapters regardless of bounded context
     llm_handler = _daily_handler(
         os.path.join(LOG_DIR, "llm.log"), formatter=formatter,
-        log_filter=_OnlyLoggerFilter("iaph.llm"),
+        log_filter=_MultiLoggerFilter([
+            "iaph.rag.llm",
+            "iaph.chat.llm",
+            "iaph.routes.llm",
+            "iaph.accessibility.llm",
+        ]),
     )
 
-    # embedding.log — only iaph.embedding
+    # embedding.log — embedding adapters in any bounded context
     embedding_handler = _daily_handler(
         os.path.join(LOG_DIR, "embedding.log"), formatter=formatter,
-        log_filter=_OnlyLoggerFilter("iaph.embedding"),
+        log_filter=_MultiLoggerFilter([
+            "iaph.rag.embedding",
+            "iaph.documents.embedding",
+        ]),
     )
 
     # auth.log — only iaph.auth
@@ -148,16 +168,16 @@ def setup_logging() -> None:
         os.path.join(LOG_DIR, "errors.log"), level=logging.WARNING, formatter=formatter,
     )
 
-    # usecases/routes.log — only iaph.usecases.routes
+    # usecases/routes.log — everything in the routes bounded context
     routes_uc_handler = _daily_handler(
         os.path.join(USECASES_LOG_DIR, "routes.log"), formatter=formatter,
-        log_filter=_OnlyLoggerFilter("iaph.usecases.routes"),
+        log_filter=_OnlyLoggerFilter("iaph.routes"),
     )
 
-    # usecases/search.log — only iaph.usecases.search
+    # usecases/search.log — everything in the search bounded context
     search_uc_handler = _daily_handler(
         os.path.join(USECASES_LOG_DIR, "search.log"), formatter=formatter,
-        log_filter=_OnlyLoggerFilter("iaph.usecases.search"),
+        log_filter=_OnlyLoggerFilter("iaph.search"),
     )
 
     # --- Console handler (all iaph.* loggers at INFO+) ---
@@ -177,14 +197,15 @@ def setup_logging() -> None:
     iaph_logger.addHandler(error_handler)
     iaph_logger.propagate = False
 
-    # iaph.query — queries.log (inherits info.log + console from iaph parent)
-    logging.getLogger("iaph.query").addHandler(query_handler)
+    # queries.log — attach to the iaph parent, the filter scopes which
+    # namespaces are actually written (RAG + chat intent/reformulator).
+    iaph_logger.addHandler(query_handler)
 
-    # iaph.llm — llm.log (inherits info.log + console from iaph parent)
-    logging.getLogger("iaph.llm").addHandler(llm_handler)
+    # llm.log — attach to iaph parent; filter scopes to per-context LLM loggers.
+    iaph_logger.addHandler(llm_handler)
 
-    # iaph.embedding — embedding.log (inherits info.log + console from iaph parent)
-    logging.getLogger("iaph.embedding").addHandler(embedding_handler)
+    # embedding.log — attach to iaph parent; filter scopes to embedding adapters.
+    iaph_logger.addHandler(embedding_handler)
 
     # iaph.auth — auth.log (inherits info.log + console from iaph parent)
     logging.getLogger("iaph.auth").addHandler(auth_handler)
@@ -192,11 +213,11 @@ def setup_logging() -> None:
     # iaph.feedback — feedback.log (inherits info.log + console from iaph parent)
     logging.getLogger("iaph.feedback").addHandler(feedback_handler)
 
-    # iaph.usecases.routes — usecases/routes.log (inherits info.log + console from iaph parent)
-    logging.getLogger("iaph.usecases.routes").addHandler(routes_uc_handler)
+    # iaph.routes — usecases/routes.log (whole routes bounded context)
+    logging.getLogger("iaph.routes").addHandler(routes_uc_handler)
 
-    # iaph.usecases.search — usecases/search.log (inherits info.log + console from iaph parent)
-    logging.getLogger("iaph.usecases.search").addHandler(search_uc_handler)
+    # iaph.search — usecases/search.log (whole search bounded context)
+    logging.getLogger("iaph.search").addHandler(search_uc_handler)
 
     # Root logger — errors.log only (catches warnings from libraries)
     root = logging.getLogger()

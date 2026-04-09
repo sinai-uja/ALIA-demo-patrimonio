@@ -8,7 +8,7 @@ from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.text_search_port import TextSearchPort
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.rag.text_search")
 
 # Common Spanish stopwords and conversational verbs to strip before FTS
 _STOPWORDS = {

@@ -12,6 +12,7 @@ from src.domain.chat.prompts import CONVERSATIONAL_SYSTEM_PROMPT
 from src.domain.chat.services.intent_classifier import IntentClassifier, MessageIntent
 from src.domain.chat.services.query_reformulator import QueryReformulator
 from src.domain.shared.ports.unit_of_work import UnitOfWork
+from src.infrastructure.shared.exceptions import LLMUnavailableError
 
 logger = logging.getLogger("iaph.chat.send_message")
 
@@ -57,8 +58,16 @@ class SendMessageUseCase:
                 sources=[],
             )
 
-            # 4. Classify intent via LLM
-            intent = await self._intent_classifier.classify(dto.content, history)
+            # 4. Classify intent via LLM. If the LLM adapter is unavailable we
+            # fall back to a plain RAG query so the user still gets an answer.
+            try:
+                intent = await self._intent_classifier.classify(dto.content, history)
+            except LLMUnavailableError:
+                logger.warning(
+                    "Intent classification unavailable, defaulting to RAG_QUERY",
+                    exc_info=True,
+                )
+                intent = MessageIntent.RAG_QUERY
 
             # 5. Route based on intent
             if intent == MessageIntent.CONVERSATIONAL:
