@@ -12,7 +12,7 @@ import logging
 import re
 
 from src.domain.routes.value_objects.route_narrative import RouteNarrative
-from src.infrastructure.shared.exceptions import LLMResponseParseError
+from src.application.shared.exceptions import LLMResponseParseError
 
 logger = logging.getLogger("iaph.routes.llm")
 

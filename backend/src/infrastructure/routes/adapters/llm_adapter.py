@@ -10,7 +10,7 @@ from src.infrastructure.routes.adapters._narrative_parser import (
     parse_narrative_json,
 )
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.infrastructure.shared.exceptions import LLMUnavailableError
+from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.routes.llm")

@@ -5,7 +5,7 @@ import logging
 from src.config import settings
 from src.domain.rag.ports.embedding_port import EmbeddingPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.infrastructure.shared.exceptions import (
+from src.application.shared.exceptions import (
     EmbeddingServiceUnavailableError,
 )
 from src.infrastructure.shared.http.httpx_client import post_json

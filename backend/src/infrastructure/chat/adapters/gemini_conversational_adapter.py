@@ -3,7 +3,7 @@ import time
 
 from src.config import settings
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
-from src.infrastructure.shared.exceptions import LLMUnavailableError
+from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.chat.llm")

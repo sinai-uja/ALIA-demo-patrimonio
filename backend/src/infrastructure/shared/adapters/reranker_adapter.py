@@ -7,7 +7,7 @@ from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.reranker_port import RerankerPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.infrastructure.shared.exceptions import (
+from src.application.shared.exceptions import (
     ExternalServiceUnavailableError,
 )
 from src.infrastructure.shared.http.httpx_client import post_json

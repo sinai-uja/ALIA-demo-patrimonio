@@ -19,13 +19,11 @@ from src.application.auth.exceptions import (
 from src.application.shared.exceptions import (
     ApplicationError,
     ConflictError,
+    ExternalServiceUnavailableError,
+    LLMResponseParseError,
     ResourceNotFoundError,
     UnauthorizedActionError,
     ValidationError,
-)
-from src.infrastructure.shared.exceptions import (
-    ExternalServiceUnavailableError,
-    LLMResponseParseError,
 )
 
 logger = logging.getLogger("iaph.api.exceptions")

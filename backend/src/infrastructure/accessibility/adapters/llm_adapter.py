@@ -12,7 +12,7 @@ from src.domain.accessibility.prompts import (
 )
 from src.domain.accessibility.value_objects.simplification_level import SimplificationLevel
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.infrastructure.shared.exceptions import LLMUnavailableError
+from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.accessibility.llm")

@@ -17,7 +17,7 @@ from typing import Any
 
 import httpx
 
-from src.infrastructure.shared.exceptions import ExternalServiceUnavailableError
+from src.application.shared.exceptions import ExternalServiceUnavailableError
 
 _logger = logging.getLogger("iaph.infra.httpx")
 

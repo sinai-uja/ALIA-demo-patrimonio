@@ -24,3 +24,23 @@ class UnauthorizedActionError(ApplicationError):
 
 class ValidationError(ApplicationError):
     """Raised when input fails application-level validation."""
+
+
+class ExternalServiceUnavailableError(ApplicationError):
+    """Raised when an external dependency is unreachable or failing."""
+
+
+class LLMUnavailableError(ExternalServiceUnavailableError):
+    """Raised when the LLM provider is unavailable."""
+
+
+class EmbeddingServiceUnavailableError(ExternalServiceUnavailableError):
+    """Raised when the embedding service is unavailable."""
+
+
+class RAGUnavailableError(ExternalServiceUnavailableError):
+    """Raised when the RAG backend is unavailable."""
+
+
+class LLMResponseParseError(ApplicationError):
+    """Raised when an LLM response cannot be parsed into the expected shape."""

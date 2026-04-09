@@ -8,7 +8,7 @@ import httpx
 from src.config import settings
 from src.domain.documents.ports.embedding_port import EmbeddingPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.infrastructure.shared.exceptions import EmbeddingServiceUnavailableError
+from src.application.shared.exceptions import EmbeddingServiceUnavailableError
 
 logger = logging.getLogger("iaph.documents.embedding")
 
