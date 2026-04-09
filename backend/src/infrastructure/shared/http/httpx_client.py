@@ -32,8 +32,8 @@ def _translate_status_error(
     status = exc.response.status_code
     try:
         body_preview = exc.response.text[:500]
-    except Exception:  # noqa: BLE001 - defensive, body may be unreadable
-        body_preview = "<unreadable body>"
+    except (UnicodeDecodeError, ValueError, RuntimeError, httpx.HTTPError):
+        body_preview = "<unavailable>"
     _logger.warning(
         "%s HTTP %s on %s — %s", service_label, status, url, body_preview,
     )

@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Protocol
 
-logger = logging.getLogger("iaph.auth")
+logger = logging.getLogger("iaph.auth.token_provider")
 
 
 class TokenProvider(Protocol):

@@ -18,7 +18,7 @@ from src.application.auth.services.auth_application_service import (
 from src.config import settings
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.auth")
+logger = logging.getLogger("iaph.auth.router")
 
 router = APIRouter()
 

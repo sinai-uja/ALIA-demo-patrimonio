@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
 
@@ -98,7 +99,7 @@ class VLLMAdapter(LLMPort):
                 try:
                     body = cause.response.json()
                     error_msg = body.get("message", str(body))
-                except Exception:  # noqa: BLE001 - defensive body parsing
+                except (json.JSONDecodeError, ValueError, UnicodeDecodeError):
                     error_msg = cause.response.text[:500]
                 logger.warning("LLM 400 error: %s", error_msg)
                 reduced = max(64, self._max_tokens // 2)

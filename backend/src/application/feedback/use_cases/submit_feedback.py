@@ -7,7 +7,7 @@ from src.domain.feedback.entities.feedback import Feedback
 from src.domain.feedback.ports.feedback_repository import FeedbackRepository
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 
-logger = logging.getLogger("iaph.feedback")
+logger = logging.getLogger("iaph.feedback.submit")
 
 
 class SubmitFeedbackUseCase:
