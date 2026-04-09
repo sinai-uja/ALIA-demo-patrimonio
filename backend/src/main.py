@@ -18,6 +18,7 @@ from src.api.v1.endpoints.search.search import router as search_router
 from src.api.v1.exception_handlers import register_exception_handlers
 from src.composition.auth_composition import build_auth_application_service
 from src.config import settings
+from src.infrastructure.shared.persistence.engine import AsyncSessionLocal
 from src.logging_config import setup_logging
 
 setup_logging()
@@ -27,11 +28,12 @@ logger.info("Starting %s", settings.project_name)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    auth_service = build_auth_application_service()
-    auth_service.ensure_root_admin(
-        username=settings.admin_username,
-        password=settings.admin_password,
-    )
+    async with AsyncSessionLocal() as session:
+        auth_service = build_auth_application_service(session)
+        await auth_service.ensure_root_admin(
+            username=settings.admin_username,
+            password=settings.admin_password,
+        )
     logger.info("Root admin bootstrap completed")
     yield
 

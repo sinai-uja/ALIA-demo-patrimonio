@@ -11,8 +11,8 @@ class LoginUseCase:
         self._auth_port = auth_port
         self._token_port = token_port
 
-    def execute(self, dto: LoginDTO) -> TokenPairDTO:
-        user = self._auth_port.authenticate(dto.username, dto.password)
+    async def execute(self, dto: LoginDTO) -> TokenPairDTO:
+        user = await self._auth_port.authenticate(dto.username, dto.password)
         if user is None:
             raise InvalidCredentialsError("Invalid credentials")
         return TokenPairDTO(

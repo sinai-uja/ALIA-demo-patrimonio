@@ -9,11 +9,11 @@ class ValidateTokenUseCase:
         self._token_port = token_port
         self._auth_port = auth_port
 
-    def execute(self, token: str) -> User:
+    async def execute(self, token: str) -> User:
         username = self._token_port.validate_token(token)
         if username is None:
             raise InvalidTokenError("Invalid token")
-        user = self._auth_port.get_user_by_username(username)
+        user = await self._auth_port.get_user_by_username(username)
         if user is None:
             raise InvalidTokenError("User not found")
         return user

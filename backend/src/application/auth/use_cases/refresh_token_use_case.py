@@ -7,7 +7,7 @@ class RefreshTokenUseCase:
     def __init__(self, token_port: TokenPort) -> None:
         self._token_port = token_port
 
-    def execute(self, refresh_token: str) -> TokenPairDTO:
+    async def execute(self, refresh_token: str) -> TokenPairDTO:
         username = self._token_port.validate_token(refresh_token)
         if username is None:
             raise InvalidTokenError("Invalid or expired refresh token")

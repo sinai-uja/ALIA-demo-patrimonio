@@ -1,5 +1,4 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.auth.services.auth_application_service import (
     AuthApplicationService,
@@ -19,13 +18,15 @@ from src.infrastructure.auth.adapters.db_auth_adapter import DbAuthAdapter
 from src.infrastructure.auth.adapters.jwt_token_adapter import (
     JWTTokenAdapter,
 )
+from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
+    SqlAlchemyUnitOfWork,
+)
 
-_sync_engine = create_engine(settings.database_url_sync, echo=False, pool_pre_ping=True)
-_SyncSessionLocal = sessionmaker(bind=_sync_engine)
 
-
-def build_auth_application_service() -> AuthApplicationService:
-    auth_adapter = DbAuthAdapter(_SyncSessionLocal)
+def build_auth_application_service(db: AsyncSession) -> AuthApplicationService:
+    """Wire all auth dependencies and return the application service."""
+    auth_adapter = DbAuthAdapter(db)
+    uow = SqlAlchemyUnitOfWork(session=db)
     token_adapter = JWTTokenAdapter(
         secret_key=settings.jwt_secret_key,
         algorithm=settings.jwt_algorithm,
@@ -43,8 +44,9 @@ def build_auth_application_service() -> AuthApplicationService:
             token_port=token_adapter
         ),
         ensure_root_admin_use_case=EnsureRootAdminUseCase(
-            auth_port=auth_adapter
+            auth_port=auth_adapter, unit_of_work=uow,
         ),
         auth_port=auth_adapter,
+        unit_of_work=uow,
         root_admin_username=settings.admin_username,
     )

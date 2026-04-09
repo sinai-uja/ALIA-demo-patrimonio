@@ -36,11 +36,11 @@ def _to_response(u: UserDTO) -> AdminUserResponse:
 
 
 @router.get("/users", response_model=list[AdminUserResponse])
-def list_users(
+async def list_users(
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
-    return [_to_response(u) for u in service.list_users()]
+    return [_to_response(u) for u in await service.list_users()]
 
 
 @router.post(
@@ -48,12 +48,12 @@ def list_users(
     response_model=AdminUserResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_user(
+async def create_user(
     req: CreateUserRequest,
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
-    user = service.create_user(
+    user = await service.create_user(
         CreateUserDTO(
             username=req.username,
             password=req.password,
@@ -65,14 +65,14 @@ def create_user(
 
 
 @router.put("/users/{user_id}", response_model=AdminUserResponse)
-def update_user(
+async def update_user(
     user_id: str,
     req: UpdateUserRequest,
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
     uid = _uuid.UUID(user_id)
-    user = service.update_user(
+    user = await service.update_user(
         UpdateUserDTO(
             user_id=uid,
             password=req.password,
@@ -87,13 +87,13 @@ def update_user(
     "/users/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_user(
+async def delete_user(
     user_id: str,
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
     uid = _uuid.UUID(user_id)
-    service.delete_user(uid, actor=admin)
+    await service.delete_user(uid, actor=admin)
 
 
 def _to_pt_response(pt) -> ProfileTypeResponse:
@@ -101,11 +101,14 @@ def _to_pt_response(pt) -> ProfileTypeResponse:
 
 
 @router.get("/profile-types", response_model=list[ProfileTypeResponse])
-def list_profile_types(
+async def list_profile_types(
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
-    return [_to_pt_response(pt) for pt in service.list_profile_types_admin()]
+    return [
+        _to_pt_response(pt)
+        for pt in await service.list_profile_types_admin()
+    ]
 
 
 @router.post(
@@ -113,23 +116,23 @@ def list_profile_types(
     response_model=ProfileTypeResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_profile_type(
+async def create_profile_type(
     req: CreateProfileTypeRequest,
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
-    pt = service.create_profile_type(CreateProfileTypeDTO(name=req.name))
+    pt = await service.create_profile_type(CreateProfileTypeDTO(name=req.name))
     return _to_pt_response(pt)
 
 
 @router.put("/profile-types/{profile_type_id}", response_model=ProfileTypeResponse)
-def rename_profile_type(
+async def rename_profile_type(
     profile_type_id: str,
     req: UpdateProfileTypeRequest,
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
-    pt = service.rename_profile_type(
+    pt = await service.rename_profile_type(
         UpdateProfileTypeDTO(
             profile_type_id=_uuid.UUID(profile_type_id),
             name=req.name,
@@ -139,9 +142,9 @@ def rename_profile_type(
 
 
 @router.delete("/profile-types/{profile_type_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_profile_type(
+async def delete_profile_type(
     profile_type_id: str,
     admin: User = Depends(get_current_admin),
     service: AuthApplicationService = Depends(get_auth_service),
 ):
-    service.delete_profile_type(_uuid.UUID(profile_type_id))
+    await service.delete_profile_type(_uuid.UUID(profile_type_id))
