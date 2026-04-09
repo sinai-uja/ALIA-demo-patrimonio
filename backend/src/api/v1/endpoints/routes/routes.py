@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.routes.deps import get_routes_service
@@ -123,14 +123,7 @@ async def generate_route(
         username=user.username,
     )
 
-    try:
-        result = await service.generate_route(dto)
-    except Exception as exc:
-        logger.error("Route generation failed: query=%r, error=%s", request.query[:80], exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Route generation error: {exc}",
-        ) from exc
+    result = await service.generate_route(dto)
 
     logger.info(
         "Route generated: id=%s, title=%r, stops=%d, duration=%d min",
@@ -157,13 +150,7 @@ async def delete_route(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> Response:
     """Delete a virtual route by ID."""
-    try:
-        await service.delete_route(route_id, user_id=str(user.id))
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404, detail=str(exc),
-        ) from exc
-
+    await service.delete_route(route_id, user_id=str(user.id))
     return Response(status_code=204)
 
 
@@ -174,13 +161,7 @@ async def get_route(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
     """Get a specific virtual route by ID."""
-    try:
-        result = await service.get_route(route_id, user_id=str(user.id))
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404, detail=str(exc),
-        ) from exc
-
+    result = await service.get_route(route_id, user_id=str(user.id))
     return _dto_to_schema(result)
 
 
@@ -206,18 +187,7 @@ async def guide_query(
         ],
     )
 
-    try:
-        result = await service.guide_query(dto)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404, detail=str(exc),
-        ) from exc
-    except Exception as exc:
-        logger.error("Guide query failed: route=%s, error=%s", route_id, exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Guide query error: {exc}",
-        ) from exc
+    result = await service.guide_query(dto)
 
     logger.info(
         "Guide response: route=%s, answer=%d chars, sources=%d",

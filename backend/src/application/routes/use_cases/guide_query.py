@@ -1,4 +1,5 @@
 from src.application.routes.dto.routes_dto import GuideQueryDTO, GuideResponseDTO
+from src.application.routes.exceptions import RouteNotFoundError
 from src.domain.routes.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
 )
@@ -30,7 +31,7 @@ class GuideQueryUseCase:
         # 1. Load the route
         route = await self._route_repository.get_route(UUID(dto.route_id))
         if route is None:
-            raise ValueError(f"Route not found: {dto.route_id}")
+            raise RouteNotFoundError(f"Route not found: {dto.route_id}")
 
         # 2. Fetch full descriptions for all stops with heritage_asset_id
         asset_ids = [

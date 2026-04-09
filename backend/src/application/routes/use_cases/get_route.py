@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from src.application.routes.dto.routes_dto import RouteStopDTO, VirtualRouteDTO
+from src.application.routes.exceptions import RouteNotFoundError
 from src.domain.routes.ports.route_repository import RouteRepository
 
 
@@ -14,7 +15,7 @@ class GetRouteUseCase:
         user_uuid = UUID(user_id) if user_id else None
         route = await self._route_repository.get_route(UUID(route_id), user_id=user_uuid)
         if route is None:
-            raise ValueError(f"Route not found: {route_id}")
+            raise RouteNotFoundError(f"Route not found: {route_id}")
 
         return VirtualRouteDTO(
             id=str(route.id),

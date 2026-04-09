@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from src.application.routes.exceptions import RouteNotFoundError
 from src.domain.routes.ports.route_repository import RouteRepository
 
 
@@ -13,4 +14,4 @@ class DeleteRouteUseCase:
         user_uuid = UUID(user_id) if user_id else None
         deleted = await self._route_repository.delete_route(UUID(route_id), user_id=user_uuid)
         if not deleted:
-            raise ValueError(f"Route not found: {route_id}")
+            raise RouteNotFoundError(f"Route not found: {route_id}")

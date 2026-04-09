@@ -5,6 +5,10 @@ import httpx
 
 from src.config import settings
 from src.domain.routes.ports.llm_port import LLMPort
+from src.domain.routes.value_objects.route_narrative import RouteNarrative
+from src.infrastructure.routes.adapters._narrative_parser import (
+    parse_narrative_json,
+)
 
 logger = logging.getLogger("iaph.llm")
 
@@ -81,3 +85,17 @@ class GeminiRoutesAdapter(LLMPort):
             )
             logger.debug("Gemini routes full response:\n%s", content)
             return content
+
+    async def generate_route_narrative(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        province_label: str,
+        max_tokens: int | None = None,
+    ) -> RouteNarrative:
+        raw = await self.generate_structured(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=max_tokens,
+        )
+        return parse_narrative_json(raw, province_label)

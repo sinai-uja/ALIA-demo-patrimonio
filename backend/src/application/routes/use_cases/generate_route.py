@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from uuid import UUID
@@ -146,18 +145,18 @@ class GenerateRouteUseCase:
             province=dto.province_filter,
             municipality=dto.municipality_filter,
         )
-        raw_narrative = await self._llm_port.generate_structured(
+        route_narrative = await self._llm_port.generate_route_narrative(
             system_prompt=ROUTE_SYSTEM_PROMPT,
             user_prompt=route_prompt,
+            province_label=province_label,
             max_tokens=settings.llm_route_narrative_max_tokens,
         )
+        title = route_narrative.title
+        introduction = route_narrative.introduction
+        narrative_segments = route_narrative.segments
+        conclusion = route_narrative.conclusion
 
-        # 9. Parse structured narrative (with fallback)
-        title, introduction, narrative_segments, conclusion = (
-            self._parse_narrative_json(raw_narrative, province_label)
-        )
-
-        # 10. Compose monolithic narrative for backward compatibility
+        # 9. Compose monolithic narrative for backward compatibility
         narrative_parts = [introduction]
         for i in range(1, len(selected_chunks) + 1):
             if i in narrative_segments:
@@ -186,118 +185,6 @@ class GenerateRouteUseCase:
             saved_route.id, user_label, title[:60], len(selected_chunks), elapsed_ms,
         )
         return self._to_dto(saved_route)
-
-    def _parse_narrative_json(
-        self, raw: str, province: str,
-    ) -> tuple[str, str, dict[int, str], str]:
-        """Parse structured JSON narrative from LLM response.
-
-        Returns (title, introduction, {order: narrative}, conclusion).
-        Falls back to regex extraction for truncated JSON, then to
-        treating the entire response as monolithic narrative.
-        """
-        import re
-
-        cleaned = raw.strip()
-        # Strip markdown code block if present
-        if cleaned.startswith("```"):
-            lines = cleaned.split("\n")
-            lines = lines[1:]  # remove opening ```json or ```
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            cleaned = "\n".join(lines)
-
-        # Try full JSON parse first
-        try:
-            data = json.loads(cleaned)
-            title = data.get("title", f"Ruta cultural por {province}")
-            introduction = data.get("introduction", "")
-            conclusion = data.get("conclusion", "")
-            segments: dict[int, str] = {}
-            for stop in data.get("stops", []):
-                order = stop.get("order")
-                narrative_text = stop.get("narrative", "")
-                if order is not None and narrative_text:
-                    segments[int(order)] = narrative_text
-            return title, introduction, segments, conclusion
-        except (json.JSONDecodeError, AttributeError, TypeError):
-            pass
-
-        # JSON parse failed — try regex extraction for truncated JSON
-        if cleaned.startswith("{"):
-            logger.warning(
-                "Full JSON parse failed, attempting regex extraction "
-                "from truncated response (%d chars)", len(cleaned),
-            )
-            title = f"Ruta cultural por {province}"
-            introduction = ""
-            conclusion = ""
-            segments = {}
-
-            title_match = re.search(r'"title"\s*:\s*"([^"]+)"', cleaned)
-            if title_match:
-                title = title_match.group(1)
-
-            intro_match = re.search(
-                r'"introduction"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
-            )
-            if intro_match:
-                introduction = intro_match.group(1).replace('\\"', '"')
-
-            conclusion_match = re.search(
-                r'"conclusion"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
-            )
-            if conclusion_match:
-                conclusion = conclusion_match.group(1).replace('\\"', '"')
-
-            # Extract stop narratives
-            for stop_match in re.finditer(
-                r'"order"\s*:\s*(\d+)\s*,\s*"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"',
-                cleaned,
-            ):
-                order = int(stop_match.group(1))
-                narrative_text = stop_match.group(2).replace('\\"', '"')
-                segments[order] = narrative_text
-
-            if introduction or segments:
-                logger.info(
-                    "Regex extraction recovered: title=%s, intro=%d chars, "
-                    "%d stop segments, conclusion=%d chars",
-                    title[:50], len(introduction), len(segments), len(conclusion),
-                )
-                return title, introduction, segments, conclusion
-
-        # Complete fallback — treat as plain text
-        logger.warning("Failed to parse narrative JSON, using plain text fallback")
-        title = self._extract_title_from_text(cleaned, province)
-        return title, cleaned, {}, ""
-
-    @staticmethod
-    def _extract_title_from_text(narrative: str, province: str) -> str:
-        if narrative:
-            # If the response looks like JSON, try to extract title from it
-            stripped = narrative.strip()
-            if stripped.startswith("{"):
-                try:
-                    # Try partial JSON parse (may be truncated)
-                    import re
-                    title_match = re.search(r'"title"\s*:\s*"([^"]+)"', stripped)
-                    if title_match:
-                        return title_match.group(1)
-                except Exception:
-                    pass
-                return f"Ruta cultural por {province}"
-            first_line = stripped.split("\n")[0].strip()
-            clean = (
-                first_line.lstrip("#")
-                .strip()
-                .strip('"')
-                .strip("*")
-                .strip()
-            )
-            if clean and len(clean) < 200:
-                return clean
-        return f"Ruta cultural por {province}"
 
     def _to_dto(self, route) -> VirtualRouteDTO:
         return VirtualRouteDTO(
