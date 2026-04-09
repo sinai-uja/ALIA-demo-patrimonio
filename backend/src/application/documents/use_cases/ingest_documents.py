@@ -13,7 +13,7 @@ from src.domain.documents.services.document_enrichment_service import (
 from src.domain.documents.value_objects.heritage_type import HeritageType
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 
-logger = logging.getLogger("iaph")
+logger = logging.getLogger("iaph.documents.ingest")
 
 EMBEDDING_BATCH_SIZE = 2
 
