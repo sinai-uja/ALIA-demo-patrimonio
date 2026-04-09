@@ -19,6 +19,7 @@ from src.api.v1.endpoints.heritage.heritage import router as heritage_router
 from src.api.v1.endpoints.rag.rag import router as rag_router
 from src.api.v1.endpoints.routes.routes import router as routes_router
 from src.api.v1.endpoints.search.search import router as search_router
+from src.api.v1.exception_handlers import register_exception_handlers
 from src.config import settings
 from src.infrastructure.auth.models import UserModel, UserProfileTypeModel
 from src.logging_config import setup_logging
@@ -75,6 +76,8 @@ app = FastAPI(
     docs_url="/docs",
     lifespan=lifespan,
 )
+
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
