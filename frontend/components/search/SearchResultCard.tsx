@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { SearchResult } from "@/lib/api";
 import { useSearchStore } from "@/store/search";
+import { useAuthStore } from "@/store/auth";
+import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 
 const HERITAGE_LABELS: Record<string, string> = {
   patrimonio_inmueble: "Patrimonio Inmueble",
@@ -31,7 +33,17 @@ function cleanDescription(text: string): string {
   return text.replace(/^DESCRIPCI[OÓ]N\s*/i, "").trim();
 }
 
-export function SearchResultCard({ result, rank }: { result: SearchResult; rank: number }) {
+export function SearchResultCard({
+  result,
+  rank,
+  searchId,
+  query,
+}: {
+  result: SearchResult;
+  rank: number;
+  searchId: string | null;
+  query: string;
+}) {
   const openDetail = useSearchStore((s) => s.openDetail);
   const [activeChunk, setActiveChunk] = useState(0);
   const chunk = result.chunks[activeChunk];
@@ -44,20 +56,35 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
   return (
     <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start gap-4">
-        {/* Thumbnail */}
-        {result.image_url ? (
-          <img
-            src={result.image_url}
-            alt={displayName}
-            className="w-20 h-20 rounded-xl object-cover shrink-0 bg-stone-100"
+        {/* Feedback + Thumbnail stacked */}
+        <div className="shrink-0 flex flex-col items-center gap-1">
+          <FeedbackButtons
+            targetType="search_result"
+            targetId={searchId ? `${searchId}:${result.document_id}` : result.document_id}
+            metadata={{
+              search_id: searchId,
+              document_id: result.document_id,
+              query,
+              heritage_type: result.heritage_type,
+              province: result.province,
+              user_profile_type: useAuthStore.getState().profileType ?? undefined,
+            }}
+            size="sm"
           />
-        ) : (
-          <div className="w-20 h-20 rounded-xl bg-stone-100 shrink-0 flex items-center justify-center">
-            <svg className="w-8 h-8 text-stone-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21" />
-            </svg>
-          </div>
-        )}
+          {result.image_url ? (
+            <img
+              src={result.image_url}
+              alt={displayName}
+              className="w-20 h-20 rounded-xl object-cover bg-stone-100"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-xl bg-stone-100 flex items-center justify-center">
+              <svg className="w-8 h-8 text-stone-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21" />
+              </svg>
+            </div>
+          )}
+        </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
@@ -205,6 +232,7 @@ export function SearchResultCard({ result, rank }: { result: SearchResult; rank:
           </div>
         </div>
       </div>
+
     </div>
   );
 }
