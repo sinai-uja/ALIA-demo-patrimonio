@@ -17,7 +17,8 @@ from src.application.shared.exceptions import LLMResponseParseError
 logger = logging.getLogger("iaph.routes.llm")
 
 
-def _strip_markdown(raw: str) -> str:
+def _strip_code_fences(raw: str) -> str:
+    """Remove markdown code fences (```json ... ```) wrapping the response."""
     cleaned = raw.strip()
     if cleaned.startswith("```"):
         lines = cleaned.split("\n")
@@ -26,6 +27,26 @@ def _strip_markdown(raw: str) -> str:
             lines = lines[:-1]
         cleaned = "\n".join(lines)
     return cleaned
+
+
+def _strip_markdown(text: str) -> str:
+    """Strip common markdown formatting from LLM output fields."""
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)  # **bold** -> bold
+    text = re.sub(r"\*([^*]+)\*", r"\1", text)       # *italic* -> italic
+    text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)  # ### heading -> heading
+    text = re.sub(r"^---+$", "", text, flags=re.MULTILINE)  # --- separators
+    return text.strip()
+
+
+def _clean_title(title: str) -> str:
+    """Strip markdown and remove common 'Titulo:' prefixes from title."""
+    title = _strip_markdown(title)
+    lower = title.lower()
+    if lower.startswith("título:"):
+        title = title[len("título:"):].strip()
+    elif lower.startswith("titulo:"):
+        title = title[len("titulo:"):].strip()
+    return title
 
 
 def _extract_title_from_text(narrative: str, province: str) -> str:
@@ -67,20 +88,25 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
             f"Expected str LLM response, got {type(raw).__name__}",
         )
 
-    cleaned = _strip_markdown(raw)
+    cleaned = _strip_code_fences(raw)
+
+    # Count expected stops from "order" occurrences (used for recovery logging).
+    expected_stops = len(re.findall(r'"order"\s*:', cleaned))
 
     # 1. Strict JSON parse.
     try:
         data = json.loads(cleaned)
-        title = data.get("title") or f"Ruta cultural por {province}"
-        introduction = data.get("introduction", "") or ""
-        conclusion = data.get("conclusion", "") or ""
+        title = _clean_title(
+            data.get("title") or f"Ruta cultural por {province}",
+        )
+        introduction = _strip_markdown(data.get("introduction", "") or "")
+        conclusion = _strip_markdown(data.get("conclusion", "") or "")
         segments: dict[int, str] = {}
         for stop in data.get("stops", []) or []:
             order = stop.get("order")
             narrative_text = stop.get("narrative", "")
             if order is not None and narrative_text:
-                segments[int(order)] = narrative_text
+                segments[int(order)] = _strip_markdown(narrative_text)
         return RouteNarrative(
             title=title,
             introduction=introduction,
@@ -102,9 +128,11 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
         conclusion = ""
         segments = {}
 
-        title_match = re.search(r'"title"\s*:\s*"([^"]+)"', cleaned)
+        title_match = re.search(
+            r'"title"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
+        )
         if title_match:
-            title = title_match.group(1)
+            title = title_match.group(1).replace('\\"', '"')
 
         intro_match = re.search(
             r'"introduction"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
@@ -118,6 +146,7 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
         if conclusion_match:
             conclusion = conclusion_match.group(1).replace('\\"', '"')
 
+        # Extract complete narrative segments (escaped-quote aware).
         for stop_match in re.finditer(
             r'"order"\s*:\s*(\d+)\s*,\s*"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"',
             cleaned,
@@ -126,14 +155,29 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
             narrative_text = stop_match.group(2).replace('\\"', '"')
             segments[order] = narrative_text
 
+        # Try to capture a partial narrative if JSON was truncated mid-string.
+        if expected_stops > len(segments):
+            partial_match = re.search(
+                r'"order"\s*:\s*(\d+)\s*,\s*"narrative"\s*:\s*"((?:[^"\\]|\\.)+)$',
+                cleaned,
+            )
+            if partial_match:
+                order = int(partial_match.group(1))
+                if order not in segments:
+                    partial_text = partial_match.group(2).replace('\\"', '"')
+                    segments[order] = partial_text
+
+        # Apply markdown stripping to all recovered fields.
+        title = _clean_title(title)
+        introduction = _strip_markdown(introduction)
+        conclusion = _strip_markdown(conclusion)
+        segments = {k: _strip_markdown(v) for k, v in segments.items()}
+
         if introduction or segments:
-            logger.info(
-                "Regex extraction recovered: title=%s, intro=%d chars, "
-                "%d stop segments, conclusion=%d chars",
-                title[:50],
-                len(introduction),
+            logger.warning(
+                "Recovered %d/%d narrative segments from truncated response",
                 len(segments),
-                len(conclusion),
+                expected_stops,
             )
             return RouteNarrative(
                 title=title,
@@ -146,9 +190,10 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
     logger.warning(
         "Failed to parse narrative JSON, using plain text fallback",
     )
+    fallback_text = _strip_markdown(cleaned)
     return RouteNarrative(
-        title=_extract_title_from_text(cleaned, province),
-        introduction=cleaned,
+        title=_extract_title_from_text(fallback_text, province),
+        introduction=fallback_text,
         segments={},
         conclusion="",
     )

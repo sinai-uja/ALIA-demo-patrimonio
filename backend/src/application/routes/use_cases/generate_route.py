@@ -152,7 +152,10 @@ class GenerateRouteUseCase:
             system_prompt=ROUTE_SYSTEM_PROMPT,
             user_prompt=route_prompt,
             province_label=province_label,
-            max_tokens=settings.llm_route_narrative_max_tokens,
+            max_tokens=min(
+                len(selected_chunks) * 400 + 500,
+                settings.llm_route_narrative_max_tokens,
+            ),
         )
         title = route_narrative.title
         introduction = route_narrative.introduction
