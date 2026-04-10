@@ -22,8 +22,14 @@ export default function LoginPage() {
     try {
       await login(username, password);
       window.location.href = "/";
-    } catch {
-      setError("Credenciales incorrectas");
+    } catch (err: any) {
+      if (err?.status === 401) {
+        setError("Credenciales incorrectas");
+      } else if (err?.status >= 500) {
+        setError("Servicio no disponible temporalmente");
+      } else {
+        setError("Error de conexión");
+      }
     } finally {
       setLoading(false);
     }

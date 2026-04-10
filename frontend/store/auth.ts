@@ -58,7 +58,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (!res.ok) {
       const err = await res.text();
-      throw new Error(err || res.statusText);
+      const error = new Error(err || res.statusText);
+      (error as any).status = res.status;
+      throw error;
     }
 
     const data = (await res.json()) as LoginResponse;
