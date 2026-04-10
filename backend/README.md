@@ -28,22 +28,27 @@ Built with **Python 3.11**, managed with **uv**, following **hexagonal architect
 src/
 ├── domain/             # Pure Python domain -- entities, value objects, ports, services
 │   ├── documents/      # HeritageType, Document, Chunk; ChunkingService; EmbeddingPort, DocumentRepository
-│   ├── rag/            # RAGQuery, RetrievedChunk, RAGResponse; ContextAssemblyService; VectorSearchPort, LLMPort
+│   ├── rag/            # RAGQuery, RetrievedChunk, RAGResponse; ContextAssemblyService; VectorSearchPort, LLMPort, RerankerPort
 │   ├── chat/           # ChatSession, Message, MessageRole; ChatRepository, RAGPort
 │   ├── routes/         # VirtualRoute, RouteStop, AssetPreview; RouteBuilderService, QueryExtractionService; HeritageAssetLookupPort, EntityDetectionPort, FilterMetadataPort
 │   ├── accessibility/  # SimplifiedText, SimplificationLevel; LLMPort
-│   └── heritage/       # HeritageAsset, typed raw_data value objects; HeritageRepository
+│   ├── heritage/       # HeritageAsset, typed raw_data value objects; HeritageRepository
+│   ├── auth/           # User, TokenPair; AuthPort, TokenPort
+│   ├── feedback/       # Feedback; FeedbackRepositoryPort
+│   └── shared/         # EmbeddingPort, UnitOfWork, extract_asset_id value object
 ├── application/        # Use cases and DTOs (no framework dependencies)
+│   └── shared/         # Typed exception hierarchy (ApplicationError and specializations)
 ├── infrastructure/     # SQLAlchemy ORM, httpx adapters, parquet loader
+│   └── shared/         # HttpEmbeddingAdapter, HttpRerankerAdapter, PgVectorSearchAdapter, SqlAlchemyUnitOfWork, httpx helpers
 ├── composition/        # Dependency wiring (composition root per bounded context)
 ├── api/v1/endpoints/   # FastAPI routers, Pydantic schemas, FastAPI deps
-├── db/                 # AsyncEngine, AsyncSessionLocal, Base, get_db dependency
+│   └── admin/          # Admin user/profile management (part of auth context)
 ├── config.py           # pydantic-settings Settings
-├── main.py             # FastAPI app, CORS, router registration
+├── main.py             # FastAPI app, CORS, router registration, exception handlers
 └── tests/              # pytest tests
 ```
 
-Seven bounded contexts: **documents**, **rag**, **chat**, **routes**, **heritage**, **search**, and **accessibility**. Each context has its own domain, application, infrastructure, composition, and API layers.
+Ten bounded contexts: **documents**, **rag**, **chat**, **routes**, **heritage**, **search**, **accessibility**, **auth**, **feedback**, and **shared**. Each context has its own domain, application, infrastructure, composition, and API layers. All endpoints (except auth and health) require JWT authentication.
 
 ---
 
