@@ -3,6 +3,7 @@
 import pytest
 
 from src.domain.documents.entities.document import Document
+from src.domain.documents.exceptions import InvalidChunkingConfigurationError
 from src.domain.documents.services.chunking_service import ChunkingService
 from src.domain.documents.value_objects.heritage_type import HeritageType
 
@@ -31,11 +32,11 @@ class TestChunkingServiceInit:
         assert service.chunk_overlap == 10
 
     def test_overlap_greater_or_equal_to_size_raises(self):
-        with pytest.raises(ValueError, match="chunk_overlap must be less than chunk_size"):
+        with pytest.raises(InvalidChunkingConfigurationError, match="chunk_overlap must be less than chunk_size"):
             ChunkingService(chunk_size=100, chunk_overlap=100)
 
     def test_overlap_exceeds_size_raises(self):
-        with pytest.raises(ValueError, match="chunk_overlap must be less than chunk_size"):
+        with pytest.raises(InvalidChunkingConfigurationError, match="chunk_overlap must be less than chunk_size"):
             ChunkingService(chunk_size=50, chunk_overlap=60)
 
 

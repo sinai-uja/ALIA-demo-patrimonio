@@ -1,7 +1,7 @@
 """Integration tests for admin endpoints with mocked dependencies."""
 
 import uuid
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -83,8 +83,8 @@ def _clear_overrides():
     app.dependency_overrides.clear()
 
 
-def _mock_service() -> MagicMock:
-    return MagicMock()
+def _mock_service() -> AsyncMock:
+    return AsyncMock()
 
 
 # ===========================================================================
@@ -101,7 +101,7 @@ class TestNonAdminAccessDenied:
             resp = await c.get(f"{PREFIX}/users")
 
         assert resp.status_code == 403
-        assert "Admin access required" in resp.json()["detail"]
+        assert "Admin privileges required" in resp.json()["detail"]
 
     async def test_create_user_returns_403_for_regular_user(self):
         svc = _mock_service()
@@ -110,7 +110,7 @@ class TestNonAdminAccessDenied:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.post(
                 f"{PREFIX}/users",
-                json={"username": "new", "password": "pw"},
+                json={"username": "new", "password": "secret123"},
             )
 
         assert resp.status_code == 403
@@ -208,7 +208,7 @@ class TestRootAdminProtection:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.put(
                 f"{PREFIX}/users/{ROOT_ADMIN_USER.id}",
-                json={"password": "newpw"},
+                json={"password": "newpassword"},
             )
 
         assert resp.status_code == 403
@@ -244,7 +244,7 @@ class TestAdminProfileTypeRestriction:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.post(
                 f"{PREFIX}/users",
-                json={"username": "evil", "password": "pw", "profile_type": "admin"},
+                json={"username": "evil", "password": "secret123", "profile_type": "admin"},
             )
 
         assert resp.status_code == 403
@@ -264,7 +264,7 @@ class TestAdminProfileTypeRestriction:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.post(
                 f"{PREFIX}/users",
-                json={"username": "new_admin", "password": "pw", "profile_type": "admin"},
+                json={"username": "new_admin", "password": "secret123", "profile_type": "admin"},
             )
 
         assert resp.status_code == 201
@@ -328,7 +328,7 @@ class TestCRUDHappyPath:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.post(
                 f"{PREFIX}/users",
-                json={"username": "researcher", "password": "pw", "profile_type": "investigador"},
+                json={"username": "researcher", "password": "secret123", "profile_type": "investigador"},
             )
 
         assert resp.status_code == 201
@@ -348,7 +348,7 @@ class TestCRUDHappyPath:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.put(
                 f"{PREFIX}/users/{REGULAR_USER.id}",
-                json={"password": "newpw"},
+                json={"password": "newpassword"},
             )
 
         assert resp.status_code == 200
@@ -392,7 +392,7 @@ class TestErrorHandling:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.put(
                 f"{PREFIX}/users/{uuid.uuid4()}",
-                json={"password": "newpw"},
+                json={"password": "newpassword"},
             )
 
         assert resp.status_code == 404
@@ -416,7 +416,7 @@ class TestErrorHandling:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.post(
                 f"{PREFIX}/users",
-                json={"username": "existing", "password": "pw"},
+                json={"username": "existing", "password": "secret123"},
             )
 
         assert resp.status_code == 409

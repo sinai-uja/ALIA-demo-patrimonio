@@ -241,6 +241,9 @@ class TestGenerateRouteUseCase:
         self.route_builder_service = MagicMock(spec=RouteBuilderService)
         self.query_extraction_service = MagicMock(spec=QueryExtractionService)
         self.heritage_asset_lookup_port = AsyncMock()
+        self.unit_of_work = AsyncMock()
+        self.unit_of_work.__aenter__ = AsyncMock(return_value=self.unit_of_work)
+        self.unit_of_work.__aexit__ = AsyncMock(return_value=False)
 
         self.use_case = GenerateRouteUseCase(
             rag_port=self.rag_port,
@@ -249,6 +252,7 @@ class TestGenerateRouteUseCase:
             route_builder_service=self.route_builder_service,
             query_extraction_service=self.query_extraction_service,
             heritage_asset_lookup_port=self.heritage_asset_lookup_port,
+            unit_of_work=self.unit_of_work,
         )
 
     def _setup_defaults(self, chunks=None, route=None, num_stops=2):
