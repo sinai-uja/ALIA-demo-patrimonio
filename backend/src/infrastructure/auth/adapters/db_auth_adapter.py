@@ -13,6 +13,7 @@ from src.application.auth.exceptions import (
     UserAlreadyExistsError,
     UserNotFoundError,
 )
+from src.application.shared.exceptions import ExternalServiceUnavailableError
 from src.domain.auth.entities.user import User, UserProfileType
 from src.domain.auth.ports.auth_port import AuthPort
 from src.infrastructure.auth.models import UserModel, UserProfileTypeModel
@@ -31,14 +32,21 @@ class DbAuthAdapter(AuthPort):
         self._session = session
 
     async def authenticate(self, username: str, password: str) -> User | None:
-        result = await self._session.execute(
-            select(UserModel).where(UserModel.username == username)
-        )
+        try:
+            result = await self._session.execute(
+                select(UserModel).where(UserModel.username == username)
+            )
+        except Exception as exc:
+            logger.error("Database error during authentication for user=%r", username, exc_info=True)
+            raise ExternalServiceUnavailableError("Authentication service temporarily unavailable") from exc
         row = result.scalar_one_or_none()
         if row is None:
+            logger.debug("Authentication failed: user %r not found", username)
             return None
         if not bcrypt.checkpw(password.encode(), row.password_hash.encode()):
+            logger.debug("Authentication failed: wrong password for user %r", username)
             return None
+        logger.debug("Authentication succeeded for user %r", username)
         return self._to_domain(row)
 
     async def get_user_by_username(self, username: str) -> User | None:

@@ -1,7 +1,11 @@
+import logging
+
 from src.application.auth.dto.auth_dto import LoginDTO, TokenPairDTO
 from src.application.auth.exceptions import InvalidCredentialsError
 from src.domain.auth.ports.auth_port import AuthPort
 from src.domain.auth.ports.token_port import TokenPort
+
+logger = logging.getLogger("iaph.auth.login")
 
 
 class LoginUseCase:
@@ -14,7 +18,9 @@ class LoginUseCase:
     async def execute(self, dto: LoginDTO) -> TokenPairDTO:
         user = await self._auth_port.authenticate(dto.username, dto.password)
         if user is None:
+            logger.warning("Login failed: invalid credentials for user=%r", dto.username)
             raise InvalidCredentialsError("Invalid credentials")
+        logger.info("Login succeeded for user=%r", dto.username)
         return TokenPairDTO(
             access_token=self._token_port.create_access_token(
                 user.username

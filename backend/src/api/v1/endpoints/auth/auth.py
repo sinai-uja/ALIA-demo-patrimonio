@@ -31,12 +31,16 @@ async def login(
 ):
     client_ip = raw_request.client.host if raw_request.client else "unknown"
     logger.info("Login attempt: user=%r, ip=%s", request.username, client_ip)
-    result = await service.login(
-        LoginDTO(
-            username=request.username,
-            password=request.password,
+    try:
+        result = await service.login(
+            LoginDTO(
+                username=request.username,
+                password=request.password,
+            )
         )
-    )
+    except Exception:
+        logger.warning("Login failed: user=%r, ip=%s", request.username, client_ip)
+        raise
     logger.info("Login success: user=%r, ip=%s", request.username, client_ip)
     return TokenResponse(
         access_token=result.access_token,
