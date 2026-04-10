@@ -201,7 +201,6 @@ def _make_virtual_route(
             municipality=province,
             url=f"https://example.com/stop{i}",
             description=f"Descripcion parada {i}",
-            visit_duration_minutes=60,
         )
         for i in range(1, num_stops + 1)
     ]
@@ -210,7 +209,6 @@ def _make_virtual_route(
         title=title,
         province=province,
         stops=stops,
-        total_duration_minutes=60 * num_stops,
         narrative=narrative,
         introduction=introduction,
         conclusion=conclusion,

@@ -1,26 +1,16 @@
 from uuid import uuid4
 
-from src.domain.shared.value_objects.asset_id import extract_asset_id
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
-
-# Visit duration estimates by heritage type (minutes)
-_DURATION_MAP: dict[str, int] = {
-    "patrimonio_inmueble": 60,
-    "patrimonio_inmaterial": 45,
-    "paisaje_cultural": 90,
-    "patrimonio_mueble": 30,
-}
-
-_DEFAULT_DURATION = 45
+from src.domain.shared.value_objects.asset_id import extract_asset_id
 
 
 class RouteBuilderService:
     """Builds a VirtualRoute from retrieved heritage chunks and user preferences.
 
-    Selects unique stops ordered by heritage type diversity, assigns
-    estimated visit durations, and assembles the route entity.
+    Selects unique stops ordered by heritage type diversity and assembles
+    the route entity.
     """
 
     def select_diverse_stops(
@@ -84,7 +74,6 @@ class RouteBuilderService:
         stops: list[RouteStop] = []
         for idx, chunk in enumerate(selected_chunks, start=1):
             heritage_type = chunk.get("heritage_type", "")
-            duration = _DURATION_MAP.get(heritage_type.lower(), _DEFAULT_DURATION)
             document_id = chunk.get("document_id", "")
             heritage_asset_id = None
             if document_id:
@@ -114,7 +103,6 @@ class RouteBuilderService:
                     ),
                     url=chunk.get("url", ""),
                     description=description,
-                    visit_duration_minutes=duration,
                     heritage_asset_id=heritage_asset_id,
                     document_id=document_id or None,
                     narrative_segment=narrative_segments.get(idx, ""),
@@ -124,14 +112,11 @@ class RouteBuilderService:
                 )
             )
 
-        total_duration = sum(stop.visit_duration_minutes for stop in stops)
-
         return VirtualRoute(
             id=uuid4(),
             title=title,
             province=province,
             stops=stops,
-            total_duration_minutes=total_duration,
             narrative=narrative,
             introduction=introduction,
             conclusion=conclusion,

@@ -34,9 +34,6 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const hours = Math.floor(route.total_duration_minutes / 60);
-  const mins = route.total_duration_minutes % 60;
-  const duration = hours > 0 ? `${hours}h ${mins}min` : `${mins}min`;
   const thumbnail = route.stops.find((s) => s.image_url)?.image_url;
   const summary = route.introduction || route.narrative;
 
@@ -94,12 +91,6 @@ export function RouteCard({ route }: { route: VirtualRoute }) {
               {route.province}
             </span>
             <span>{route.stops.length} paradas</span>
-            <span className="flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              {duration}
-            </span>
           </div>
 
           {summary && (

@@ -19,14 +19,6 @@ const HERITAGE_TYPE_COLORS: Record<string, string> = {
   paisaje_cultural: "bg-sky-100 text-sky-700",
 };
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-  if (hours > 0) return `${hours}h`;
-  return `${mins}min`;
-}
-
 /** Legacy layout for old routes without introduction/conclusion */
 function LegacyStopsLayout({
   route,
@@ -74,7 +66,6 @@ function LegacyStopsLayout({
                       {stop.heritage_type}
                     </span>
                     <span>{stop.municipality ?? stop.province}</span>
-                    <span>{stop.visit_duration_minutes}min</span>
                   </div>
                   <p className="text-sm text-stone-600 mt-2 leading-relaxed line-clamp-3">
                     {stop.description}
@@ -440,7 +431,6 @@ export default function RouteDetailPage() {
                 {activeRoute.province}
               </span>
               <span>{activeRoute.stops.length} paradas</span>
-              <span>{formatDuration(activeRoute.total_duration_minutes)}</span>
               <FeedbackButtons targetType="route" targetId={activeRoute.id} />
             </div>
           </div>

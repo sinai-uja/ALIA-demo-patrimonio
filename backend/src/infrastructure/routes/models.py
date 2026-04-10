@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,7 +26,6 @@ class VirtualRouteModel(Base):
     narrative: Mapped[str] = mapped_column(Text, nullable=False)
     introduction: Mapped[str | None] = mapped_column(Text, nullable=True)
     conclusion: Mapped[str | None] = mapped_column(Text, nullable=True)
-    total_duration_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
     stops: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

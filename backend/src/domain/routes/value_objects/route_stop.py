@@ -12,7 +12,6 @@ class RouteStop:
     municipality: str | None
     url: str
     description: str
-    visit_duration_minutes: int
     heritage_asset_id: str | None = None
     document_id: str | None = None
     narrative_segment: str = ""

@@ -23,7 +23,6 @@ class RouteStopSchema(BaseModel):
     municipality: str | None
     url: str
     description: str
-    visit_duration_minutes: int
     heritage_asset_id: str | None = None
     narrative_segment: str = ""
     image_url: str | None = None
@@ -36,7 +35,6 @@ class VirtualRouteSchema(BaseModel):
     title: str
     province: str
     stops: list[RouteStopSchema]
-    total_duration_minutes: int
     narrative: str
     introduction: str | None = None
     conclusion: str | None = None

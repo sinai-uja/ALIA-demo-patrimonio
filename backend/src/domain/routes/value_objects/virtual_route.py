@@ -13,7 +13,6 @@ class VirtualRoute:
     title: str
     province: str
     stops: list[RouteStop]
-    total_duration_minutes: int
     narrative: str
     introduction: str = ""
     conclusion: str = ""

@@ -44,7 +44,7 @@ def _dto_to_schema(result: VirtualRouteDTO) -> VirtualRouteSchema:
                 municipality=s.municipality,
                 url=s.url,
                 description=s.description,
-                visit_duration_minutes=s.visit_duration_minutes,
+
                 heritage_asset_id=s.heritage_asset_id,
                 narrative_segment=s.narrative_segment,
                 image_url=s.image_url,
@@ -53,7 +53,7 @@ def _dto_to_schema(result: VirtualRouteDTO) -> VirtualRouteSchema:
             )
             for s in result.stops
         ],
-        total_duration_minutes=result.total_duration_minutes,
+
         narrative=result.narrative,
         introduction=result.introduction or None,
         conclusion=result.conclusion or None,
@@ -129,8 +129,8 @@ async def generate_route(
     result = await service.generate_route(dto)
 
     logger.info(
-        "Route generated: id=%s, title=%r, stops=%d, duration=%d min",
-        result.id, result.title, len(result.stops), result.total_duration_minutes,
+        "Route generated: id=%s, title=%r, stops=%d",
+        result.id, result.title, len(result.stops),
     )
     return _dto_to_schema(result)
 

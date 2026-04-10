@@ -26,8 +26,8 @@ from src.domain.routes.services.query_extraction_service import (
 from src.domain.routes.services.route_builder_service import (
     RouteBuilderService,
 )
-from src.domain.shared.value_objects.asset_id import extract_asset_id
 from src.domain.shared.ports.unit_of_work import UnitOfWork
+from src.domain.shared.value_objects.asset_id import extract_asset_id
 
 logger = logging.getLogger("iaph.routes.generate_route")
 
@@ -210,7 +210,6 @@ class GenerateRouteUseCase:
                     municipality=stop.municipality,
                     url=stop.url,
                     description=stop.description,
-                    visit_duration_minutes=stop.visit_duration_minutes,
                     heritage_asset_id=stop.heritage_asset_id,
                     narrative_segment=stop.narrative_segment,
                     image_url=stop.image_url,
@@ -219,7 +218,7 @@ class GenerateRouteUseCase:
                 )
                 for stop in route.stops
             ],
-            total_duration_minutes=route.total_duration_minutes,
+
             narrative=route.narrative,
             introduction=route.introduction,
             conclusion=route.conclusion,

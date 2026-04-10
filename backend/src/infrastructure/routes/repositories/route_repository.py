@@ -30,7 +30,6 @@ class SqlAlchemyRouteRepository(RouteRepository):
                 "municipality": stop.municipality,
                 "url": stop.url,
                 "description": stop.description,
-                "visit_duration_minutes": stop.visit_duration_minutes,
                 "heritage_asset_id": stop.heritage_asset_id,
                 "document_id": stop.document_id,
                 "narrative_segment": stop.narrative_segment,
@@ -48,7 +47,6 @@ class SqlAlchemyRouteRepository(RouteRepository):
             narrative=route.narrative,
             introduction=route.introduction,
             conclusion=route.conclusion,
-            total_duration_minutes=route.total_duration_minutes,
             stops=stops_json,
             created_at=route.created_at,
             user_id=user_id,
@@ -59,7 +57,10 @@ class SqlAlchemyRouteRepository(RouteRepository):
             await self._db.flush()
             await self._db.refresh(model)
         except Exception:
-            logger.error("Failed to save route route_id=%s user_id=%s", route.id, user_id, exc_info=True)
+            logger.error(
+                "Failed to save route route_id=%s user_id=%s",
+                route.id, user_id, exc_info=True,
+            )
             raise
 
         return self._to_entity(model)
@@ -73,7 +74,10 @@ class SqlAlchemyRouteRepository(RouteRepository):
         try:
             result = await self._db.execute(stmt)
         except Exception:
-            logger.error("Failed to get route route_id=%s user_id=%s", route_id, user_id, exc_info=True)
+            logger.error(
+                "Failed to get route route_id=%s user_id=%s",
+                route_id, user_id, exc_info=True,
+            )
             raise
         model = result.scalar_one_or_none()
 
@@ -95,7 +99,10 @@ class SqlAlchemyRouteRepository(RouteRepository):
         try:
             result = await self._db.execute(stmt)
         except Exception:
-            logger.error("Failed to list routes province=%r user_id=%s", province, user_id, exc_info=True)
+            logger.error(
+                "Failed to list routes province=%r user_id=%s",
+                province, user_id, exc_info=True,
+            )
             raise
         models = result.scalars().all()
 
@@ -110,7 +117,10 @@ class SqlAlchemyRouteRepository(RouteRepository):
         try:
             result = await self._db.execute(stmt)
         except Exception:
-            logger.error("Failed to fetch route for deletion route_id=%s user_id=%s", route_id, user_id, exc_info=True)
+            logger.error(
+                "Failed to fetch route for deletion route_id=%s user_id=%s",
+                route_id, user_id, exc_info=True,
+            )
             raise
         model = result.scalar_one_or_none()
 
@@ -135,7 +145,6 @@ class SqlAlchemyRouteRepository(RouteRepository):
                 municipality=s.get("municipality"),
                 url=s.get("url", ""),
                 description=s.get("description", ""),
-                visit_duration_minutes=s["visit_duration_minutes"],
                 heritage_asset_id=s.get("heritage_asset_id"),
                 document_id=s.get("document_id"),
                 narrative_segment=s.get("narrative_segment", ""),
@@ -151,7 +160,6 @@ class SqlAlchemyRouteRepository(RouteRepository):
             title=model.title,
             province=model.province,
             stops=stops,
-            total_duration_minutes=model.total_duration_minutes,
             narrative=model.narrative,
             introduction=getattr(model, "introduction", None) or "",
             conclusion=getattr(model, "conclusion", None) or "",

@@ -160,7 +160,6 @@ export interface RouteStop {
   municipality: string | null;
   url: string;
   description: string;
-  visit_duration_minutes: number;
   heritage_asset_id?: string | null;
   narrative_segment?: string;
   image_url?: string | null;
@@ -173,7 +172,6 @@ export interface VirtualRoute {
   title: string;
   province: string;
   stops: RouteStop[];
-  total_duration_minutes: number;
   narrative: string;
   introduction?: string | null;
   conclusion?: string | null;

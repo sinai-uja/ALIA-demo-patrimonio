@@ -27,7 +27,6 @@ class RouteStopDTO:
     municipality: str | None
     url: str
     description: str
-    visit_duration_minutes: int
     heritage_asset_id: str | None = None
     narrative_segment: str = ""
     image_url: str | None = None
@@ -43,7 +42,6 @@ class VirtualRouteDTO:
     title: str
     province: str
     stops: list[RouteStopDTO]
-    total_duration_minutes: int
     narrative: str
     introduction: str = ""
     conclusion: str = ""
