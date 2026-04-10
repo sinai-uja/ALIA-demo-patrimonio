@@ -42,7 +42,7 @@ export default function LoginPage() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-stone-50 to-green-50/30">
-      <div className="w-full max-w-md rounded-2xl border border-stone-200/60 bg-white p-8 shadow-lg">
+      <div className="w-full max-w-lg rounded-2xl border border-stone-200/60 bg-white p-8 shadow-lg">
         {/* Logo + title */}
         <div className="mb-6 flex flex-col items-center gap-2.5">
           <img src="/images/alia-navbar.png" alt="ALIA" className="h-10 w-auto" />
@@ -108,21 +108,21 @@ export default function LoginPage() {
         </form>
 
         {/* Partner logos */}
-        <div className="mt-6 pt-5 border-t border-stone-100 flex items-center justify-center gap-6">
+        <div className="mt-6 pt-5 border-t border-stone-100 flex items-center justify-center gap-5">
           <a href="https://sinai.ujaen.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
-            <img src="/images/sinai.png" alt="Departamento SINAI - Universidad de Jaén" className="h-7 w-auto" />
+            <img src="/images/sinai.png" alt="Departamento SINAI - Universidad de Jaén" className="h-6 w-auto" />
           </a>
           <a href="https://www.ujaen.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
-            <img src="/images/uja.png" alt="Universidad de Jaén" className="h-5 w-auto" />
+            <img src="/images/uja.png" alt="Universidad de Jaén" className="h-4 w-auto" />
           </a>
           <a href="https://www.iaph.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
-            <img src="/images/iaph.png" alt="Instituto Andaluz de Patrimonio Histórico" className="h-7 w-auto" />
+            <img src="/images/iaph.png" alt="Instituto Andaluz de Patrimonio Histórico" className="h-6 w-auto" />
           </a>
           <a href="https://alia.gob.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
-            <img src="/images/alia.png" alt="Proyecto ALIA" className="h-7 w-auto" />
+            <img src="/images/alia.png" alt="Proyecto ALIA" className="h-6 w-auto" />
           </a>
           <a href="https://www.innovasur.com/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
-            <img src="/images/innovasur.png" alt="Innovasur" className="h-5 w-auto" />
+            <img src="/images/innovasur.png" alt="Innovasur" className="h-4 w-auto" />
           </a>
         </div>
       </div>
