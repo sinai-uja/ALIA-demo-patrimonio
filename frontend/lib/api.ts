@@ -481,7 +481,7 @@ export interface FeedbackBatchResponse {
 
 export const feedback = {
   submit: (params: {
-    target_type: "route" | "search";
+    target_type: "route" | "search" | "search_result";
     target_id: string;
     value: 1 | -1;
     metadata?: Record<string, unknown>;

@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { type ActiveFilter, collectFilters } from "@/lib/filterUtils";
 import { minDelay } from "@/lib/minDelay";
+import { useFeedbackStore } from "@/store/feedback";
 
 interface SearchState {
   query: string;
@@ -136,6 +137,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         totalPages: res.total_pages,
         searchId: res.search_id,
       });
+
+      // Pre-load feedback state for all results on this page (composite key: searchId:documentId)
+      const feedbackIds = res.results.map((r: SearchResult) => `${res.search_id}:${r.document_id}`);
+      useFeedbackStore.getState().loadFeedbackBatch("search_result", feedbackIds);
     } catch (err) {
       if (controller.signal.aborted) return;
       set({ results: [], totalResults: 0, page: 1, totalPages: 0, searchId: null });

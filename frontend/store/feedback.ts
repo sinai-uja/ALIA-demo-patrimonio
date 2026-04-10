@@ -5,7 +5,7 @@ interface FeedbackState {
   feedbacks: Record<string, number>; // key: "targetType:targetId", value: +1/-1
 
   submitFeedback: (
-    targetType: "route" | "search",
+    targetType: "route" | "search" | "search_result",
     targetId: string,
     value: 1 | -1,
     metadata?: Record<string, unknown>

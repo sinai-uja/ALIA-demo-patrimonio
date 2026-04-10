@@ -109,3 +109,36 @@ class TestFeedbackEndpoints:
         body = resp.json()
         assert body["feedbacks"]["target-1"] == 1
         assert body["feedbacks"]["target-2"] == -1
+
+    async def test_submit_search_result_feedback_returns_200(
+        self, client, mock_feedback_service
+    ):
+        mock_feedback_service.submit_feedback.return_value = _feedback_dto(
+            target_type="search_result",
+            target_id="ficha-inmueble-12345",
+        )
+        resp = await client.put(
+            "/api/v1/feedback",
+            json={
+                "target_type": "search_result",
+                "target_id": "ficha-inmueble-12345",
+                "value": 1,
+            },
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["target_type"] == "search_result"
+        assert body["target_id"] == "ficha-inmueble-12345"
+
+    async def test_submit_search_result_feedback_invalid_type_returns_422(
+        self, client, mock_feedback_service
+    ):
+        resp = await client.put(
+            "/api/v1/feedback",
+            json={
+                "target_type": "invalid_type",
+                "target_id": "target-1",
+                "value": 1,
+            },
+        )
+        assert resp.status_code == 422
