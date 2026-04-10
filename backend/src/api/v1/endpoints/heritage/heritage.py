@@ -1,7 +1,8 @@
 from dataclasses import asdict
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
+from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.heritage.deps import get_heritage_service
 from src.api.v1.endpoints.heritage.schemas import (
     HeritageAssetSchema,
@@ -11,6 +12,8 @@ from src.api.v1.endpoints.heritage.schemas import (
 from src.application.heritage.services.heritage_application_service import (
     HeritageApplicationService,
 )
+from src.application.shared.exceptions import ResourceNotFoundError
+from src.domain.auth.entities.user import User
 
 router = APIRouter()
 
@@ -26,6 +29,7 @@ async def list_assets(
     ),
     limit: int = Query(50, ge=1, le=200, description="Page size"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
+    user: User = Depends(get_current_user),
     service: HeritageApplicationService = Depends(get_heritage_service),
 ) -> HeritageAssetSummaryListSchema:
     """List heritage assets with optional filters and pagination."""
@@ -60,12 +64,13 @@ async def list_assets(
 @router.get("/{asset_id}", response_model=HeritageAssetSchema)
 async def get_asset(
     asset_id: str,
+    user: User = Depends(get_current_user),
     service: HeritageApplicationService = Depends(get_heritage_service),
 ) -> HeritageAssetSchema:
     """Get a heritage asset by ID with full typed details."""
     result = await service.get_asset(asset_id)
     if result is None:
-        raise HTTPException(status_code=404, detail="Asset not found")
+        raise ResourceNotFoundError("Asset not found")
 
     details_dict = asdict(result.details) if result.details else None
 

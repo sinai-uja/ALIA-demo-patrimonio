@@ -3,6 +3,7 @@ import uuid
 
 from src.domain.documents.entities.chunk import Chunk
 from src.domain.documents.entities.document import Document
+from src.domain.documents.exceptions import InvalidChunkingConfigurationError
 
 
 class ChunkingService:
@@ -15,7 +16,9 @@ class ChunkingService:
 
     def __init__(self, chunk_size: int = 512, chunk_overlap: int = 64) -> None:
         if chunk_overlap >= chunk_size:
-            raise ValueError("chunk_overlap must be less than chunk_size")
+            raise InvalidChunkingConfigurationError(
+                "chunk_overlap must be less than chunk_size"
+            )
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
 

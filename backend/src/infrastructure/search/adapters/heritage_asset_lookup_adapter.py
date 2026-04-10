@@ -1,5 +1,4 @@
 import logging
-import re
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,19 +7,9 @@ from src.domain.search.ports.heritage_asset_lookup_port import (
     HeritageAssetLookupPort,
     HeritageAssetSummaryData,
 )
+from src.domain.shared.value_objects.asset_id import extract_asset_id
 
-logger = logging.getLogger("iaph.usecases.search")
-
-_PREFIX_RE = re.compile(r"^ficha-\w+-")
-
-
-def _extract_asset_id(document_id: str) -> str:
-    """Extract the numeric heritage asset ID from a chunk document_id.
-
-    Chunk document_ids use the format 'ficha-{type}-{number}' while
-    heritage_assets.id stores just the numeric part.
-    """
-    return _PREFIX_RE.sub("", document_id)
+logger = logging.getLogger("iaph.search.heritage_lookup")
 
 
 class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
@@ -36,7 +25,7 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             return {}
 
         # Map document_id -> asset_id for the query
-        doc_to_asset = {doc_id: _extract_asset_id(doc_id) for doc_id in ids}
+        doc_to_asset = {doc_id: extract_asset_id(doc_id) for doc_id in ids}
         asset_ids = list(set(doc_to_asset.values()))
 
         placeholders = ", ".join(f":id_{i}" for i in range(len(asset_ids)))
@@ -58,7 +47,11 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get heritage asset summaries count=%d", len(asset_ids), exc_info=True)
+            raise
         rows = result.fetchall()
 
         logger.info("Heritage asset lookup: requested=%d, found=%d", len(ids), len(rows))

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import time
 
@@ -9,8 +10,12 @@ from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.llm_port import LLMPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
+from src.application.shared.exceptions import LLMUnavailableError
+from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.rag.llm")
+
+_SERVICE_LABEL = "vllm.rag"
 
 
 class VLLMAdapter(LLMPort):
@@ -67,31 +72,52 @@ class VLLMAdapter(LLMPort):
         }
 
         headers = await self._build_auth_headers()
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            t0 = time.perf_counter()
-            response = await client.post(
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            )
+        url = f"{self._base_url}/chat/completions"
 
-            if response.status_code == 400:
-                body = response.json()
-                error_msg = body.get("message", str(body))
+        t0 = time.perf_counter()
+        try:
+            data = await post_json(
+                url,
+                payload,
+                service_label=_SERVICE_LABEL,
+                timeout=120.0,
+                headers=headers or None,
+                error_class=LLMUnavailableError,
+            )
+        except LLMUnavailableError as exc:
+            # Preserve the legacy 400-halving-max-tokens retry semantic: the
+            # shared helper raises ``LLMUnavailableError`` with the original
+            # ``httpx.HTTPStatusError`` chained via ``__cause__``. If the
+            # first attempt failed with HTTP 400, halve ``max_tokens`` and
+            # retry once through the same helper; any other failure
+            # propagates unchanged.
+            cause = exc.__cause__
+            if (
+                isinstance(cause, httpx.HTTPStatusError)
+                and cause.response.status_code == 400
+            ):
+                try:
+                    body = cause.response.json()
+                    error_msg = body.get("message", str(body))
+                except (json.JSONDecodeError, ValueError, UnicodeDecodeError):
+                    error_msg = cause.response.text[:500]
                 logger.warning("LLM 400 error: %s", error_msg)
                 reduced = max(64, self._max_tokens // 2)
                 payload["max_tokens"] = reduced
                 logger.info("Retrying with max_tokens=%d", reduced)
-                response = await client.post(
-                    f"{self._base_url}/chat/completions",
-                    json=payload,
-                    headers=headers,
+                data = await post_json(
+                    url,
+                    payload,
+                    service_label=_SERVICE_LABEL,
+                    timeout=120.0,
+                    headers=headers or None,
+                    error_class=LLMUnavailableError,
                 )
+            else:
+                raise
+        latency = time.perf_counter() - t0
 
-            latency = time.perf_counter() - t0
-            response.raise_for_status()
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            logger.info("LLM response: %d chars, latency=%.2fs", len(content), latency)
-            logger.debug("LLM full response:\n%s", content)
-            return content
+        content = data["choices"][0]["message"]["content"]
+        logger.info("LLM response: %d chars, latency=%.2fs", len(content), latency)
+        logger.debug("LLM full response:\n%s", content)
+        return content

@@ -18,11 +18,15 @@ from src.infrastructure.chat.adapters.gemini_conversational_adapter import (
 )
 from src.infrastructure.chat.adapters.rag_adapter import InProcessRAGAdapter
 from src.infrastructure.chat.repositories.chat_repository import ChatRepositoryImpl
+from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
+    SqlAlchemyUnitOfWork,
+)
 
 
 def build_chat_application_service(db: AsyncSession) -> ChatApplicationService:
     """Wire all chat dependencies and return the application service."""
     chat_repo = ChatRepositoryImpl(db)
+    uow = SqlAlchemyUnitOfWork(session=db)
 
     rag_service = build_rag_application_service(db)
     rag_adapter = InProcessRAGAdapter(rag_service)
@@ -38,16 +42,23 @@ def build_chat_application_service(db: AsyncSession) -> ChatApplicationService:
     query_reformulator = QueryReformulator()
 
     return ChatApplicationService(
-        create_session_use_case=CreateSessionUseCase(chat_repository=chat_repo),
+        create_session_use_case=CreateSessionUseCase(
+            chat_repository=chat_repo, unit_of_work=uow,
+        ),
         send_message_use_case=SendMessageUseCase(
             chat_repository=chat_repo,
             rag_port=rag_adapter,
             intent_classifier=intent_classifier,
             query_reformulator=query_reformulator,
             conversational_llm_port=conversational_llm,
+            unit_of_work=uow,
         ),
         get_session_history_use_case=GetSessionHistoryUseCase(chat_repository=chat_repo),
         list_sessions_use_case=ListSessionsUseCase(chat_repository=chat_repo),
-        delete_session_use_case=DeleteSessionUseCase(chat_repository=chat_repo),
-        update_session_title_use_case=UpdateSessionTitleUseCase(chat_repository=chat_repo),
+        delete_session_use_case=DeleteSessionUseCase(
+            chat_repository=chat_repo, unit_of_work=uow,
+        ),
+        update_session_title_use_case=UpdateSessionTitleUseCase(
+            chat_repository=chat_repo, unit_of_work=uow,
+        ),
     )

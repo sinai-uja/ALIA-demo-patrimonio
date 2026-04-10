@@ -2,7 +2,7 @@ import logging
 
 from src.application.rag.dto.rag_dto import RAGQueryDTO, RAGResponseDTO, SourceDTO
 from src.config import settings
-from src.domain.rag.ports.embedding_port import EmbeddingPort
+from src.domain.shared.ports.embedding_port import EmbeddingPort
 from src.domain.rag.ports.llm_port import LLMPort
 from src.domain.rag.ports.text_search_port import TextSearchPort
 from src.domain.rag.ports.vector_search_port import VectorSearchPort
@@ -13,7 +13,7 @@ from src.domain.rag.services.query_instruction_service import wrap_query_for_emb
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService
 from src.domain.rag.services.reranking_service import RerankingService
 
-logger = logging.getLogger("iaph.query")
+logger = logging.getLogger("iaph.rag.query")
 
 ABSTENTION_ANSWER = (
     "No he encontrado informacion suficientemente relevante en la base de datos del IAPH "

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.config import settings
 from src.domain.search.ports.filter_metadata_port import FilterMetadataPort
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.filter_metadata")
 
 
 class PgFilterMetadataAdapter(FilterMetadataPort):
@@ -24,7 +24,11 @@ class PgFilterMetadataAdapter(FilterMetadataPort):
             WHERE province IS NOT NULL
             ORDER BY province ASC
         """)
-        result = await self._db.execute(query)
+        try:
+            result = await self._db.execute(query)
+        except Exception:
+            logger.error("Failed to get distinct provinces", exc_info=True)
+            raise
         rows = result.fetchall()
         logger.info("Distinct provinces: %d", len(rows))
         return [row[0] for row in rows]
@@ -50,7 +54,11 @@ class PgFilterMetadataAdapter(FilterMetadataPort):
               {province_filter}
             ORDER BY municipality ASC
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get distinct municipalities provinces=%s", provinces, exc_info=True)
+            raise
         rows = result.fetchall()
         logger.info(
             "Distinct municipalities (provinces=%s): %d",
@@ -66,7 +74,11 @@ class PgFilterMetadataAdapter(FilterMetadataPort):
             WHERE heritage_type IS NOT NULL
             ORDER BY heritage_type ASC
         """)
-        result = await self._db.execute(query)
+        try:
+            result = await self._db.execute(query)
+        except Exception:
+            logger.error("Failed to get distinct heritage types", exc_info=True)
+            raise
         rows = result.fetchall()
         logger.info("Distinct heritage types: %d", len(rows))
         return [row[0] for row in rows]

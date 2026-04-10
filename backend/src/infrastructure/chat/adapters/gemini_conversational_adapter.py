@@ -1,12 +1,12 @@
 import logging
 import time
 
-import httpx
-
 from src.config import settings
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
+from src.application.shared.exceptions import LLMUnavailableError
+from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.chat.llm")
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -52,18 +52,21 @@ class GeminiConversationalAdapter(ConversationalLLMPort):
             f"?key={self._api_key}"
         )
 
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            t0 = time.perf_counter()
-            response = await client.post(url, json=payload)
-            latency = time.perf_counter() - t0
-            response.raise_for_status()
-            data = response.json()
-            content = (
-                data["candidates"][0]["content"]["parts"][0]["text"]
-            )
-            logger.info(
-                "Gemini conversational response: %d chars, latency=%.2fs",
-                len(content), latency,
-            )
-            logger.debug("Gemini conversational full response:\n%s", content)
-            return content
+        t0 = time.perf_counter()
+        data = await post_json(
+            url,
+            payload,
+            service_label="gemini.chat",
+            timeout=60.0,
+            error_class=LLMUnavailableError,
+        )
+        latency = time.perf_counter() - t0
+        content = (
+            data["candidates"][0]["content"]["parts"][0]["text"]
+        )
+        logger.info(
+            "Gemini conversational response: %d chars, latency=%.2fs",
+            len(content), latency,
+        )
+        logger.debug("Gemini conversational full response:\n%s", content)
+        return content

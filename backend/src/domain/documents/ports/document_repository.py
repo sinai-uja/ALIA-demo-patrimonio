@@ -21,6 +21,3 @@ class DocumentRepository(ABC):
 
     @abstractmethod
     async def delete_all_chunks(self) -> int: ...
-
-    @abstractmethod
-    async def commit(self) -> None: ...

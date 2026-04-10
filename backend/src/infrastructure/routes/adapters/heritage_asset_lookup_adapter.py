@@ -1,5 +1,4 @@
 import logging
-import re
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,18 +8,7 @@ from src.domain.routes.ports.heritage_asset_lookup_port import (
 )
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 
-logger = logging.getLogger("iaph.routes")
-
-_PREFIX_RE = re.compile(r"^ficha-\w+-")
-
-
-def extract_asset_id(document_id: str) -> str:
-    """Extract the numeric heritage asset ID from a chunk document_id.
-
-    Chunk document_ids use the format 'ficha-{type}-{number}' while
-    heritage_assets.id stores just the numeric part.
-    """
-    return _PREFIX_RE.sub("", document_id)
+logger = logging.getLogger("iaph.routes.heritage_lookup")
 
 
 class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
@@ -55,7 +43,11 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get asset previews count=%d", len(unique_ids), exc_info=True)
+            raise
         rows = result.fetchall()
 
         logger.info(
@@ -115,7 +107,11 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get asset full descriptions count=%d", len(unique_ids), exc_info=True)
+            raise
         rows = result.fetchall()
 
         descriptions: dict[str, str] = {}

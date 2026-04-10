@@ -6,7 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
-from src.db.base import Base
+from src.infrastructure.shared.persistence.base import Base
 
 
 class ChatSessionModel(Base):

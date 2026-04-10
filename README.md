@@ -27,7 +27,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 ```
 /
 ├── backend/              # FastAPI API -- hexagonal architecture, Python 3.11, uv
-│   ├── src/              # 7 bounded contexts: documents, rag, chat, routes, heritage, search, accessibility
+│   ├── src/              # 10 bounded contexts: documents, rag, chat, routes, heritage, search, accessibility, auth, feedback, shared
 │   ├── docker/           # Backend Dockerfile
 │   └── alembic/          # DB migrations
 ├── frontend/             # Next.js 16 web application

@@ -22,8 +22,14 @@ export default function LoginPage() {
     try {
       await login(username, password);
       window.location.href = "/";
-    } catch {
-      setError("Credenciales incorrectas");
+    } catch (err: any) {
+      if (err?.status === 401) {
+        setError("Credenciales incorrectas");
+      } else if (err?.status >= 500) {
+        setError("Servicio no disponible temporalmente");
+      } else {
+        setError("Error de conexión");
+      }
     } finally {
       setLoading(false);
     }
@@ -105,6 +111,9 @@ export default function LoginPage() {
         <div className="mt-6 pt-5 border-t border-stone-100 flex items-center justify-center gap-6">
           <a href="https://sinai.ujaen.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/sinai.png" alt="Departamento SINAI - Universidad de Jaén" className="h-7 w-auto" />
+          </a>
+          <a href="https://www.ujaen.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+            <img src="/images/uja.png" alt="Universidad de Jaén" className="h-5 w-auto" />
           </a>
           <a href="https://alia.gob.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/alia.png" alt="Proyecto ALIA" className="h-7 w-auto" />

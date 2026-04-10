@@ -3,7 +3,7 @@ import logging
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.reranker_port import RerankerPort
 
-logger = logging.getLogger("iaph.reranker")
+logger = logging.getLogger("iaph.rag.reranker")
 
 
 class NeuralRerankingService:

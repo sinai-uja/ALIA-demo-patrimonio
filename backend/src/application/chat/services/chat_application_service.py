@@ -38,8 +38,10 @@ class ChatApplicationService:
     async def send_message(self, dto: SendMessageDTO) -> MessageDTO:
         return await self._send_message.execute(dto)
 
-    async def get_history(self, session_id: str) -> list[MessageDTO]:
-        return await self._get_session_history.execute(session_id)
+    async def get_history(
+        self, session_id: str, user_id: str | None = None,
+    ) -> list[MessageDTO]:
+        return await self._get_session_history.execute(session_id, user_id=user_id)
 
     async def list_sessions(self, user_id: str | None = None) -> list[SessionDTO]:
         return await self._list_sessions.execute(user_id=user_id)

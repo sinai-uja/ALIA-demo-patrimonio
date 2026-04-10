@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { auth as authApi } from "@/lib/api";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:18080/api/v1";
 
 interface LoginResponse {
   access_token: string;
@@ -58,7 +58,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (!res.ok) {
       const err = await res.text();
-      throw new Error(err || res.statusText);
+      const error = new Error(err || res.statusText);
+      (error as any).status = res.status;
+      throw error;
     }
 
     const data = (await res.json()) as LoginResponse;

@@ -1,3 +1,4 @@
+from src.application.auth.exceptions import InvalidTokenError
 from src.domain.auth.entities.user import User
 from src.domain.auth.ports.auth_port import AuthPort
 from src.domain.auth.ports.token_port import TokenPort
@@ -8,11 +9,11 @@ class ValidateTokenUseCase:
         self._token_port = token_port
         self._auth_port = auth_port
 
-    def execute(self, token: str) -> User:
+    async def execute(self, token: str) -> User:
         username = self._token_port.validate_token(token)
         if username is None:
-            raise ValueError("Invalid token")
-        user = self._auth_port.get_user_by_username(username)
+            raise InvalidTokenError("Invalid token")
+        user = await self._auth_port.get_user_by_username(username)
         if user is None:
-            raise ValueError("User not found")
+            raise InvalidTokenError("User not found")
         return user

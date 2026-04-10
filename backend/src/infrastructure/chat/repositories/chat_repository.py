@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -9,6 +10,8 @@ from src.domain.chat.entities.message import Message
 from src.domain.chat.entities.message_role import MessageRole
 from src.domain.chat.ports.chat_repository import ChatRepository
 from src.infrastructure.chat.models import ChatMessageModel, ChatSessionModel
+
+logger = logging.getLogger("iaph.chat.repository")
 
 
 class ChatRepositoryImpl(ChatRepository):
@@ -22,8 +25,12 @@ class ChatRepositoryImpl(ChatRepository):
     ) -> ChatSession:
         model = ChatSessionModel(id=uuid.uuid4(), title=title, user_id=user_id)
         self._db.add(model)
-        await self._db.commit()
-        await self._db.refresh(model)
+        try:
+            await self._db.flush()
+            await self._db.refresh(model)
+        except Exception:
+            logger.error("Failed to create chat session title=%r user_id=%s", title, user_id, exc_info=True)
+            raise
         return self._to_session_entity(model)
 
     async def get_session(
@@ -32,7 +39,11 @@ class ChatRepositoryImpl(ChatRepository):
         stmt = select(ChatSessionModel).where(ChatSessionModel.id == session_id)
         if user_id is not None:
             stmt = stmt.where(ChatSessionModel.user_id == user_id)
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error("Failed to get chat session session_id=%s user_id=%s", session_id, user_id, exc_info=True)
+            raise
         model = result.scalar_one_or_none()
         if model is None:
             return None
@@ -42,7 +53,11 @@ class ChatRepositoryImpl(ChatRepository):
         stmt = select(ChatSessionModel).order_by(ChatSessionModel.updated_at.desc())
         if user_id is not None:
             stmt = stmt.where(ChatSessionModel.user_id == user_id)
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error("Failed to list chat sessions user_id=%s", user_id, exc_info=True)
+            raise
         return [self._to_session_entity(m) for m in result.scalars().all()]
 
     async def delete_session(
@@ -51,8 +66,11 @@ class ChatRepositoryImpl(ChatRepository):
         stmt = delete(ChatSessionModel).where(ChatSessionModel.id == session_id)
         if user_id is not None:
             stmt = stmt.where(ChatSessionModel.user_id == user_id)
-        await self._db.execute(stmt)
-        await self._db.commit()
+        try:
+            await self._db.execute(stmt)
+        except Exception:
+            logger.error("Failed to delete chat session session_id=%s user_id=%s", session_id, user_id, exc_info=True)
+            raise
 
     async def update_session_title(
         self, session_id: uuid.UUID, title: str, user_id: uuid.UUID | None = None,
@@ -64,13 +82,21 @@ class ChatRepositoryImpl(ChatRepository):
         )
         if user_id is not None:
             stmt = stmt.where(ChatSessionModel.user_id == user_id)
-        await self._db.execute(stmt)
-        await self._db.commit()
+        try:
+            await self._db.execute(stmt)
+            await self._db.flush()
+        except Exception:
+            logger.error("Failed to update chat session title session_id=%s", session_id, exc_info=True)
+            raise
 
         get_stmt = select(ChatSessionModel).where(ChatSessionModel.id == session_id)
         if user_id is not None:
             get_stmt = get_stmt.where(ChatSessionModel.user_id == user_id)
-        result = await self._db.execute(get_stmt)
+        try:
+            result = await self._db.execute(get_stmt)
+        except Exception:
+            logger.error("Failed to re-fetch chat session after title update session_id=%s", session_id, exc_info=True)
+            raise
         model = result.scalar_one_or_none()
         if model is None:
             raise ValueError(f"Session {session_id} not found")
@@ -92,23 +118,31 @@ class ChatRepositoryImpl(ChatRepository):
         )
         self._db.add(model)
 
-        # Update session updated_at
-        await self._db.execute(
-            update(ChatSessionModel)
-            .where(ChatSessionModel.id == session_id)
-            .values(updated_at=datetime.now(UTC))
-        )
+        try:
+            # Update session updated_at
+            await self._db.execute(
+                update(ChatSessionModel)
+                .where(ChatSessionModel.id == session_id)
+                .values(updated_at=datetime.now(UTC))
+            )
 
-        await self._db.commit()
-        await self._db.refresh(model)
+            await self._db.flush()
+            await self._db.refresh(model)
+        except Exception:
+            logger.error("Failed to add message to chat session session_id=%s role=%s", session_id, role.value, exc_info=True)
+            raise
         return self._to_message_entity(model)
 
     async def get_messages(self, session_id: uuid.UUID) -> list[Message]:
-        result = await self._db.execute(
-            select(ChatMessageModel)
-            .where(ChatMessageModel.session_id == session_id)
-            .order_by(ChatMessageModel.created_at.asc())
-        )
+        try:
+            result = await self._db.execute(
+                select(ChatMessageModel)
+                .where(ChatMessageModel.session_id == session_id)
+                .order_by(ChatMessageModel.created_at.asc())
+            )
+        except Exception:
+            logger.error("Failed to get messages for chat session session_id=%s", session_id, exc_info=True)
+            raise
         return [self._to_message_entity(m) for m in result.scalars().all()]
 
     @staticmethod

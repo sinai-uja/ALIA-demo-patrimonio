@@ -12,6 +12,9 @@ from src.application.feedback.use_cases.submit_feedback import SubmitFeedbackUse
 from src.infrastructure.feedback.repositories.feedback_repository import (
     SqlAlchemyFeedbackRepository,
 )
+from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
+    SqlAlchemyUnitOfWork,
+)
 
 
 def build_feedback_application_service(
@@ -19,12 +22,15 @@ def build_feedback_application_service(
 ) -> FeedbackApplicationService:
     """Wire all feedback adapters and return the application service."""
     feedback_repository = SqlAlchemyFeedbackRepository(db)
+    uow = SqlAlchemyUnitOfWork(session=db)
 
     submit_feedback_use_case = SubmitFeedbackUseCase(
         feedback_repository=feedback_repository,
+        unit_of_work=uow,
     )
     delete_feedback_use_case = DeleteFeedbackUseCase(
         feedback_repository=feedback_repository,
+        unit_of_work=uow,
     )
     get_feedback_use_case = GetFeedbackUseCase(
         feedback_repository=feedback_repository,

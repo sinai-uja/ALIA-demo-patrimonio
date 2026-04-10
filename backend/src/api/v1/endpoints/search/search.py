@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.search.deps import get_search_service
@@ -19,7 +19,7 @@ from src.application.search.services.search_application_service import (
 )
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.router")
 
 router = APIRouter()
 
@@ -48,14 +48,7 @@ async def similarity_search(
         user_id=user.username,
     )
 
-    try:
-        result = await service.similarity_search(dto)
-    except Exception as exc:
-        logger.error("Search pipeline failed: query=%r, error=%s", request.query[:80], exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Search pipeline error: {exc}",
-        ) from exc
+    result = await service.similarity_search(dto)
 
     logger.info(
         "Search response: search_id=%s query=%r, total_results=%d, page=%d/%d",
@@ -103,18 +96,13 @@ async def get_suggestions(
     query: str = Query(
         ..., min_length=1, description="Search query text",
     ),
+    user: User = Depends(get_current_user),
     service: SearchApplicationService = Depends(get_search_service),
 ) -> SuggestionResponse:
     """Detect entities in a search query and return suggestions."""
     logger.info("GET /search/suggestions query=%r", query[:80])
 
-    try:
-        result = await service.get_suggestions(query)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Suggestion error: {exc}",
-        ) from exc
+    result = await service.get_suggestions(query)
 
     return SuggestionResponse(
         query=result.query,
@@ -137,18 +125,13 @@ async def get_filters(
         default=None,
         description="Filter municipalities by province(s)",
     ),
+    user: User = Depends(get_current_user),
     service: SearchApplicationService = Depends(get_search_service),
 ) -> FilterValuesResponse:
     """Return available filter values for search facets."""
     logger.info("GET /search/filters province=%s", province)
 
-    try:
-        result = await service.get_filter_values(province)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Filter values error: {exc}",
-        ) from exc
+    result = await service.get_filter_values(province)
 
     return FilterValuesResponse(
         heritage_types=result.heritage_types,

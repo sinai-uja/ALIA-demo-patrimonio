@@ -5,7 +5,7 @@ from sqlalchemy import Column, DateTime, Index, SmallInteger, String, UniqueCons
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 
-from src.db.base import Base
+from src.infrastructure.shared.persistence.base import Base
 
 
 class UserFeedbackModel(Base):

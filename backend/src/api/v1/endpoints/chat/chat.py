@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.chat.deps import get_chat_service
@@ -12,10 +12,23 @@ from src.api.v1.endpoints.chat.schemas import (
     UpdateSessionRequest,
 )
 from src.application.chat.dto.chat_dto import CreateSessionDTO, SendMessageDTO, UpdateSessionDTO
+from src.application.chat.dto.source_dto import SourceDTO
 from src.application.chat.services.chat_application_service import ChatApplicationService
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.query")
+
+def _source_dto_to_dict(source: SourceDTO) -> dict:
+    return {
+        "title": source.title,
+        "url": source.url,
+        "score": source.score,
+        "heritage_type": source.heritage_type,
+        "province": source.province,
+        "municipality": source.municipality,
+        "metadata": source.metadata,
+    }
+
+logger = logging.getLogger("iaph.chat.router")
 
 router = APIRouter()
 
@@ -74,10 +87,7 @@ async def update_session(
 ) -> SessionResponse:
     """Update a chat session title."""
     dto = UpdateSessionDTO(session_id=session_id, title=request.title, user_id=str(user.id))
-    try:
-        result = await service.update_session_title(dto)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    result = await service.update_session_title(dto)
     return SessionResponse(
         id=result.id,
         title=result.title,
@@ -89,16 +99,17 @@ async def update_session(
 @router.get("/sessions/{session_id}/messages", response_model=list[MessageResponse])
 async def get_session_messages(
     session_id: str,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> list[MessageResponse]:
     """Get all messages for a chat session."""
-    results = await service.get_history(session_id)
+    results = await service.get_history(session_id, user_id=str(user.id))
     return [
         MessageResponse(
             id=m.id,
             role=m.role,
             content=m.content,
-            sources=m.sources,
+            sources=[_source_dto_to_dict(s) for s in m.sources],
             created_at=m.created_at,
         )
         for m in results
@@ -113,6 +124,7 @@ async def get_session_messages(
 async def send_message(
     session_id: str,
     request: SendMessageRequest,
+    user: User = Depends(get_current_user),
     service: ChatApplicationService = Depends(get_chat_service),
 ) -> MessageResponse:
     """Send a user message, trigger RAG pipeline, and return assistant response."""
@@ -127,12 +139,10 @@ async def send_message(
         top_k=request.top_k,
         heritage_type_filter=request.heritage_type_filter,
         province_filter=request.province_filter,
+        user_id=str(user.id),
     )
 
-    try:
-        result = await service.send_message(dto)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    result = await service.send_message(dto)
 
     logger.info(
         "Response: %d chars, %d sources",
@@ -143,6 +153,6 @@ async def send_message(
         id=result.id,
         role=result.role,
         content=result.content,
-        sources=result.sources,
+        sources=[_source_dto_to_dict(s) for s in result.sources],
         created_at=result.created_at,
     )

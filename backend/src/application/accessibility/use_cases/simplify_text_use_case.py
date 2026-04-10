@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from src.application.accessibility.dto.accessibility_dto import SimplifiedTextDTO, SimplifyTextDTO
+from src.application.shared.exceptions import ValidationError
 from src.domain.accessibility.ports.llm_port import LLMPort
 from src.domain.accessibility.value_objects.simplification_level import SimplificationLevel
 
@@ -18,7 +19,7 @@ class SimplifyTextUseCase:
         except ValueError:
             valid = [lvl.value for lvl in SimplificationLevel]
             msg = f"Invalid simplification level '{dto.level}'. Valid levels: {valid}"
-            raise ValueError(msg)
+            raise ValidationError(msg)
 
         # 2. Call LLM port to simplify
         simplified = await self._llm_port.simplify(dto.text, level)

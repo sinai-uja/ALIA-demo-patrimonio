@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from src.application.chat.dto.source_dto import SourceDTO
+
 
 @dataclass(frozen=True)
 class CreateSessionDTO:
@@ -38,6 +40,7 @@ class SendMessageDTO:
     top_k: int = 3
     heritage_type_filter: str | None = None
     province_filter: str | None = None
+    user_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -48,5 +51,5 @@ class MessageDTO:
     session_id: str
     role: str
     content: str
-    sources: list[dict] = field(default_factory=list)
+    sources: list[SourceDTO] = field(default_factory=list)
     created_at: str = ""

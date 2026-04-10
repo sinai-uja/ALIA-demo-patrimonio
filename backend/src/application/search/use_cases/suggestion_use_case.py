@@ -10,7 +10,7 @@ from src.domain.search.services.entity_detection_service import (
     EntityDetectionService,
 )
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.suggestion")
 
 CACHE_TTL_SECONDS = 300  # 5 minutes
 

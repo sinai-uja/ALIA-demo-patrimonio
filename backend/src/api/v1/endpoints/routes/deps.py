@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
 from src.composition.routes_composition import build_routes_application_service
-from src.db.deps import get_db
+from src.composition.database import get_db
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_routes_service(

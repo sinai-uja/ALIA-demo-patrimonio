@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy import and_, delete, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,6 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.feedback.entities.feedback import Feedback
 from src.domain.feedback.ports.feedback_repository import FeedbackRepository
 from src.infrastructure.feedback.models import UserFeedbackModel
+
+logger = logging.getLogger("iaph.feedback.repository")
 
 
 class SqlAlchemyFeedbackRepository(FeedbackRepository):
@@ -33,8 +37,15 @@ class SqlAlchemyFeedbackRepository(FeedbackRepository):
                 "updated_at": stmt.excluded.updated_at,
             },
         )
-        await self._db.execute(stmt)
-        await self._db.commit()
+        try:
+            await self._db.execute(stmt)
+            await self._db.flush()
+        except Exception:
+            logger.error(
+                "Failed to upsert feedback user_id=%s target_type=%s target_id=%s",
+                feedback.user_id, feedback.target_type, feedback.target_id, exc_info=True,
+            )
+            raise
 
         row = await self.get(
             feedback.user_id, feedback.target_type, feedback.target_id,
@@ -54,8 +65,15 @@ class SqlAlchemyFeedbackRepository(FeedbackRepository):
                 ),
             )
         )
-        result = await self._db.execute(stmt)
-        await self._db.commit()
+        try:
+            result = await self._db.execute(stmt)
+            await self._db.flush()
+        except Exception:
+            logger.error(
+                "Failed to delete feedback user_id=%s target_type=%s target_id=%s",
+                user_id, target_type, target_id, exc_info=True,
+            )
+            raise
         return result.rowcount > 0
 
     async def get(
@@ -68,7 +86,14 @@ class SqlAlchemyFeedbackRepository(FeedbackRepository):
                 UserFeedbackModel.target_id == target_id,
             ),
         )
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error(
+                "Failed to get feedback user_id=%s target_type=%s target_id=%s",
+                user_id, target_type, target_id, exc_info=True,
+            )
+            raise
         model = result.scalar_one_or_none()
         if model is None:
             return None
@@ -86,7 +111,14 @@ class SqlAlchemyFeedbackRepository(FeedbackRepository):
                 UserFeedbackModel.target_id.in_(target_ids),
             ),
         )
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error(
+                "Failed to get_batch feedback user_id=%s target_type=%s count=%d",
+                user_id, target_type, len(target_ids), exc_info=True,
+            )
+            raise
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models]
 

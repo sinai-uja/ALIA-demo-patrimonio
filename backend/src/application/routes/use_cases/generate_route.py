@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from uuid import UUID
@@ -27,11 +26,10 @@ from src.domain.routes.services.query_extraction_service import (
 from src.domain.routes.services.route_builder_service import (
     RouteBuilderService,
 )
-from src.infrastructure.routes.adapters.heritage_asset_lookup_adapter import (
-    extract_asset_id,
-)
+from src.domain.shared.value_objects.asset_id import extract_asset_id
+from src.domain.shared.ports.unit_of_work import UnitOfWork
 
-logger = logging.getLogger("iaph.usecases.routes")
+logger = logging.getLogger("iaph.routes.generate_route")
 
 
 class GenerateRouteUseCase:
@@ -45,6 +43,7 @@ class GenerateRouteUseCase:
         route_builder_service: RouteBuilderService,
         query_extraction_service: QueryExtractionService,
         heritage_asset_lookup_port: HeritageAssetLookupPort,
+        unit_of_work: UnitOfWork,
     ) -> None:
         self._rag_port = rag_port
         self._llm_port = llm_port
@@ -52,6 +51,7 @@ class GenerateRouteUseCase:
         self._route_builder_service = route_builder_service
         self._query_extraction_service = query_extraction_service
         self._heritage_asset_lookup_port = heritage_asset_lookup_port
+        self._uow = unit_of_work
 
     async def execute(self, dto: GenerateRouteDTO) -> VirtualRouteDTO:
         t0 = time.monotonic()
@@ -148,18 +148,21 @@ class GenerateRouteUseCase:
             province=dto.province_filter,
             municipality=dto.municipality_filter,
         )
-        raw_narrative = await self._llm_port.generate_structured(
+        route_narrative = await self._llm_port.generate_route_narrative(
             system_prompt=ROUTE_SYSTEM_PROMPT,
             user_prompt=route_prompt,
-            max_tokens=settings.llm_route_narrative_max_tokens,
+            province_label=province_label,
+            max_tokens=min(
+                len(selected_chunks) * 400 + 500,
+                settings.llm_route_narrative_max_tokens,
+            ),
         )
+        title = route_narrative.title
+        introduction = route_narrative.introduction
+        narrative_segments = route_narrative.segments
+        conclusion = route_narrative.conclusion
 
-        # 9. Parse structured narrative (with fallback)
-        title, introduction, narrative_segments, conclusion = (
-            self._parse_narrative_json(raw_narrative, province_label)
-        )
-
-        # 10. Compose monolithic narrative for backward compatibility
+        # 9. Compose monolithic narrative for backward compatibility
         narrative_parts = [introduction]
         for i in range(1, len(selected_chunks) + 1):
             if i in narrative_segments:
@@ -167,7 +170,7 @@ class GenerateRouteUseCase:
         narrative_parts.append(conclusion)
         narrative = "\n\n".join(p for p in narrative_parts if p)
 
-        # 11. Build route entity with enriched data
+        # 10. Build route entity with enriched data
         route = self._route_builder_service.build(
             selected_chunks=selected_chunks,
             province=province_label,
@@ -179,127 +182,19 @@ class GenerateRouteUseCase:
             asset_previews=asset_previews,
         )
 
-        # 12. Save and return
+        # 11. Save and return
         user_uuid = UUID(dto.user_id) if dto.user_id else None
-        saved_route = await self._route_repository.save_route(route, user_id=user_uuid)
+        async with self._uow:
+            saved_route = await self._route_repository.save_route(
+                route, user_id=user_uuid,
+            )
+            result = self._to_dto(saved_route)
         elapsed_ms = (time.monotonic() - t0) * 1000
         logger.info(
             "Route generation complete: route_id=%s user=%s title=%r stops=%d %.0fms",
             saved_route.id, user_label, title[:60], len(selected_chunks), elapsed_ms,
         )
-        return self._to_dto(saved_route)
-
-    def _parse_narrative_json(
-        self, raw: str, province: str,
-    ) -> tuple[str, str, dict[int, str], str]:
-        """Parse structured JSON narrative from LLM response.
-
-        Returns (title, introduction, {order: narrative}, conclusion).
-        Falls back to regex extraction for truncated JSON, then to
-        treating the entire response as monolithic narrative.
-        """
-        import re
-
-        cleaned = raw.strip()
-        # Strip markdown code block if present
-        if cleaned.startswith("```"):
-            lines = cleaned.split("\n")
-            lines = lines[1:]  # remove opening ```json or ```
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            cleaned = "\n".join(lines)
-
-        # Try full JSON parse first
-        try:
-            data = json.loads(cleaned)
-            title = data.get("title", f"Ruta cultural por {province}")
-            introduction = data.get("introduction", "")
-            conclusion = data.get("conclusion", "")
-            segments: dict[int, str] = {}
-            for stop in data.get("stops", []):
-                order = stop.get("order")
-                narrative_text = stop.get("narrative", "")
-                if order is not None and narrative_text:
-                    segments[int(order)] = narrative_text
-            return title, introduction, segments, conclusion
-        except (json.JSONDecodeError, AttributeError, TypeError):
-            pass
-
-        # JSON parse failed — try regex extraction for truncated JSON
-        if cleaned.startswith("{"):
-            logger.warning(
-                "Full JSON parse failed, attempting regex extraction "
-                "from truncated response (%d chars)", len(cleaned),
-            )
-            title = f"Ruta cultural por {province}"
-            introduction = ""
-            conclusion = ""
-            segments = {}
-
-            title_match = re.search(r'"title"\s*:\s*"([^"]+)"', cleaned)
-            if title_match:
-                title = title_match.group(1)
-
-            intro_match = re.search(
-                r'"introduction"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
-            )
-            if intro_match:
-                introduction = intro_match.group(1).replace('\\"', '"')
-
-            conclusion_match = re.search(
-                r'"conclusion"\s*:\s*"((?:[^"\\]|\\.)*)"', cleaned,
-            )
-            if conclusion_match:
-                conclusion = conclusion_match.group(1).replace('\\"', '"')
-
-            # Extract stop narratives
-            for stop_match in re.finditer(
-                r'"order"\s*:\s*(\d+)\s*,\s*"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"',
-                cleaned,
-            ):
-                order = int(stop_match.group(1))
-                narrative_text = stop_match.group(2).replace('\\"', '"')
-                segments[order] = narrative_text
-
-            if introduction or segments:
-                logger.info(
-                    "Regex extraction recovered: title=%s, intro=%d chars, "
-                    "%d stop segments, conclusion=%d chars",
-                    title[:50], len(introduction), len(segments), len(conclusion),
-                )
-                return title, introduction, segments, conclusion
-
-        # Complete fallback — treat as plain text
-        logger.warning("Failed to parse narrative JSON, using plain text fallback")
-        title = self._extract_title_from_text(cleaned, province)
-        return title, cleaned, {}, ""
-
-    @staticmethod
-    def _extract_title_from_text(narrative: str, province: str) -> str:
-        if narrative:
-            # If the response looks like JSON, try to extract title from it
-            stripped = narrative.strip()
-            if stripped.startswith("{"):
-                try:
-                    # Try partial JSON parse (may be truncated)
-                    import re
-                    title_match = re.search(r'"title"\s*:\s*"([^"]+)"', stripped)
-                    if title_match:
-                        return title_match.group(1)
-                except Exception:
-                    pass
-                return f"Ruta cultural por {province}"
-            first_line = stripped.split("\n")[0].strip()
-            clean = (
-                first_line.lstrip("#")
-                .strip()
-                .strip('"')
-                .strip("*")
-                .strip()
-            )
-            if clean and len(clean) < 200:
-                return clean
-        return f"Ruta cultural por {province}"
+        return result
 
     def _to_dto(self, route) -> VirtualRouteDTO:
         return VirtualRouteDTO(

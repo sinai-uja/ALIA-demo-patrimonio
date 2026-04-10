@@ -5,7 +5,7 @@ from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db.base import Base
+from src.infrastructure.shared.persistence.base import Base
 
 
 class VirtualRouteModel(Base):

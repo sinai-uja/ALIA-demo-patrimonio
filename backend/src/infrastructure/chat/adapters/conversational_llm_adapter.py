@@ -3,13 +3,13 @@ from __future__ import annotations
 import logging
 import time
 
-import httpx
-
 from src.config import settings
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
+from src.application.shared.exceptions import LLMUnavailableError
+from src.infrastructure.shared.http.httpx_client import post_json
 
-logger = logging.getLogger("iaph.llm")
+logger = logging.getLogger("iaph.chat.llm")
 
 
 class ConversationalLLMAdapter(ConversationalLLMPort):
@@ -57,19 +57,19 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
         }
 
         headers = await self._build_auth_headers()
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            t0 = time.perf_counter()
-            response = await client.post(
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            )
-            latency = time.perf_counter() - t0
-            response.raise_for_status()
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            logger.info(
-                "Conversational LLM response: %d chars, latency=%.2fs", len(content), latency,
-            )
-            logger.debug("Conversational LLM full response:\n%s", content)
-            return content
+        t0 = time.perf_counter()
+        data = await post_json(
+            f"{self._base_url}/chat/completions",
+            payload,
+            service_label="vllm.chat",
+            timeout=60.0,
+            headers=headers or None,
+            error_class=LLMUnavailableError,
+        )
+        latency = time.perf_counter() - t0
+        content = data["choices"][0]["message"]["content"]
+        logger.info(
+            "Conversational LLM response: %d chars, latency=%.2fs", len(content), latency,
+        )
+        logger.debug("Conversational LLM full response:\n%s", content)
+        return content

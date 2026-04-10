@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Protocol
 
-logger = logging.getLogger("iaph.auth")
+logger = logging.getLogger("iaph.auth.token_provider")
 
 
 class TokenProvider(Protocol):
@@ -60,9 +60,16 @@ class GcpIdentityTokenProvider:
     def _fetch_token(self) -> str:
         from google.auth.transport.requests import Request
 
-        if self._service_account_json:
-            return self._fetch_with_service_account(Request())
-        return self._fetch_with_default_credentials(Request())
+        try:
+            if self._service_account_json:
+                return self._fetch_with_service_account(Request())
+            return self._fetch_with_default_credentials(Request())
+        except Exception:
+            logger.error(
+                "Failed to fetch identity token for audience=%s",
+                self._target_audience, exc_info=True,
+            )
+            raise
 
     def _fetch_with_service_account(self, request) -> str:
         from google.oauth2 import service_account

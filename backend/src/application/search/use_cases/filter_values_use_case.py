@@ -3,7 +3,7 @@ import logging
 from src.application.search.dto.search_dto import FilterValuesDTO
 from src.domain.search.ports.filter_metadata_port import FilterMetadataPort
 
-logger = logging.getLogger("iaph.usecases.search")
+logger = logging.getLogger("iaph.search.filter_values")
 
 
 class FilterValuesUseCase:

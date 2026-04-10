@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.routes.deps import get_routes_service
@@ -14,6 +14,7 @@ from src.api.v1.endpoints.routes.schemas import (
     RouteSuggestionResponse,
     VirtualRouteSchema,
 )
+from src.application.routes.dto.history_turn_dto import HistoryTurnDTO
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
     GuideQueryDTO,
@@ -24,7 +25,7 @@ from src.application.routes.services.routes_application_service import (
 )
 from src.domain.auth.entities.user import User
 
-logger = logging.getLogger("iaph.usecases.routes")
+logger = logging.getLogger("iaph.routes.router")
 
 router = APIRouter()
 
@@ -65,6 +66,7 @@ def _dto_to_schema(result: VirtualRouteDTO) -> VirtualRouteSchema:
 )
 async def get_route_suggestions(
     query: str,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> RouteSuggestionResponse:
     """Get entity-detection suggestions for a route planning query."""
@@ -89,6 +91,7 @@ async def get_route_suggestions(
 )
 async def get_route_filters(
     province: list[str] | None = Query(default=None),
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> RouteFilterValuesResponse:
     """Get available filter values for route planning."""
@@ -123,14 +126,7 @@ async def generate_route(
         username=user.username,
     )
 
-    try:
-        result = await service.generate_route(dto)
-    except Exception as exc:
-        logger.error("Route generation failed: query=%r, error=%s", request.query[:80], exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Route generation error: {exc}",
-        ) from exc
+    result = await service.generate_route(dto)
 
     logger.info(
         "Route generated: id=%s, title=%r, stops=%d, duration=%d min",
@@ -157,13 +153,7 @@ async def delete_route(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> Response:
     """Delete a virtual route by ID."""
-    try:
-        await service.delete_route(route_id, user_id=str(user.id))
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404, detail=str(exc),
-        ) from exc
-
+    await service.delete_route(route_id, user_id=str(user.id))
     return Response(status_code=204)
 
 
@@ -174,13 +164,7 @@ async def get_route(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
     """Get a specific virtual route by ID."""
-    try:
-        result = await service.get_route(route_id, user_id=str(user.id))
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404, detail=str(exc),
-        ) from exc
-
+    result = await service.get_route(route_id, user_id=str(user.id))
     return _dto_to_schema(result)
 
 
@@ -190,6 +174,7 @@ async def get_route(
 async def guide_query(
     route_id: str,
     request: GuideQueryRequest,
+    user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> GuideResponseSchema:
     """Ask the guide a question about a specific route."""
@@ -201,23 +186,12 @@ async def guide_query(
         route_id=route_id,
         question=request.question,
         history=[
-            {"role": m.role, "content": m.content}
+            HistoryTurnDTO(role=m.role, content=m.content)
             for m in request.history
         ],
     )
 
-    try:
-        result = await service.guide_query(dto)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=404, detail=str(exc),
-        ) from exc
-    except Exception as exc:
-        logger.error("Guide query failed: route=%s, error=%s", route_id, exc)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Guide query error: {exc}",
-        ) from exc
+    result = await service.guide_query(dto)
 
     logger.info(
         "Guide response: route=%s, answer=%d chars, sources=%d",

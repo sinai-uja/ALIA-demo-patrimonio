@@ -1,10 +1,14 @@
+import logging
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.heritage.entities.heritage_asset import HeritageAsset
 from src.domain.heritage.ports.heritage_repository import HeritageRepository
 from src.domain.heritage.value_objects.raw_data import parse_raw_data
-from src.infrastructure.documents.models import HeritageAssetModel
+from src.infrastructure.heritage.models import HeritageAssetModel
+
+logger = logging.getLogger("iaph.heritage.repository")
 
 
 class SqlAlchemyHeritageRepository(HeritageRepository):
@@ -17,7 +21,11 @@ class SqlAlchemyHeritageRepository(HeritageRepository):
         stmt = select(HeritageAssetModel).where(
             HeritageAssetModel.id == asset_id,
         )
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error("Failed to get heritage asset asset_id=%s", asset_id, exc_info=True)
+            raise
         model = result.scalar_one_or_none()
         if model is None:
             return None
@@ -36,7 +44,14 @@ class SqlAlchemyHeritageRepository(HeritageRepository):
         stmt = stmt.order_by(HeritageAssetModel.denomination).limit(limit)
         if offset:
             stmt = stmt.offset(offset)
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error(
+                "Failed to list heritage assets heritage_type=%r province=%r municipality=%r",
+                heritage_type, province, municipality, exc_info=True,
+            )
+            raise
         return [self._to_entity(m) for m in result.scalars().all()]
 
     async def count_assets(
@@ -47,7 +62,14 @@ class SqlAlchemyHeritageRepository(HeritageRepository):
     ) -> int:
         stmt = select(func.count(HeritageAssetModel.id))
         stmt = self._apply_filters(stmt, heritage_type, province, municipality)
-        result = await self._db.execute(stmt)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error(
+                "Failed to count heritage assets heritage_type=%r province=%r municipality=%r",
+                heritage_type, province, municipality, exc_info=True,
+            )
+            raise
         return result.scalar() or 0
 
     @staticmethod
