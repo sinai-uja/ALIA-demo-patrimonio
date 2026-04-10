@@ -5,12 +5,12 @@ from src.application.documents.dto.ingest_dto import IngestDocumentsCommand, Ing
 from src.domain.documents.entities.chunk_embedding import ChunkEmbedding
 from src.domain.documents.ports.document_loader import DocumentLoader
 from src.domain.documents.ports.document_repository import DocumentRepository
-from src.domain.shared.ports.embedding_port import EmbeddingPort
 from src.domain.documents.services.chunking_service import ChunkingService
 from src.domain.documents.services.document_enrichment_service import (
     DocumentEnrichmentService,
 )
 from src.domain.documents.value_objects.heritage_type import HeritageType
+from src.domain.shared.ports.embedding_port import EmbeddingPort
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 
 logger = logging.getLogger("iaph.documents.ingest")

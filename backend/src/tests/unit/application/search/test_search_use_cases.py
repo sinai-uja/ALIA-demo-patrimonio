@@ -1,6 +1,6 @@
 """Tests for search use cases (similarity, suggestion, filter_values)."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -14,7 +14,6 @@ from src.application.search.use_cases.filter_values_use_case import FilterValues
 from src.application.search.use_cases.similarity_search_use_case import SimilaritySearchUseCase
 from src.application.search.use_cases.suggestion_use_case import SuggestionUseCase
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
-
 
 # ---------------------------------------------------------------------------
 # Helpers

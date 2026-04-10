@@ -8,7 +8,6 @@ from src.application.accessibility.dto.accessibility_dto import SimplifiedTextDT
 from src.application.accessibility.use_cases.simplify_text_use_case import SimplifyTextUseCase
 from src.application.shared.exceptions import LLMUnavailableError, ValidationError
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

@@ -3,12 +3,12 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from src.config import settings
-from src.domain.shared.ports.embedding_port import EmbeddingPort
-from src.infrastructure.shared.auth.token_provider import TokenProvider
 from src.application.shared.exceptions import (
     EmbeddingServiceUnavailableError,
 )
+from src.config import settings
+from src.domain.shared.ports.embedding_port import EmbeddingPort
+from src.infrastructure.shared.auth.token_provider import TokenProvider
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.shared.embedding")

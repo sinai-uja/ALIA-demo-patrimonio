@@ -57,7 +57,10 @@ class PgFilterMetadataAdapter(FilterMetadataPort):
         try:
             result = await self._db.execute(query, params)
         except Exception:
-            logger.error("Failed to get distinct municipalities provinces=%s", provinces, exc_info=True)
+            logger.error(
+                "Failed to get distinct municipalities provinces=%s",
+                provinces, exc_info=True,
+            )
             raise
         rows = result.fetchall()
         logger.info(

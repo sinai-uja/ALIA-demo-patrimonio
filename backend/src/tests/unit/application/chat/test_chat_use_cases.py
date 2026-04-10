@@ -21,7 +21,6 @@ from src.application.chat.use_cases.update_session_title import UpdateSessionTit
 from src.domain.chat.entities.message import Message
 from src.domain.chat.entities.message_role import MessageRole
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

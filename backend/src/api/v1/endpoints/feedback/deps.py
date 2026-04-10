@@ -7,8 +7,8 @@ from fastapi import Depends
 from src.application.feedback.services.feedback_application_service import (
     FeedbackApplicationService,
 )
-from src.composition.feedback_composition import build_feedback_application_service
 from src.composition.database import get_db
+from src.composition.feedback_composition import build_feedback_application_service
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession

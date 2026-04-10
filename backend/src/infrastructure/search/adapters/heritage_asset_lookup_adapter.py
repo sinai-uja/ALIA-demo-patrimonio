@@ -50,7 +50,10 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
         try:
             result = await self._db.execute(query, params)
         except Exception:
-            logger.error("Failed to get heritage asset summaries count=%d", len(asset_ids), exc_info=True)
+            logger.error(
+                "Failed to get heritage asset summaries count=%d",
+                len(asset_ids), exc_info=True,
+            )
             raise
         rows = result.fetchall()
 

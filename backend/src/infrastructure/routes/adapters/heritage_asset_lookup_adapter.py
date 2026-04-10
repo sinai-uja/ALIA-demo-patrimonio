@@ -46,7 +46,10 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
         try:
             result = await self._db.execute(query, params)
         except Exception:
-            logger.error("Failed to get asset previews count=%d", len(unique_ids), exc_info=True)
+            logger.error(
+                "Failed to get asset previews count=%d",
+                len(unique_ids), exc_info=True,
+            )
             raise
         rows = result.fetchall()
 
@@ -110,7 +113,10 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
         try:
             result = await self._db.execute(query, params)
         except Exception:
-            logger.error("Failed to get asset full descriptions count=%d", len(unique_ids), exc_info=True)
+            logger.error(
+                "Failed to get asset full descriptions count=%d",
+                len(unique_ids), exc_info=True,
+            )
             raise
         rows = result.fetchall()
 

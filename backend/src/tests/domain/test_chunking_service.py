@@ -32,11 +32,17 @@ class TestChunkingServiceInit:
         assert service.chunk_overlap == 10
 
     def test_overlap_greater_or_equal_to_size_raises(self):
-        with pytest.raises(InvalidChunkingConfigurationError, match="chunk_overlap must be less than chunk_size"):
+        with pytest.raises(
+            InvalidChunkingConfigurationError,
+            match="chunk_overlap must be less than chunk_size",
+        ):
             ChunkingService(chunk_size=100, chunk_overlap=100)
 
     def test_overlap_exceeds_size_raises(self):
-        with pytest.raises(InvalidChunkingConfigurationError, match="chunk_overlap must be less than chunk_size"):
+        with pytest.raises(
+            InvalidChunkingConfigurationError,
+            match="chunk_overlap must be less than chunk_size",
+        ):
             ChunkingService(chunk_size=50, chunk_overlap=60)
 
 

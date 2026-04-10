@@ -11,13 +11,13 @@ import httpx
 import pytest
 import respx
 
+from src.application.shared.exceptions import EmbeddingServiceUnavailableError
+from src.infrastructure.shared.adapters.embedding_adapter import HttpEmbeddingAdapter
+
 
 async def _noop_sleep(_seconds: float) -> None:
     """Replacement for asyncio.sleep that returns immediately."""
     return
-
-from src.application.shared.exceptions import EmbeddingServiceUnavailableError
-from src.infrastructure.shared.adapters.embedding_adapter import HttpEmbeddingAdapter
 
 BASE_URL = "https://embedding.test.local"
 EMBED_URL = f"{BASE_URL}/embed"

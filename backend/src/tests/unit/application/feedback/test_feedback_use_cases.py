@@ -13,7 +13,6 @@ from src.application.feedback.use_cases.get_feedback_batch import GetFeedbackBat
 from src.application.feedback.use_cases.submit_feedback import SubmitFeedbackUseCase
 from src.domain.feedback.entities.feedback import Feedback
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

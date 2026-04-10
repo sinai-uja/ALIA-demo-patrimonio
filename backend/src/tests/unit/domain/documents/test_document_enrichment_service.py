@@ -1,6 +1,5 @@
 """Unit tests for DocumentEnrichmentService — pure domain, zero mocks."""
 
-import math
 from uuid import uuid4
 
 import pytest
@@ -12,7 +11,6 @@ from src.domain.documents.services.document_enrichment_service import (
     EnrichedContent,
 )
 from src.domain.documents.value_objects.heritage_type import HeritageType
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -53,7 +51,10 @@ def _make_chunk(content: str = "chunk body text") -> Chunk:
 
 class TestEnrichV4Paisaje:
     def test_paisaje_template_contains_title_and_province(self):
-        doc = _make_document(heritage_type=HeritageType.PAISAJE_CULTURAL, title="Vega de Granada", province="Granada")
+        doc = _make_document(
+            heritage_type=HeritageType.PAISAJE_CULTURAL,
+            title="Vega de Granada", province="Granada",
+        )
         chunk = _make_chunk("descripción del paisaje")
         service = DocumentEnrichmentService(chunks_version="v4")
 

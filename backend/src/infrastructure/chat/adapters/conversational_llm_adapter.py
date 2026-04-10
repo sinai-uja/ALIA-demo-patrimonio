@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 import time
 
+from src.application.shared.exceptions import LLMUnavailableError
 from src.config import settings
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.chat.llm")

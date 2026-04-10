@@ -1,6 +1,5 @@
 """Unit tests for QueryReformulator — pure domain, zero mocks."""
 
-from datetime import datetime
 from uuid import uuid4
 
 import pytest

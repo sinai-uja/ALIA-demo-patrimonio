@@ -1,10 +1,10 @@
 import logging
 import time
 
+from src.application.shared.exceptions import LLMUnavailableError
 from src.config import settings
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.ports.llm_port import LLMPort
-from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.rag.llm")

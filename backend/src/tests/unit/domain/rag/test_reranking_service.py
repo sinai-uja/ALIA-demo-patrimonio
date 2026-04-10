@@ -1,6 +1,5 @@
 """Unit tests for RerankingService — pure domain, zero mocks."""
 
-import pytest
 
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.services.reranking_service import RerankingService
@@ -67,7 +66,10 @@ class TestPreFilter:
 
 class TestScoringAndWeights:
     def test_title_match_boosts_ranking(self):
-        service = RerankingService(weight_title=0.9, weight_base=0.1, weight_coverage=0.0, weight_position=0.0)
+        service = RerankingService(
+            weight_title=0.9, weight_base=0.1,
+            weight_coverage=0.0, weight_position=0.0,
+        )
         high_title = _make_chunk("c1", title="Castillo de Jaén", content="info general")
         low_title = _make_chunk("c2", title="Documento sobre la zona", content="castillo ruinas")
 
@@ -77,7 +79,10 @@ class TestScoringAndWeights:
 
     def test_configurable_weights_change_ranking(self):
         # With coverage weight dominant, the chunk with more query terms in content wins
-        service = RerankingService(weight_base=0.0, weight_title=0.0, weight_coverage=1.0, weight_position=0.0)
+        service = RerankingService(
+            weight_base=0.0, weight_title=0.0,
+            weight_coverage=1.0, weight_position=0.0,
+        )
         low_coverage = _make_chunk("c1", title="castillo", content="breve")
         high_coverage = _make_chunk("c2", title="castillo", content="castillo medieval en jaen")
 

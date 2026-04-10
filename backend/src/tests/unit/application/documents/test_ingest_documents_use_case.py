@@ -1,7 +1,7 @@
 """Tests for IngestDocumentsUseCase — documents context."""
 
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -9,7 +9,6 @@ from src.application.documents.dto.ingest_dto import IngestDocumentsCommand, Ing
 from src.application.documents.use_cases.ingest_documents import IngestDocumentsUseCase
 from src.domain.documents.entities.chunk import Chunk
 from src.domain.documents.services.document_enrichment_service import DocumentEnrichmentService
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -83,7 +82,10 @@ def enrichment_service():
 
 
 @pytest.fixture
-def use_case(document_loader, chunking_service, embedding_port, document_repository, enrichment_service, mock_uow):
+def use_case(
+    document_loader, chunking_service, embedding_port,
+    document_repository, enrichment_service, mock_uow,
+):
     loader, _ = document_loader
     return IngestDocumentsUseCase(
         document_loader=loader,

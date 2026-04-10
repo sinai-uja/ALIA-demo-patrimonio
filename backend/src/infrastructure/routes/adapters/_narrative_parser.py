@@ -11,8 +11,8 @@ import json
 import logging
 import re
 
-from src.domain.routes.value_objects.route_narrative import RouteNarrative
 from src.application.shared.exceptions import LLMResponseParseError
+from src.domain.routes.value_objects.route_narrative import RouteNarrative
 
 logger = logging.getLogger("iaph.routes.llm")
 

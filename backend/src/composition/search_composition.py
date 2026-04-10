@@ -25,6 +25,12 @@ from src.domain.rag.services.reranking_service import RerankingService
 from src.domain.search.services.entity_detection_service import (
     EntityDetectionService,
 )
+from src.infrastructure.search.adapters.filter_metadata_adapter import (
+    PgFilterMetadataAdapter,
+)
+from src.infrastructure.search.adapters.heritage_asset_lookup_adapter import (
+    PgHeritageAssetLookupAdapter,
+)
 from src.infrastructure.shared.adapters.embedding_adapter import (
     HttpEmbeddingAdapter,
 )
@@ -36,12 +42,6 @@ from src.infrastructure.shared.adapters.text_search_adapter import (
 )
 from src.infrastructure.shared.adapters.vector_search_adapter import (
     PgVectorSearchAdapter,
-)
-from src.infrastructure.search.adapters.filter_metadata_adapter import (
-    PgFilterMetadataAdapter,
-)
-from src.infrastructure.search.adapters.heritage_asset_lookup_adapter import (
-    PgHeritageAssetLookupAdapter,
 )
 
 # Module-level singletons — these don't depend on the DB session
