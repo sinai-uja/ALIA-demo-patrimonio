@@ -115,7 +115,7 @@ export default function LoginPage() {
           <a href="https://www.ujaen.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/uja.png" alt="Universidad de Jaén" className="h-4 w-auto" />
           </a>
-          <a href="https://www.iaph.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+          <a href="https://www.juntadeandalucia.es/organismos/iaph.html" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/iaph.png" alt="Instituto Andaluz de Patrimonio Histórico" className="h-6 w-auto" />
           </a>
           <a href="https://alia.gob.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
@@ -123,6 +123,21 @@ export default function LoginPage() {
           </a>
           <a href="https://www.innovasur.com/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/innovasur.png" alt="Innovasur" className="h-4 w-auto" />
+          </a>
+        </div>
+        {/* Institutional logos */}
+        <div className="mt-3 pt-3 border-t border-stone-100 flex flex-wrap items-center justify-center gap-4">
+          <a href="https://next-generation-eu.europa.eu/index_es" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+            <img src="/images/next-negeration.png" alt="NextGenerationEU" className="h-5 w-auto" />
+          </a>
+          <a href="https://digital.gob.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+            <img src="/images/ministerio.png" alt="Ministerio para la Transformación Digital y de la Función Pública" className="h-5 w-auto" />
+          </a>
+          <a href="https://planderecuperacion.gob.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+            <img src="/images/plan-recuperación.png" alt="Plan de Recuperación, Transformación y Resiliencia" className="h-5 w-auto" />
+          </a>
+          <a href="https://www.bsc.es/es" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+            <img src="/images/bsc.png" alt="Barcelona Supercomputing Center" className="h-5 w-auto" />
           </a>
         </div>
       </div>
