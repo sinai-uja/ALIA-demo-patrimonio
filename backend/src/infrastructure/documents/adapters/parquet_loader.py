@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Iterator
 
 import pandas as pd
@@ -5,6 +6,8 @@ import pandas as pd
 from src.domain.documents.entities.document import Document
 from src.domain.documents.ports.document_loader import DocumentLoader
 from src.domain.documents.value_objects.heritage_type import HeritageType
+
+logger = logging.getLogger("iaph.documents.loader")
 
 # Columns that map directly to Document entity fields
 _ENTITY_COLUMNS = {"id", "url", "title", "province", "municipality", "text"}
@@ -16,7 +19,11 @@ class ParquetDocumentLoader(DocumentLoader):
     def load_documents(
         self, source_path: str, heritage_type: HeritageType
     ) -> Iterator[Document]:
-        df = pd.read_parquet(source_path, engine="pyarrow")
+        try:
+            df = pd.read_parquet(source_path, engine="pyarrow")
+        except Exception:
+            logger.error("Failed to read parquet file source_path=%r", source_path, exc_info=True)
+            raise
 
         for _, row in df.iterrows():
             row_dict = row.to_dict()

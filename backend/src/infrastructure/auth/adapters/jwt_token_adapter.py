@@ -1,8 +1,11 @@
+import logging
 from datetime import UTC, datetime, timedelta
 
 import jwt
 
 from src.domain.auth.ports.token_port import TokenPort
+
+logger = logging.getLogger("iaph.auth.jwt")
 
 
 class JWTTokenAdapter(TokenPort):
@@ -48,5 +51,9 @@ class JWTTokenAdapter(TokenPort):
                 algorithms=[self._algorithm],
             )
             return payload.get("sub")
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        except jwt.ExpiredSignatureError:
+            logger.debug("Token expired")
+            return None
+        except jwt.InvalidTokenError as exc:
+            logger.warning("Invalid token: %s", exc)
             return None

@@ -43,7 +43,11 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get asset previews count=%d", len(unique_ids), exc_info=True)
+            raise
         rows = result.fetchall()
 
         logger.info(
@@ -103,7 +107,11 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get asset full descriptions count=%d", len(unique_ids), exc_info=True)
+            raise
         rows = result.fetchall()
 
         descriptions: dict[str, str] = {}

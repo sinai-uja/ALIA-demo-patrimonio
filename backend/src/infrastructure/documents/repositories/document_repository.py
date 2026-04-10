@@ -1,3 +1,4 @@
+import logging
 import math
 
 from sqlalchemy import select, text
@@ -10,6 +11,8 @@ from src.domain.documents.ports.document_repository import (
     DocumentRepository as DocumentRepositoryPort,
 )
 from src.infrastructure.documents.models import DocumentChunkModel
+
+logger = logging.getLogger("iaph.documents.repository")
 
 
 class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
@@ -36,7 +39,14 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
             metadata_=self._sanitize_metadata(document.metadata),
         )
         self._session.add(model)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except Exception:
+            logger.error(
+                "Failed to save chunk document_id=%s chunk_index=%d",
+                chunk.document_id, chunk.chunk_index, exc_info=True,
+            )
+            raise
 
     @staticmethod
     def _sanitize_metadata(data: dict) -> dict:
@@ -60,7 +70,11 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
             .where(DocumentChunkModel.document_id == document_id)
             .order_by(DocumentChunkModel.chunk_index)
         )
-        result = await self._session.execute(stmt)
+        try:
+            result = await self._session.execute(stmt)
+        except Exception:
+            logger.error("Failed to get chunks document_id=%s", document_id, exc_info=True)
+            raise
         rows = result.scalars().all()
         return [
             Chunk(
@@ -78,12 +92,23 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
             DocumentChunkModel.document_id == document_id,
             DocumentChunkModel.chunk_index == chunk_index,
         )
-        result = await self._session.execute(stmt)
+        try:
+            result = await self._session.execute(stmt)
+        except Exception:
+            logger.error(
+                "Failed to check chunk existence document_id=%s chunk_index=%d",
+                document_id, chunk_index, exc_info=True,
+            )
+            raise
         return result.scalar_one_or_none() is not None
 
     async def delete_all_chunks(self) -> int:
-        result = await self._session.execute(
-            text(f"DELETE FROM {DocumentChunkModel.__tablename__}")
-        )
-        await self._session.flush()
+        try:
+            result = await self._session.execute(
+                text(f"DELETE FROM {DocumentChunkModel.__tablename__}")
+            )
+            await self._session.flush()
+        except Exception:
+            logger.error("Failed to delete all chunks", exc_info=True)
+            raise
         return result.rowcount

@@ -50,9 +50,13 @@ class DbAuthAdapter(AuthPort):
         return self._to_domain(row)
 
     async def get_user_by_username(self, username: str) -> User | None:
-        result = await self._session.execute(
-            select(UserModel).where(UserModel.username == username)
-        )
+        try:
+            result = await self._session.execute(
+                select(UserModel).where(UserModel.username == username)
+            )
+        except Exception as exc:
+            logger.error("Database error in get_user_by_username username=%r", username, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         row = result.scalar_one_or_none()
         if row is None:
             return None
@@ -61,46 +65,70 @@ class DbAuthAdapter(AuthPort):
     async def update_profile_type(
         self, user_id: uuid.UUID, profile_type_name: str
     ) -> User:
-        pt_result = await self._session.execute(
-            select(UserProfileTypeModel)
-            .where(UserProfileTypeModel.name == profile_type_name)
-        )
+        try:
+            pt_result = await self._session.execute(
+                select(UserProfileTypeModel)
+                .where(UserProfileTypeModel.name == profile_type_name)
+            )
+        except Exception as exc:
+            logger.error("Database error in update_profile_type looking up profile_type=%r", profile_type_name, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         pt = pt_result.scalar_one_or_none()
         if pt is None:
             raise ProfileTypeNotFoundError(
                 f"Profile type '{profile_type_name}' not found"
             )
 
-        user_result = await self._session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
+        try:
+            user_result = await self._session.execute(
+                select(UserModel).where(UserModel.id == user_id)
+            )
+        except Exception as exc:
+            logger.error("Database error in update_profile_type looking up user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         user = user_result.scalar_one_or_none()
         if user is None:
             raise UserNotFoundError("User not found")
 
         user.profile_type_id = pt.id
-        await self._session.flush()
-        await self._session.refresh(user)
+        try:
+            await self._session.flush()
+            await self._session.refresh(user)
+        except Exception as exc:
+            logger.error("Database error in update_profile_type flush user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         return self._to_domain(user)
 
     async def list_profile_types(self) -> list[UserProfileType]:
-        result = await self._session.execute(
-            select(UserProfileTypeModel).order_by(UserProfileTypeModel.name)
-        )
+        try:
+            result = await self._session.execute(
+                select(UserProfileTypeModel).order_by(UserProfileTypeModel.name)
+            )
+        except Exception as exc:
+            logger.error("Database error in list_profile_types", exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         rows = result.scalars().all()
         return [UserProfileType(id=r.id, name=r.name) for r in rows]
 
     async def list_users(self) -> list[User]:
-        result = await self._session.execute(
-            select(UserModel).order_by(UserModel.username)
-        )
+        try:
+            result = await self._session.execute(
+                select(UserModel).order_by(UserModel.username)
+            )
+        except Exception as exc:
+            logger.error("Database error in list_users", exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         rows = result.scalars().all()
         return [self._to_domain(row) for row in rows]
 
     async def get_user_by_id(self, user_id: uuid.UUID) -> User | None:
-        result = await self._session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
+        try:
+            result = await self._session.execute(
+                select(UserModel).where(UserModel.id == user_id)
+            )
+        except Exception as exc:
+            logger.error("Database error in get_user_by_id user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         row = result.scalar_one_or_none()
         if row is None:
             return None
@@ -109,9 +137,13 @@ class DbAuthAdapter(AuthPort):
     async def create_user(
         self, username: str, password: str, profile_type_name: str | None,
     ) -> User:
-        existing_result = await self._session.execute(
-            select(UserModel).where(UserModel.username == username)
-        )
+        try:
+            existing_result = await self._session.execute(
+                select(UserModel).where(UserModel.username == username)
+            )
+        except Exception as exc:
+            logger.error("Database error in create_user checking existing username=%r", username, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         if existing_result.scalar_one_or_none() is not None:
             raise UserAlreadyExistsError(
                 f"Username '{username}' already exists"
@@ -119,10 +151,14 @@ class DbAuthAdapter(AuthPort):
 
         profile_type_id = None
         if profile_type_name is not None:
-            pt_result = await self._session.execute(
-                select(UserProfileTypeModel)
-                .where(UserProfileTypeModel.name == profile_type_name)
-            )
+            try:
+                pt_result = await self._session.execute(
+                    select(UserProfileTypeModel)
+                    .where(UserProfileTypeModel.name == profile_type_name)
+                )
+            except Exception as exc:
+                logger.error("Database error in create_user looking up profile_type=%r", profile_type_name, exc_info=True)
+                raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
             pt = pt_result.scalar_one_or_none()
             if pt is None:
                 raise ProfileTypeNotFoundError(
@@ -138,8 +174,12 @@ class DbAuthAdapter(AuthPort):
             profile_type_id=profile_type_id,
         )
         self._session.add(user)
-        await self._session.flush()
-        await self._session.refresh(user)
+        try:
+            await self._session.flush()
+            await self._session.refresh(user)
+        except Exception as exc:
+            logger.error("Database error in create_user flush username=%r", username, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         return self._to_domain(user)
 
     async def update_user(
@@ -149,9 +189,13 @@ class DbAuthAdapter(AuthPort):
         password: str | None,
         profile_type_name: str | None,
     ) -> User:
-        user_result = await self._session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
+        try:
+            user_result = await self._session.execute(
+                select(UserModel).where(UserModel.id == user_id)
+            )
+        except Exception as exc:
+            logger.error("Database error in update_user looking up user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         user = user_result.scalar_one_or_none()
         if user is None:
             raise UserNotFoundError("User not found")
@@ -162,10 +206,14 @@ class DbAuthAdapter(AuthPort):
             ).decode()
 
         if profile_type_name is not None:
-            pt_result = await self._session.execute(
-                select(UserProfileTypeModel)
-                .where(UserProfileTypeModel.name == profile_type_name)
-            )
+            try:
+                pt_result = await self._session.execute(
+                    select(UserProfileTypeModel)
+                    .where(UserProfileTypeModel.name == profile_type_name)
+                )
+            except Exception as exc:
+                logger.error("Database error in update_user looking up profile_type=%r", profile_type_name, exc_info=True)
+                raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
             pt = pt_result.scalar_one_or_none()
             if pt is None:
                 raise ProfileTypeNotFoundError(
@@ -173,34 +221,50 @@ class DbAuthAdapter(AuthPort):
                 )
             user.profile_type_id = pt.id
 
-        await self._session.flush()
-        await self._session.refresh(user)
+        try:
+            await self._session.flush()
+            await self._session.refresh(user)
+        except Exception as exc:
+            logger.error("Database error in update_user flush user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         return self._to_domain(user)
 
     async def delete_user(self, user_id: uuid.UUID) -> None:
-        user_result = await self._session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
+        try:
+            user_result = await self._session.execute(
+                select(UserModel).where(UserModel.id == user_id)
+            )
+        except Exception as exc:
+            logger.error("Database error in delete_user looking up user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         user = user_result.scalar_one_or_none()
         if user is None:
             raise UserNotFoundError("User not found")
         await self._session.delete(user)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except Exception as exc:
+            logger.error("Database error in delete_user flush user_id=%s", user_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
 
     async def list_profile_types_with_counts(
         self,
     ) -> list[tuple[UserProfileType, int]]:
-        result = await self._session.execute(
-            select(
-                UserProfileTypeModel,
-                func.count(UserModel.id).label("user_count"),
+        try:
+            result = await self._session.execute(
+                select(
+                    UserProfileTypeModel,
+                    func.count(UserModel.id).label("user_count"),
+                )
+                .outerjoin(
+                    UserModel, UserModel.profile_type_id == UserProfileTypeModel.id
+                )
+                .group_by(UserProfileTypeModel.id)
+                .order_by(UserProfileTypeModel.name)
             )
-            .outerjoin(
-                UserModel, UserModel.profile_type_id == UserProfileTypeModel.id
-            )
-            .group_by(UserProfileTypeModel.id)
-            .order_by(UserProfileTypeModel.name)
-        )
+        except Exception as exc:
+            logger.error("Database error in list_profile_types_with_counts", exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         rows = result.all()
         return [
             (
@@ -214,51 +278,75 @@ class DbAuthAdapter(AuthPort):
         ]
 
     async def create_profile_type(self, name: str) -> UserProfileType:
-        existing_result = await self._session.execute(
-            select(UserProfileTypeModel).where(UserProfileTypeModel.name == name)
-        )
+        try:
+            existing_result = await self._session.execute(
+                select(UserProfileTypeModel).where(UserProfileTypeModel.name == name)
+            )
+        except Exception as exc:
+            logger.error("Database error in create_profile_type checking existing name=%r", name, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         if existing_result.scalar_one_or_none() is not None:
             raise ProfileTypeAlreadyExistsError(
                 f"El tipo de perfil '{name}' ya existe"
             )
         pt = UserProfileTypeModel(id=uuid.uuid4(), name=name)
         self._session.add(pt)
-        await self._session.flush()
-        await self._session.refresh(pt)
+        try:
+            await self._session.flush()
+            await self._session.refresh(pt)
+        except Exception as exc:
+            logger.error("Database error in create_profile_type flush name=%r", name, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         return UserProfileType(id=pt.id, name=pt.name)
 
     async def rename_profile_type(
         self, profile_type_id: uuid.UUID, new_name: str
     ) -> UserProfileType:
-        pt_result = await self._session.execute(
-            select(UserProfileTypeModel).where(
-                UserProfileTypeModel.id == profile_type_id
+        try:
+            pt_result = await self._session.execute(
+                select(UserProfileTypeModel).where(
+                    UserProfileTypeModel.id == profile_type_id
+                )
             )
-        )
+        except Exception as exc:
+            logger.error("Database error in rename_profile_type looking up id=%s", profile_type_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         pt = pt_result.scalar_one_or_none()
         if pt is None:
             raise ProfileTypeNotFoundError("Tipo de perfil no encontrado")
-        conflict_result = await self._session.execute(
-            select(UserProfileTypeModel).where(
-                UserProfileTypeModel.name == new_name,
-                UserProfileTypeModel.id != profile_type_id,
+        try:
+            conflict_result = await self._session.execute(
+                select(UserProfileTypeModel).where(
+                    UserProfileTypeModel.name == new_name,
+                    UserProfileTypeModel.id != profile_type_id,
+                )
             )
-        )
+        except Exception as exc:
+            logger.error("Database error in rename_profile_type checking conflict name=%r", new_name, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         if conflict_result.scalar_one_or_none() is not None:
             raise ProfileTypeAlreadyExistsError(
                 f"El tipo de perfil '{new_name}' ya existe"
             )
         pt.name = new_name
-        await self._session.flush()
-        await self._session.refresh(pt)
+        try:
+            await self._session.flush()
+            await self._session.refresh(pt)
+        except Exception as exc:
+            logger.error("Database error in rename_profile_type flush id=%s", profile_type_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         return UserProfileType(id=pt.id, name=pt.name)
 
     async def delete_profile_type(self, profile_type_id: uuid.UUID) -> None:
-        pt_result = await self._session.execute(
-            select(UserProfileTypeModel).where(
-                UserProfileTypeModel.id == profile_type_id
+        try:
+            pt_result = await self._session.execute(
+                select(UserProfileTypeModel).where(
+                    UserProfileTypeModel.id == profile_type_id
+                )
             )
-        )
+        except Exception as exc:
+            logger.error("Database error in delete_profile_type looking up id=%s", profile_type_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
         pt = pt_result.scalar_one_or_none()
         if pt is None:
             raise ProfileTypeNotFoundError("Tipo de perfil no encontrado")
@@ -272,6 +360,9 @@ class DbAuthAdapter(AuthPort):
                 f"El tipo de perfil '{pt_name}' está asignado a uno o más usuarios"
                 " y no puede eliminarse"
             )
+        except Exception as exc:
+            logger.error("Database error in delete_profile_type flush id=%s", profile_type_id, exc_info=True)
+            raise ExternalServiceUnavailableError("Auth service temporarily unavailable") from exc
 
     @staticmethod
     def _to_domain(row: UserModel) -> User:

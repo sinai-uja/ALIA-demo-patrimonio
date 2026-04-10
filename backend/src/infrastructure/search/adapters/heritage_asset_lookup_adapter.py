@@ -47,7 +47,11 @@ class PgHeritageAssetLookupAdapter(HeritageAssetLookupPort):
             FROM heritage_assets
             WHERE id IN ({placeholders})
         """)
-        result = await self._db.execute(query, params)
+        try:
+            result = await self._db.execute(query, params)
+        except Exception:
+            logger.error("Failed to get heritage asset summaries count=%d", len(asset_ids), exc_info=True)
+            raise
         rows = result.fetchall()
 
         logger.info("Heritage asset lookup: requested=%d, found=%d", len(ids), len(rows))

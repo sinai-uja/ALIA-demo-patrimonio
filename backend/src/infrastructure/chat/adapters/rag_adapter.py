@@ -1,6 +1,10 @@
+import logging
+
 from src.application.rag.dto.rag_dto import RAGQueryDTO
 from src.application.rag.services.rag_application_service import RAGApplicationService
 from src.domain.chat.ports.rag_port import RAGPort
+
+logger = logging.getLogger("iaph.chat.rag")
 
 
 class InProcessRAGAdapter(RAGPort):
@@ -20,13 +24,24 @@ class InProcessRAGAdapter(RAGPort):
         heritage_type_filter: str | None,
         province_filter: str | None,
     ) -> tuple[str, list[dict]]:
+        logger.info(
+            "RAG query start question=%r top_k=%d heritage_type=%r province=%r",
+            question[:80], top_k, heritage_type_filter, province_filter,
+        )
         dto = RAGQueryDTO(
             query=question,
             top_k=top_k,
             heritage_type_filter=heritage_type_filter,
             province_filter=province_filter,
         )
-        result = await self._rag_service.query(dto)
+        try:
+            result = await self._rag_service.query(dto)
+        except Exception:
+            logger.error(
+                "RAG query failed question=%r top_k=%d heritage_type=%r province=%r",
+                question[:80], top_k, heritage_type_filter, province_filter, exc_info=True,
+            )
+            raise
 
         sources = [
             {
