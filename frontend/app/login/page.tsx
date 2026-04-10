@@ -115,6 +115,9 @@ export default function LoginPage() {
           <a href="https://www.ujaen.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/uja.png" alt="Universidad de Jaén" className="h-5 w-auto" />
           </a>
+          <a href="https://www.iaph.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
+            <img src="/images/iaph.png" alt="Instituto Andaluz de Patrimonio Histórico" className="h-7 w-auto" />
+          </a>
           <a href="https://alia.gob.es/" target="_blank" rel="noopener noreferrer" className="opacity-70 hover:opacity-100 transition-opacity">
             <img src="/images/alia.png" alt="Proyecto ALIA" className="h-7 w-auto" />
           </a>

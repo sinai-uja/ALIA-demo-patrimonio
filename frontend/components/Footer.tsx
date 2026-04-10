@@ -21,6 +21,14 @@ export function Footer() {
             <img src="/images/uja.png" alt="Universidad de Jaén" className="h-6 sm:h-7 w-auto" />
           </a>
           <a
+            href="https://www.iaph.es/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/iaph.png" alt="Instituto Andaluz de Patrimonio Histórico" className="h-8 sm:h-10 w-auto" />
+          </a>
+          <a
             href="https://alia.gob.es/"
             target="_blank"
             rel="noopener noreferrer"
