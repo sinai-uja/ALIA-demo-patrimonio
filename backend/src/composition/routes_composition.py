@@ -161,3 +161,31 @@ def build_routes_application_service(
         add_stop_use_case=add_stop_use_case,
         generate_route_stream_use_case=generate_route_stream_use_case,
     )
+
+
+async def run_add_stop_in_background(
+    route_id: str,
+    document_id: str,
+    position: int | None,
+    user_id: str,
+) -> None:
+    """Run add_stop in a background task with its own DB session.
+
+    Used by the API layer when ``background=true`` to avoid blocking
+    the HTTP response while the LLM generates the narrative.
+    """
+    from src.infrastructure.shared.persistence.engine import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as session:
+            service = build_routes_application_service(session)
+            await service.add_stop(route_id, document_id, position, user_id=user_id)
+    except Exception:
+        import logging
+
+        logging.getLogger("iaph.routes.background").warning(
+            "Background add_stop failed: route=%s doc=%s",
+            route_id,
+            document_id,
+            exc_info=True,
+        )

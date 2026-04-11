@@ -5,6 +5,7 @@ import type { SearchResult } from "@/lib/api";
 import { useSearchStore } from "@/store/search";
 import { useAuthStore } from "@/store/auth";
 import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
+import AddToRouteModal from "@/components/search/AddToRouteModal";
 
 const HERITAGE_LABELS: Record<string, string> = {
   patrimonio_inmueble: "Patrimonio Inmueble",
@@ -46,6 +47,7 @@ export function SearchResultCard({
 }) {
   const openDetail = useSearchStore((s) => s.openDetail);
   const [activeChunk, setActiveChunk] = useState(0);
+  const [showAddToRoute, setShowAddToRoute] = useState(false);
   const chunk = result.chunks[activeChunk];
   const similarity = scoreToPercent(chunk.score);
   const heritageLabel = HERITAGE_LABELS[result.heritage_type] ?? result.heritage_type;
@@ -98,6 +100,16 @@ export function SearchResultCard({
                 Protegido
               </span>
             )}
+            <button
+              onClick={() => setShowAddToRoute(true)}
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-medium text-stone-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+              title="Añadir a ruta"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z" />
+              </svg>
+              Ruta
+            </button>
           </div>
 
           <h3 className="font-semibold text-stone-900 text-sm leading-snug mb-1.5 flex items-center gap-1.5">
@@ -233,6 +245,13 @@ export function SearchResultCard({
         </div>
       </div>
 
+      {showAddToRoute && (
+        <AddToRouteModal
+          documentId={result.document_id}
+          assetTitle={displayName}
+          onClose={() => setShowAddToRoute(false)}
+        />
+      )}
     </div>
   );
 }

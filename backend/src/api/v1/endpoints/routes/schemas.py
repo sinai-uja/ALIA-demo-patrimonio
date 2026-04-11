@@ -95,3 +95,7 @@ class AddStopRequest(BaseModel):
         ge=1,
         description="1-indexed position to insert the stop. None = append at end",
     )
+    background: bool = Field(
+        default=False,
+        description="If true, return 202 immediately and generate narrative in background",
+    )

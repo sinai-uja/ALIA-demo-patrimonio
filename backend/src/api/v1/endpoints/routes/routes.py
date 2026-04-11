@@ -205,14 +205,34 @@ async def remove_stop(
     return _dto_to_schema(result)
 
 
-@router.post("/{route_id}/stops", response_model=VirtualRouteSchema, status_code=201)
+@router.post("/{route_id}/stops", status_code=201)
 async def add_stop(
     route_id: str,
     request: AddStopRequest,
     user: User = Depends(get_current_user),
     service: RoutesApplicationService = Depends(get_routes_service),
-) -> VirtualRouteSchema:
-    """Add a new stop to a route with LLM-generated narrative."""
+):
+    """Add a new stop to a route with LLM-generated narrative.
+
+    If ``background=true``, returns 202 immediately and generates
+    the narrative asynchronously.
+    """
+    if request.background:
+        import asyncio
+
+        from src.composition.routes_composition import run_add_stop_in_background
+
+        asyncio.create_task(
+            run_add_stop_in_background(
+                route_id, request.document_id, request.position, str(user.id),
+            ),
+        )
+        return Response(
+            status_code=202,
+            content='{"status":"accepted","message":"Generando narrativa en segundo plano"}',
+            media_type="application/json",
+        )
+
     result = await service.add_stop(
         route_id, request.document_id, request.position, user_id=str(user.id),
     )

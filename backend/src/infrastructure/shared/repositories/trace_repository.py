@@ -188,3 +188,14 @@ class SqlAlchemyTraceRepository(TraceRepository):
             if len(parts) == 2:
                 feedbacks[parts[1]] = row.value
         return feedbacks
+
+    async def get_route_feedback(self, execution_id: str) -> int | None:
+        """Return the feedback value for a route, or None if no feedback."""
+        from src.infrastructure.feedback.models import UserFeedbackModel
+
+        stmt = select(UserFeedbackModel.value).where(
+            UserFeedbackModel.target_type == "route",
+            UserFeedbackModel.target_id == execution_id,
+        ).limit(1)
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none()

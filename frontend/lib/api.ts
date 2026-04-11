@@ -306,6 +306,12 @@ export const routes = {
       method: "POST",
       body: JSON.stringify({ document_id: documentId, position }),
     }),
+
+  addStopBackground: (routeId: string, documentId: string) =>
+    apiFetch<{ status: string; message: string }>(`/routes/${routeId}/stops`, {
+      method: "POST",
+      body: JSON.stringify({ document_id: documentId, background: true }),
+    }),
 };
 
 // ── Heritage Assets ──────────────────────────────────────────────────────────

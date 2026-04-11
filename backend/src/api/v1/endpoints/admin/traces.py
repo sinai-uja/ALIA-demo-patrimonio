@@ -99,14 +99,8 @@ async def get_trace(
         repo = build_trace_repository(db)
         result_feedbacks = await repo.get_result_feedbacks(detail.execution_id) or None
     elif detail.execution_type == "route" and detail.execution_id:
-        from sqlalchemy import select as sa_select
-        from src.infrastructure.feedback.models import UserFeedbackModel
-        stmt = sa_select(UserFeedbackModel.value).where(
-            UserFeedbackModel.target_type == "route",
-            UserFeedbackModel.target_id == detail.execution_id,
-        ).limit(1)
-        fb_result = await db.execute(stmt)
-        fb_row = fb_result.scalar_one_or_none()
+        repo = build_trace_repository(db)
+        fb_row = await repo.get_route_feedback(detail.execution_id)
         if fb_row is not None:
             feedback_value = fb_row
 
