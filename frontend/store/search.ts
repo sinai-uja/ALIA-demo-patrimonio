@@ -63,6 +63,7 @@ function buildCleanQuery(query: string): string {
 }
 
 let _searchController: AbortController | null = null;
+let _searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
 export const useSearchStore = create<SearchState>((set, get) => ({
   query: "",
@@ -109,7 +110,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     const cleanQuery = buildCleanQuery(query);
     if (!cleanQuery) return;
 
-    // Abort any in-flight search to prevent duplicate requests
+    // Debounce to prevent duplicate requests from React strict mode
+    if (_searchDebounce) clearTimeout(_searchDebounce);
     _searchController?.abort();
     const controller = new AbortController();
     _searchController = controller;
@@ -121,6 +123,11 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       selectedAssetId: null,
       selectedAsset: null,
     });
+
+    // Wait one microtask to let any duplicate call abort this one first
+    await new Promise((r) => { _searchDebounce = setTimeout(r, 50); });
+    if (controller.signal.aborted) { set({ loading: false }); return; }
+
     try {
       const filters = collectFilters(activeFilters);
       const res = await minDelay(searchApi.similarity({

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/store/auth";
 import { admin, auth as authApi, ValidationError } from "@/lib/api";
 import { minDelay } from "@/lib/minDelay";
@@ -338,6 +339,19 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
+      {/* Admin navigation tabs */}
+      <div className="mb-6 flex items-center gap-1">
+        <span className="rounded-lg bg-green-50 px-4 py-1.5 text-sm font-medium text-green-800">
+          Gestion de usuarios
+        </span>
+        <Link
+          href="/admin/traces"
+          className="rounded-lg px-4 py-1.5 text-sm font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors"
+        >
+          Trazabilidad
+        </Link>
+      </div>
+
       <div className="grid gap-8 lg:grid-cols-3 items-start">
 
         {/* ── Left panel — Users ── */}

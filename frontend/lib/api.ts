@@ -568,6 +568,82 @@ export const admin = {
   },
 };
 
+// ── Admin Traces ──────────────────────────────────────────────────────────────
+export interface TraceResultItem {
+  rank: number;
+  score: number;
+  title: string;
+  heritage_type: string;
+  province: string;
+  document_id?: string;
+}
+
+export interface TracePipelineStep {
+  step: string;
+  elapsed_ms?: number | null;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+  results?: TraceResultItem[] | null;
+}
+
+export interface TraceSummary {
+  id: string;
+  execution_type: string;
+  user_id: string;
+  username: string;
+  user_profile_type: string | null;
+  query: string;
+  pipeline_mode: string | null;
+  status: string;
+  created_at: string;
+  total_results: number;
+  top_score: number | null;
+  elapsed_ms: number | null;
+  feedback_value: number | null;
+}
+
+export interface TraceDetail extends TraceSummary {
+  filters: Record<string, unknown> | null;
+  steps: TracePipelineStep[];
+  llm_response: string | null;
+  result_feedbacks: Record<string, number> | null;
+}
+
+export interface TraceListResponse {
+  traces: TraceSummary[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface TraceListParams {
+  type?: string;
+  since?: string;
+  until?: string;
+  user_id?: string;
+  query?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export const traces = {
+  list: (params: TraceListParams) => {
+    const searchParams = new URLSearchParams();
+    if (params.type) searchParams.set("type", params.type);
+    if (params.since) searchParams.set("since", params.since);
+    if (params.until) searchParams.set("until", params.until);
+    if (params.user_id) searchParams.set("user_id", params.user_id);
+    if (params.query) searchParams.set("query", params.query);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.page_size) searchParams.set("page_size", String(params.page_size));
+    const qs = searchParams.toString();
+    return apiFetch<TraceListResponse>(`/admin/traces${qs ? `?${qs}` : ""}`);
+  },
+
+  get: (traceId: string) => apiFetch<TraceDetail>(`/admin/traces/${traceId}`),
+};
+
 // ── Accessibility ─────────────────────────────────────────────────────────────
 export interface SimplifyResponse {
   original_text: string;
