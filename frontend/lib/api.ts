@@ -595,6 +595,19 @@ export const feedback = {
   },
 };
 
+// ── Health ────────────────────────────────────────────────────────────────────
+export interface ServiceStatus {
+  embedding: { status: "ok" | "warming" | "down" | "local" | "unknown"; is_cloud_run: boolean };
+  llm: { status: "ok" | "warming" | "down" | "local" | "external" | "unknown"; is_cloud_run: boolean };
+  provider: string;
+  last_check: string | null;
+}
+
+export const health = {
+  status: () => apiFetch<ServiceStatus>("/health/services"),
+  keepalive: () => apiFetch<ServiceStatus>("/health/keepalive", { method: "POST" }),
+};
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 export interface UserInfo {
   id: string;

@@ -12,6 +12,7 @@ from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.chat.chat import router as chat_router
 from src.api.v1.endpoints.documents.documents import router as documents_router
 from src.api.v1.endpoints.feedback.feedback import router as feedback_router
+from src.api.v1.endpoints.health import router as health_router
 from src.api.v1.endpoints.heritage.heritage import router as heritage_router
 from src.api.v1.endpoints.rag.rag import router as rag_router
 from src.api.v1.endpoints.routes.routes import router as routes_router
@@ -116,6 +117,11 @@ app.include_router(
     prefix=f"{settings.api_v1_prefix}/feedback",
     tags=["feedback"],
     dependencies=[Depends(get_current_user)],
+)
+app.include_router(
+    health_router,
+    prefix=f"{settings.api_v1_prefix}/health",
+    tags=["health"],
 )
 
 
