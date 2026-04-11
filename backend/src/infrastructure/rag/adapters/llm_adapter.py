@@ -80,7 +80,7 @@ class VLLMAdapter(LLMPort):
                 url,
                 payload,
                 service_label=_SERVICE_LABEL,
-                timeout=120.0,
+                timeout=300.0,
                 headers=headers or None,
                 error_class=LLMUnavailableError,
             )
@@ -109,7 +109,7 @@ class VLLMAdapter(LLMPort):
                     url,
                     payload,
                     service_label=_SERVICE_LABEL,
-                    timeout=120.0,
+                    timeout=300.0,
                     headers=headers or None,
                     error_class=LLMUnavailableError,
                 )

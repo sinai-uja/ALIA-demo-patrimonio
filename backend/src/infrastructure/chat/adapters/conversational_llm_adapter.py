@@ -62,7 +62,7 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
             f"{self._base_url}/chat/completions",
             payload,
             service_label="vllm.chat",
-            timeout=60.0,
+            timeout=300.0,
             headers=headers or None,
             error_class=LLMUnavailableError,
         )

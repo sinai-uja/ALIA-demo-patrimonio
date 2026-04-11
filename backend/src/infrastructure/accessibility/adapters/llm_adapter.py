@@ -77,7 +77,7 @@ class AccessibilityLLMAdapter(LLMPort):
             f"{self._base_url}/chat/completions",
             payload,
             service_label="vllm.accessibility",
-            timeout=120.0,
+            timeout=300.0,
             headers=headers or None,
             error_class=LLMUnavailableError,
         )
