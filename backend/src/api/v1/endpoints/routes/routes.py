@@ -1,10 +1,13 @@
+import json
 import logging
 
 from fastapi import APIRouter, Depends, Query, Response
+from sse_starlette.sse import EventSourceResponse
 
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.routes.deps import get_routes_service
 from src.api.v1.endpoints.routes.schemas import (
+    AddStopRequest,
     DetectedEntitySchema,
     GenerateRouteRequest,
     GuideQueryRequest,
@@ -136,6 +139,38 @@ async def generate_route(
     return _dto_to_schema(result)
 
 
+@router.post("/generate/stream")
+async def generate_route_stream(
+    request: GenerateRouteRequest,
+    user: User = Depends(get_current_user),
+    service: RoutesApplicationService = Depends(get_routes_service),
+) -> EventSourceResponse:
+    """Generate a personalized virtual heritage route with SSE streaming."""
+    logger.info(
+        "POST /routes/generate/stream query=%r, num_stops=%d",
+        request.query[:80], request.num_stops or 5,
+    )
+    dto = GenerateRouteDTO(
+        query=request.query,
+        num_stops=request.num_stops,
+        heritage_type_filter=request.heritage_type_filter,
+        province_filter=request.province_filter,
+        municipality_filter=request.municipality_filter,
+        user_id=str(user.id),
+        username=user.username,
+        user_profile_type=user.profile_type.name if user.profile_type else None,
+    )
+
+    async def event_generator():
+        async for event in service.generate_route_stream(dto):
+            yield {
+                "event": event["event"],
+                "data": json.dumps(event["data"], ensure_ascii=False),
+            }
+
+    return EventSourceResponse(event_generator())
+
+
 @router.get("", response_model=list[VirtualRouteSchema])
 async def list_routes(
     province: str | None = None,
@@ -156,6 +191,32 @@ async def delete_route(
     """Delete a virtual route by ID."""
     await service.delete_route(route_id, user_id=str(user.id))
     return Response(status_code=204)
+
+
+@router.delete("/{route_id}/stops/{stop_order}", response_model=VirtualRouteSchema)
+async def remove_stop(
+    route_id: str,
+    stop_order: int,
+    user: User = Depends(get_current_user),
+    service: RoutesApplicationService = Depends(get_routes_service),
+) -> VirtualRouteSchema:
+    """Remove a stop from a route by its order number."""
+    result = await service.remove_stop(route_id, stop_order, user_id=str(user.id))
+    return _dto_to_schema(result)
+
+
+@router.post("/{route_id}/stops", response_model=VirtualRouteSchema, status_code=201)
+async def add_stop(
+    route_id: str,
+    request: AddStopRequest,
+    user: User = Depends(get_current_user),
+    service: RoutesApplicationService = Depends(get_routes_service),
+) -> VirtualRouteSchema:
+    """Add a new stop to a route with LLM-generated narrative."""
+    result = await service.add_stop(
+        route_id, request.document_id, request.position, user_id=str(user.id),
+    )
+    return _dto_to_schema(result)
 
 
 @router.get("/{route_id}", response_model=VirtualRouteSchema)

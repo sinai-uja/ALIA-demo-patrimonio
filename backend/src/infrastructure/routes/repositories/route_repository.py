@@ -135,6 +135,53 @@ class SqlAlchemyRouteRepository(RouteRepository):
             raise
         return True
 
+    async def update_route(
+        self,
+        route_id: UUID,
+        user_id: UUID | None,
+        *,
+        stops: list[dict],
+        narrative: str,
+        introduction: str | None = None,
+        conclusion: str | None = None,
+        title: str | None = None,
+    ) -> VirtualRoute | None:
+        stmt = select(VirtualRouteModel).where(VirtualRouteModel.id == route_id)
+        if user_id is not None:
+            stmt = stmt.where(VirtualRouteModel.user_id == user_id)
+        try:
+            result = await self._db.execute(stmt)
+        except Exception:
+            logger.error(
+                "Failed to fetch route for update route_id=%s user_id=%s",
+                route_id, user_id, exc_info=True,
+            )
+            raise
+        model = result.scalar_one_or_none()
+
+        if model is None:
+            return None
+
+        model.stops = stops
+        model.narrative = narrative
+        if introduction is not None:
+            model.introduction = introduction
+        if conclusion is not None:
+            model.conclusion = conclusion
+        if title is not None:
+            model.title = title
+
+        try:
+            await self._db.flush()
+            await self._db.refresh(model)
+        except Exception:
+            logger.error(
+                "Failed to update route route_id=%s", route_id, exc_info=True,
+            )
+            raise
+
+        return self._to_entity(model)
+
     def _to_entity(self, model: VirtualRouteModel) -> VirtualRoute:
         stops = [
             RouteStop(

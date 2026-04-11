@@ -123,6 +123,124 @@ def build_route_prompt(
     )
 
 
+TITLE_INTRO_SYSTEM_PROMPT = (
+    "Eres un experto guia turistico del patrimonio historico andaluz del "
+    "IAPH. Genera UNICAMENTE el titulo y la introduccion de una ruta "
+    "cultural en espanol, de forma concisa y atractiva.\n\n"
+    "Responde UNICAMENTE con un objeto JSON valido (sin bloques de codigo "
+    "ni markdown) con esta estructura exacta:\n"
+    '{\n'
+    '  "title": "Titulo atractivo de la ruta",\n'
+    '  "introduction": "Parrafo introductorio (2-3 frases) presentando '
+    'el tema y anticipando las paradas"\n'
+    '}\n\n'
+    "Reglas:\n"
+    "- No uses asteriscos (**), almohadillas (#), guiones (---) ni ningun "
+    "formato markdown. Solo texto plano dentro del JSON.\n"
+    "- Usa SOLO la informacion proporcionada en el contexto.\n"
+    "- No inventes datos ni lugares que no aparezcan en el contexto.\n"
+    "- La introduccion debe ser un parrafo de 2-3 frases que presente el "
+    "tema de la ruta y anticipe las paradas que se visitaran."
+)
+
+
+def build_title_intro_prompt(
+    query: str,
+    stops_context: str,
+    province: list[str] | None = None,
+    municipality: list[str] | None = None,
+) -> str:
+    """Build a prompt that generates ONLY title + introduction for a route."""
+    location_parts = []
+    if province:
+        location_parts.append(f"Provincia: {', '.join(province)}")
+    if municipality:
+        location_parts.append(f"Municipio: {', '.join(municipality)}")
+    location_line = (
+        f"Ubicacion: {'; '.join(location_parts)}\n"
+        if location_parts
+        else ""
+    )
+    return (
+        f"Genera el titulo y la introduccion para una ruta cultural con las "
+        f"siguientes paradas.\n"
+        f"{location_line}"
+        f"Tema de busqueda del visitante: {query}\n\n"
+        f"Paradas de la ruta (en orden):\n{stops_context}\n\n"
+        f"Genera el JSON con title e introduction."
+    )
+
+
+CONCLUSION_SYSTEM_PROMPT = (
+    "Eres un experto guia turistico del patrimonio historico andaluz del "
+    "IAPH. Genera UNICAMENTE el parrafo de conclusion de una ruta "
+    "cultural en espanol.\n\n"
+    "Reglas:\n"
+    "- Responde UNICAMENTE con el texto de conclusion (2-3 frases), sin "
+    "formato JSON, sin markdown, sin asteriscos ni almohadillas.\n"
+    "- Resume brevemente el recorrido realizado.\n"
+    "- Usa SOLO la informacion proporcionada. No inventes datos."
+)
+
+
+def build_conclusion_prompt(
+    route_title: str,
+    stops_context: str,
+) -> str:
+    """Build a prompt for generating ONLY the conclusion of a route."""
+    return (
+        f"Genera un parrafo de conclusion (2-3 frases) para la ruta "
+        f'"{route_title}" que incluye las siguientes paradas:\n\n'
+        f"{stops_context}\n\n"
+        f"Conclusion:"
+    )
+
+
+SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT = (
+    "Eres un experto guia turistico del patrimonio historico andaluz del "
+    "IAPH. Genera narrativas concisas y atractivas para paradas "
+    "individuales de rutas culturales en espanol.\n\n"
+    "Reglas:\n"
+    "- Responde UNICAMENTE con el texto narrativo (2-3 frases), sin "
+    "formato JSON, sin markdown, sin asteriscos ni almohadillas.\n"
+    "- Describe el bien patrimonial de forma concisa y atractiva.\n"
+    "- Si hay paradas anteriores o posteriores, crea una transicion "
+    "natural hacia/desde ellas.\n"
+    "- Usa SOLO la informacion proporcionada. No inventes datos."
+)
+
+
+def build_single_stop_narrative_prompt(
+    route_title: str,
+    stop_title: str,
+    stop_type: str,
+    stop_province: str,
+    stop_description: str,
+    previous_stop_title: str | None = None,
+    next_stop_title: str | None = None,
+) -> str:
+    """Build a prompt for generating narrative for ONE stop in an existing route."""
+    context_parts = [
+        f"Ruta: {route_title}",
+        f"Parada actual: {stop_title} ({stop_type}, {stop_province})",
+    ]
+    if previous_stop_title:
+        context_parts.append(f"Parada anterior: {previous_stop_title}")
+    if next_stop_title:
+        context_parts.append(f"Parada siguiente: {next_stop_title}")
+
+    context_parts.append(
+        f"\nInformacion de la parada:\n{stop_description}"
+    )
+
+    return (
+        "Genera una narrativa de 2-3 frases para esta parada en el "
+        "contexto de la ruta indicada.\n\n"
+        + "\n".join(context_parts)
+        + "\n\nNarrativa:"
+    )
+
+
 GUIDE_SYSTEM_PROMPT = (
     "Eres un guia experto del patrimonio historico andaluz del IAPH. "
     "Respondes preguntas sobre una ruta cultural concreta y sus paradas "

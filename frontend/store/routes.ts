@@ -3,6 +3,7 @@ import {
   routes as routesApi,
   heritage as heritageApi,
   type VirtualRoute,
+  type RouteStop,
   type HeritageAsset,
   type SuggestionResponse,
   type FilterValues,
@@ -30,6 +31,15 @@ interface RoutesState {
   generating: boolean;
   generatedRoute: VirtualRoute | null;
 
+  // Streaming state
+  streamingSteps: { step: string; status: string; detail?: string }[];
+  streamingStops: RouteStop[];
+  streamingTitle: string | null;
+  streamingIntroduction: string | null;
+  streamingConclusion: string | null;
+  streamingNarratives: Record<number, string>;
+  streamingError: string | null;
+
   // Route list
   routes: VirtualRoute[];
   activeRoute: VirtualRoute | null;
@@ -42,6 +52,10 @@ interface RoutesState {
   selectedStopAssetId: string | null;
   selectedAsset: HeritageAsset | null;
   detailLoading: boolean;
+
+  // Edit mode
+  editing: boolean;
+  editLoading: boolean;
 
   // Actions
   setQuery: (q: string) => void;
@@ -65,6 +79,9 @@ interface RoutesState {
   deleteRoute: (id: string) => Promise<void>;
   openStopDetail: (heritageAssetId: string) => Promise<void>;
   closeStopDetail: () => void;
+  setEditMode: (editing: boolean) => void;
+  removeStop: (routeId: string, stopOrder: number) => Promise<void>;
+  addStop: (routeId: string, documentId: string, position?: number) => Promise<void>;
 }
 
 let _generateController: AbortController | null = null;
@@ -83,6 +100,15 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   generating: false,
   generatedRoute: null,
 
+  // Streaming state
+  streamingSteps: [],
+  streamingStops: [],
+  streamingTitle: null,
+  streamingIntroduction: null,
+  streamingConclusion: null,
+  streamingNarratives: {},
+  streamingError: null,
+
   // Route list
   routes: [],
   activeRoute: null,
@@ -95,6 +121,10 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   selectedStopAssetId: null,
   selectedAsset: null,
   detailLoading: false,
+
+  // Edit mode
+  editing: false,
+  editLoading: false,
 
   setQuery: (q) => set({ query: q }),
 
@@ -226,28 +256,146 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     const controller = new AbortController();
     _generateController = controller;
 
-    set({ generating: true });
+    // Reset streaming state
+    set({
+      generating: true,
+      generatedRoute: null,
+      streamingSteps: [],
+      streamingStops: [],
+      streamingTitle: null,
+      streamingIntroduction: null,
+      streamingConclusion: null,
+      streamingNarratives: {},
+      streamingError: null,
+    });
+
+    const filters = collectFilters(activeFilters);
+    const params = {
+      query: query.trim(),
+      num_stops: numStops,
+      ...filters,
+    };
+
     try {
-      const filters = collectFilters(activeFilters);
-      const route = await routesApi.generate({
-        query: query.trim(),
-        num_stops: numStops,
-        ...filters,
-      }, controller.signal);
-      if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
-      set((s) => ({
-        routes: [route, ...s.routes],
-        generatedRoute: route,
-        activeRoute: route,
-      }));
-      return route;
-    } catch (err) {
-      if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
-      throw err;
-    } finally {
-      if (_generateController === controller) {
+      await routesApi.generateStream(params, controller.signal, (ev) => {
+        if (controller.signal.aborted) return;
+
+        switch (ev.event) {
+          case "step": {
+            const { step, status, ...rest } = ev.data as { step: string; status: string; [k: string]: unknown };
+            set((s) => {
+              const existing = s.streamingSteps.findIndex((ss) => ss.step === step);
+              const detail = rest.extracted_query
+                ? String(rest.extracted_query)
+                : rest.chunks
+                  ? `${rest.chunks} fragmentos`
+                  : rest.count
+                    ? `${rest.count} resultados`
+                    : undefined;
+              const entry = { step, status, detail };
+              if (existing >= 0) {
+                const updated = [...s.streamingSteps];
+                updated[existing] = entry;
+                return { streamingSteps: updated };
+              }
+              return { streamingSteps: [...s.streamingSteps, entry] };
+            });
+            break;
+          }
+
+          case "stop": {
+            const stop = ev.data as unknown as RouteStop;
+            set((s) => ({
+              streamingStops: [...s.streamingStops, stop],
+            }));
+            break;
+          }
+
+          case "narrative": {
+            const { order, type, text, title } = ev.data as {
+              order: number;
+              type: string;
+              text?: string;
+              title?: string;
+            };
+            if (type === "introduction") {
+              set({
+                streamingTitle: title ? String(title) : null,
+                streamingIntroduction: text ? String(text) : null,
+              });
+            } else if (type === "stop") {
+              set((s) => ({
+                streamingNarratives: { ...s.streamingNarratives, [order]: String(text ?? "") },
+              }));
+            } else if (type === "conclusion") {
+              set({ streamingConclusion: text ? String(text) : null });
+            }
+            break;
+          }
+
+          case "complete": {
+            const { route_id } = ev.data as { route_id: string };
+            // Fetch the full route from the server
+            routesApi.get(route_id).then((fullRoute) => {
+              set((s) => ({
+                generatedRoute: fullRoute,
+                activeRoute: fullRoute,
+                routes: [fullRoute, ...s.routes],
+                generating: false,
+                // Clear streaming state
+                streamingSteps: [],
+                streamingStops: [],
+                streamingTitle: null,
+                streamingIntroduction: null,
+                streamingConclusion: null,
+                streamingNarratives: {},
+              }));
+            }).catch(() => {
+              // If fetching full route fails, still stop generating
+              set({ generating: false, streamingError: "Error al cargar la ruta completa" });
+            });
+            break;
+          }
+
+          case "error": {
+            const { message } = ev.data as { message: string };
+            set({
+              streamingError: message || "Error durante la generacion",
+              generating: false,
+            });
+            break;
+          }
+        }
+      });
+
+      // Stream ended — if no complete event was fired, stop generating
+      // (complete event handler sets generating: false asynchronously)
+      const state = get();
+      if (state.generating && !state.generatedRoute) {
+        // Stream ended without complete event — possibly an error
         set({ generating: false });
       }
+
+      return get().generatedRoute as VirtualRoute;
+    } catch (err) {
+      if (controller.signal.aborted) {
+        set({
+          generating: false,
+          streamingSteps: [],
+          streamingStops: [],
+          streamingTitle: null,
+          streamingIntroduction: null,
+          streamingConclusion: null,
+          streamingNarratives: {},
+          streamingError: null,
+        });
+        throw new DOMException("Aborted", "AbortError");
+      }
+      set({
+        generating: false,
+        streamingError: err instanceof Error ? err.message : "Error desconocido",
+      });
+      throw err;
     }
   },
 
@@ -292,5 +440,33 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
 
   closeStopDetail: () => {
     set({ selectedStopAssetId: null, selectedAsset: null, detailLoading: false });
+  },
+
+  setEditMode: (editing) => set({ editing }),
+
+  removeStop: async (routeId, stopOrder) => {
+    set({ editLoading: true });
+    try {
+      const updated = await routesApi.removeStop(routeId, stopOrder);
+      set((s) => ({
+        activeRoute: updated,
+        routes: s.routes.map((r) => (r.id === routeId ? updated : r)),
+      }));
+    } finally {
+      set({ editLoading: false });
+    }
+  },
+
+  addStop: async (routeId, documentId, position) => {
+    set({ editLoading: true });
+    try {
+      const updated = await routesApi.addStop(routeId, documentId, position);
+      set((s) => ({
+        activeRoute: updated,
+        routes: s.routes.map((r) => (r.id === routeId ? updated : r)),
+      }));
+    } finally {
+      set({ editLoading: false });
+    }
   },
 }));

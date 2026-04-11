@@ -227,6 +227,32 @@ function PipelineStep({ step, isLast, resultFeedbacks }: { step: TracePipelineSt
         {typeof output.raw_response === "string" && (
           <ExpandableText label="Ver respuesta LLM (cruda)" text={output.raw_response} />
         )}
+        {/* Multiple LLM calls (streaming narrative generation) */}
+        {Array.isArray(output.llm_calls) && (output.llm_calls as Array<Record<string, unknown>>).length > 0 && (
+          <div className="mt-2 space-y-1">
+            {(output.llm_calls as Array<Record<string, unknown>>).map((call, ci) => {
+              const callLabel = String(call.call ?? `call_${ci + 1}`);
+              const displayLabel = callLabel === "title_introduction" ? "Titulo + Introduccion"
+                : callLabel === "conclusion" ? "Conclusion"
+                : callLabel.startsWith("stop_") ? `Parada ${callLabel.replace("stop_", "")}`
+                : callLabel;
+              return (
+                <div key={ci} className="pl-3 border-l-2 border-stone-200">
+                  <span className="text-[11px] font-medium text-stone-600">{displayLabel}</span>
+                  {typeof call.system_prompt === "string" && (
+                    <ExpandableText label="System prompt" text={call.system_prompt} />
+                  )}
+                  {typeof call.user_prompt === "string" && (
+                    <ExpandableText label="User prompt" text={call.user_prompt} />
+                  )}
+                  {typeof call.raw_response === "string" && (
+                    <ExpandableText label="Respuesta LLM" text={call.raw_response} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

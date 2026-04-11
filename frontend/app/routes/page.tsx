@@ -5,6 +5,7 @@ import { useRoutesStore } from "@/store/routes";
 import { useFeedbackStore } from "@/store/feedback";
 import { RouteSmartInput } from "@/components/routes/RouteSmartInput";
 import { RouteResult } from "@/components/routes/RouteResult";
+import { RouteStreamingPreview } from "@/components/routes/RouteStreamingPreview";
 import { RouteCard } from "@/components/routes/RouteCard";
 import { RoutesPagination } from "@/components/routes/RoutesPagination";
 import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
@@ -204,16 +205,8 @@ export default function RoutesPage() {
             <RouteSmartInput numStopsSelector={<NumStopsSelector />} />
             <RoutesFilterChips />
 
-            {/* Generation spinner */}
-            {generating && (
-              <div className="flex items-center justify-center gap-3 py-8">
-                <svg className="w-5 h-5 animate-spin text-green-600" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="text-sm text-stone-500">Generando ruta...</span>
-              </div>
-            )}
+            {/* Generation streaming preview */}
+            {generating && <RouteStreamingPreview />}
 
             {/* Generated route result */}
             {generatedRoute && !generating && (

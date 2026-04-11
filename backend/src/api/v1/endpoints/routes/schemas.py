@@ -82,3 +82,16 @@ class RouteFilterValuesResponse(BaseModel):
     heritage_types: list[str]
     provinces: list[str]
     municipalities: list[str]
+
+
+class AddStopRequest(BaseModel):
+    document_id: str = Field(
+        ...,
+        min_length=1,
+        description="Document ID of the heritage asset to add as a stop",
+    )
+    position: int | None = Field(
+        default=None,
+        ge=1,
+        description="1-indexed position to insert the stop. None = append at end",
+    )

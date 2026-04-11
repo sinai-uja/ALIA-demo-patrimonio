@@ -178,19 +178,92 @@ export interface VirtualRoute {
   created_at: string;
 }
 
+export type GenerateRouteParams = {
+  query: string;
+  num_stops?: number;
+  heritage_type_filter?: string[] | null;
+  province_filter?: string[] | null;
+  municipality_filter?: string[] | null;
+};
+
 export const routes = {
-  generate: (params: {
-    query: string;
-    num_stops?: number;
-    heritage_type_filter?: string[] | null;
-    province_filter?: string[] | null;
-    municipality_filter?: string[] | null;
-  }, signal?: AbortSignal) =>
+  generate: (params: GenerateRouteParams, signal?: AbortSignal) =>
     apiFetch<VirtualRoute>("/routes/generate", {
       method: "POST",
       body: JSON.stringify(params),
       signal,
     }),
+
+  generateStream: async (
+    params: GenerateRouteParams,
+    signal: AbortSignal | undefined,
+    onEvent: (event: { event: string; data: Record<string, unknown> }) => void,
+  ): Promise<void> => {
+    const token = getToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/routes/generate/stream`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(params),
+      signal,
+    });
+
+    if (res.status === 401) {
+      if (typeof document !== "undefined") {
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/login";
+      }
+      throw new Error("Unauthorized");
+    }
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop()!; // keep incomplete line in buffer
+
+        let currentEvent = "message";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              onEvent({ event: currentEvent, data });
+            } catch {
+              // ignore malformed JSON
+            }
+            currentEvent = "message";
+          }
+          // empty lines reset event type per SSE spec
+          if (line === "") {
+            currentEvent = "message";
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  },
 
   suggestions: (query: string) =>
     apiFetch<SuggestionResponse>(
@@ -222,6 +295,17 @@ export const routes = {
       `/routes/${routeId}/guide`,
       { method: "POST", body: JSON.stringify({ question, history: history ?? [] }) }
     ),
+
+  removeStop: (routeId: string, stopOrder: number) =>
+    apiFetch<VirtualRoute>(`/routes/${routeId}/stops/${stopOrder}`, {
+      method: "DELETE",
+    }),
+
+  addStop: (routeId: string, documentId: string, position?: number) =>
+    apiFetch<VirtualRoute>(`/routes/${routeId}/stops`, {
+      method: "POST",
+      body: JSON.stringify({ document_id: documentId, position }),
+    }),
 };
 
 // ── Heritage Assets ──────────────────────────────────────────────────────────
