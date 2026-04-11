@@ -43,6 +43,9 @@ from src.infrastructure.shared.adapters.text_search_adapter import (
 from src.infrastructure.shared.adapters.vector_search_adapter import (
     PgVectorSearchAdapter,
 )
+from src.infrastructure.shared.repositories.trace_repository import (
+    SqlAlchemyTraceRepository,
+)
 
 # Module-level singletons — these don't depend on the DB session
 _embedding_adapter = HttpEmbeddingAdapter(
@@ -81,6 +84,8 @@ def build_search_application_service(
         score_threshold=settings.search_score_threshold,
     )
 
+    trace_repository = SqlAlchemyTraceRepository(db)
+
     similarity_use_case = SimilaritySearchUseCase(
         embedding_port=_embedding_adapter,
         vector_search_port=vector_search_adapter,
@@ -93,6 +98,7 @@ def build_search_application_service(
         similarity_only=settings.rag_similarity_only,
         similarity_threshold=settings.rag_similarity_threshold,
         reranker_enabled=settings.reranker_enabled,
+        trace_repository=trace_repository,
     )
 
     suggestion_use_case = SuggestionUseCase(

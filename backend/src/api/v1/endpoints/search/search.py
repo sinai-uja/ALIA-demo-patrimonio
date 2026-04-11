@@ -45,7 +45,9 @@ async def similarity_search(
         heritage_type_filter=request.heritage_type_filter,
         province_filter=request.province_filter,
         municipality_filter=request.municipality_filter,
-        user_id=user.username,
+        user_id=str(user.id),
+        username=user.username,
+        user_profile_type=user.profile_type.name if user.profile_type else None,
     )
 
     result = await service.similarity_search(dto)

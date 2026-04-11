@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.v1.endpoints.accessibility.accessibility import router as accessibility_router
 from src.api.v1.endpoints.admin.admin import router as admin_router
+from src.api.v1.endpoints.admin.traces import router as traces_router
 from src.api.v1.endpoints.auth.auth import router as auth_router
 from src.api.v1.endpoints.auth.deps import get_current_user
 from src.api.v1.endpoints.chat.chat import router as chat_router
@@ -60,6 +61,11 @@ app.include_router(
 )
 app.include_router(
     admin_router,
+    prefix=settings.api_v1_prefix,
+    dependencies=[Depends(get_current_user)],
+)
+app.include_router(
+    traces_router,
     prefix=settings.api_v1_prefix,
     dependencies=[Depends(get_current_user)],
 )

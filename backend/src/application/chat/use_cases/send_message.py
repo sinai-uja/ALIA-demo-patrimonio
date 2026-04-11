@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+import time
 from uuid import UUID
 
 from src.application.chat.dto.chat_dto import MessageDTO, SendMessageDTO
@@ -37,9 +40,12 @@ class SendMessageUseCase:
         self._uow = unit_of_work
 
     async def execute(self, dto: SendMessageDTO) -> MessageDTO:
+        t0 = time.perf_counter()
         session_id = UUID(dto.session_id)
         user_uuid = UUID(dto.user_id) if dto.user_id else None
         logger.info("Processing message for session %s: %s", dto.session_id, dto.content[:80])
+
+        reformulated_query: str | None = None
 
         async with self._uow:
             # 1. Verify session exists and is owned by the actor
@@ -60,6 +66,7 @@ class SendMessageUseCase:
 
             # 4. Classify intent via LLM. If the LLM adapter is unavailable we
             # fall back to a plain RAG query so the user still gets an answer.
+            t_intent = time.perf_counter()
             try:
                 intent = await self._intent_classifier.classify(dto.content, history)
             except LLMUnavailableError:
@@ -68,8 +75,10 @@ class SendMessageUseCase:
                     exc_info=True,
                 )
                 intent = MessageIntent.RAG_QUERY
+            intent_ms = (time.perf_counter() - t_intent) * 1000
 
             # 5. Route based on intent
+            t_response = time.perf_counter()
             if intent == MessageIntent.CONVERSATIONAL:
                 logger.info("Routing to conversational LLM (no RAG)")
                 answer = await self._conversational_llm_port.generate(
@@ -78,10 +87,10 @@ class SendMessageUseCase:
                 sources = []
 
             elif intent == MessageIntent.CONTEXTUAL_RAG:
-                reformulated = self._query_reformulator.reformulate(dto.content, history)
-                logger.info("Routing to RAG with reformulated query: %s", reformulated[:120])
+                reformulated_query = self._query_reformulator.reformulate(dto.content, history)
+                logger.info("Routing to RAG with reformulated query: %s", reformulated_query[:120])
                 answer, sources = await self._rag_port.query(
-                    question=reformulated,
+                    question=reformulated_query,
                     top_k=dto.top_k,
                     heritage_type_filter=dto.heritage_type_filter,
                     province_filter=dto.province_filter,
@@ -91,14 +100,14 @@ class SendMessageUseCase:
                 # If there's conversation history, enrich the query with context
                 # to avoid losing intent on follow-up questions misclassified as new queries
                 if history:
-                    reformulated = self._query_reformulator.reformulate(
+                    reformulated_query = self._query_reformulator.reformulate(
                         dto.content, history,
                     )
                     logger.info(
                         "Routing to RAG with context-enriched query: %s",
-                        reformulated[:120],
+                        reformulated_query[:120],
                     )
-                    query = reformulated
+                    query = reformulated_query
                 else:
                     logger.info("Routing to RAG with direct query")
                     query = dto.content
@@ -108,6 +117,7 @@ class SendMessageUseCase:
                     heritage_type_filter=dto.heritage_type_filter,
                     province_filter=dto.province_filter,
                 )
+            response_ms = (time.perf_counter() - t_response) * 1000
 
             # 6. Save the assistant message with sources
             assistant_message = await self._chat_repository.add_message(
@@ -131,6 +141,7 @@ class SendMessageUseCase:
                 sources=[_source_dict_to_dto(s) for s in assistant_message.sources],
                 created_at=assistant_message.created_at.isoformat(),
             )
+
         return result
 
 

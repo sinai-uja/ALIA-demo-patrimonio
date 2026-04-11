@@ -124,6 +124,7 @@ async def generate_route(
         municipality_filter=request.municipality_filter,
         user_id=str(user.id),
         username=user.username,
+        user_profile_type=user.profile_type.name if user.profile_type else None,
     )
 
     result = await service.generate_route(dto)

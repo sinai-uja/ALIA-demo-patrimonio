@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 import logging
 import time
-from uuid import UUID
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
 from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
@@ -29,6 +33,9 @@ from src.domain.routes.services.route_builder_service import (
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 from src.domain.shared.value_objects.asset_id import extract_asset_id
 
+if TYPE_CHECKING:
+    from src.domain.shared.ports.trace_repository import TraceRepository
+
 logger = logging.getLogger("iaph.routes.generate_route")
 
 
@@ -44,6 +51,7 @@ class GenerateRouteUseCase:
         query_extraction_service: QueryExtractionService,
         heritage_asset_lookup_port: HeritageAssetLookupPort,
         unit_of_work: UnitOfWork,
+        trace_repository: TraceRepository | None = None,
     ) -> None:
         self._rag_port = rag_port
         self._llm_port = llm_port
@@ -52,6 +60,7 @@ class GenerateRouteUseCase:
         self._query_extraction_service = query_extraction_service
         self._heritage_asset_lookup_port = heritage_asset_lookup_port
         self._uow = unit_of_work
+        self._trace_repo = trace_repository
 
     async def execute(self, dto: GenerateRouteDTO) -> VirtualRouteDTO:
         t0 = time.monotonic()
@@ -70,10 +79,12 @@ class GenerateRouteUseCase:
             province_filter=dto.province_filter,
             municipality_filter=dto.municipality_filter,
         )
+        t_extract = time.perf_counter()
         extracted_query = await self._llm_port.generate_structured(
             system_prompt=QUERY_EXTRACTION_SYSTEM_PROMPT,
             user_prompt=extraction_prompt,
         )
+        extract_ms = (time.perf_counter() - t_extract) * 1000
         extracted_query = (
             extracted_query.strip().strip('"').strip("'")
         )
@@ -83,6 +94,7 @@ class GenerateRouteUseCase:
         )
 
         # 3. Single RAG call with extracted query + filters
+        t_rag = time.perf_counter()
         _, chunks = await self._rag_port.query(
             question=extracted_query,
             top_k=dto.num_stops * 3,
@@ -91,6 +103,7 @@ class GenerateRouteUseCase:
             municipality_filter=dto.municipality_filter,
         )
 
+        rag_ms = (time.perf_counter() - t_rag) * 1000
         logger.info(
             "Route generation: RAG returned %d chunks for query=%r",
             len(chunks), extracted_query,
@@ -142,6 +155,7 @@ class GenerateRouteUseCase:
         stops_context = "\n---\n".join(stops_context_parts)
 
         # 8. Generate per-stop narrative via LLM (structured JSON)
+        t_narrative = time.perf_counter()
         route_prompt = build_route_prompt(
             query=extracted_query,
             stops_context=stops_context,
@@ -157,6 +171,7 @@ class GenerateRouteUseCase:
                 settings.llm_route_narrative_max_tokens,
             ),
         )
+        narrative_ms = (time.perf_counter() - t_narrative) * 1000
         title = route_narrative.title
         introduction = route_narrative.introduction
         narrative_segments = route_narrative.segments
@@ -194,6 +209,84 @@ class GenerateRouteUseCase:
             "Route generation complete: route_id=%s user=%s title=%r stops=%d %.0fms",
             saved_route.id, user_label, title[:60], len(selected_chunks), elapsed_ms,
         )
+
+        # --- Trace instrumentation ---
+        if self._trace_repo:
+            try:
+                from src.domain.shared.entities.execution_trace import ExecutionTrace
+
+                trace_steps = [
+                    {
+                        "step": "query_extraction",
+                        "input": {"user_query": dto.query[:80], "cleaned_text": cleaned_text[:80]},
+                        "output": {"extracted_query": extracted_query[:80]},
+                        "elapsed_ms": round(extract_ms, 1),
+                    },
+                    {
+                        "step": "rag_query",
+                        "input": {"query": extracted_query[:80], "top_k": dto.num_stops * 3},
+                        "output": {"chunks_returned": len(chunks)},
+                        "elapsed_ms": round(rag_ms, 1),
+                    },
+                    {
+                        "step": "stop_selection",
+                        "input": {"candidates": len(chunks), "num_stops": dto.num_stops},
+                        "output": {
+                            "selected": len(selected_chunks),
+                            "stops": [
+                                {"title": c.get("title", "")[:60], "type": c.get("heritage_type", "")}
+                                for c in selected_chunks
+                            ],
+                        },
+                    },
+                    {
+                        "step": "heritage_asset_lookup",
+                        "input": {"asset_ids": len(asset_ids)},
+                        "output": {"previews_found": len(asset_previews)},
+                    },
+                    {
+                        "step": "narrative_generation",
+                        "input": {"stops_context_chars": len(stops_context)},
+                        "output": {
+                            "title": title[:60],
+                            "narrative_chars": len(narrative),
+                            "segments": len(narrative_segments),
+                        },
+                        "elapsed_ms": round(narrative_ms, 1),
+                    },
+                    {
+                        "step": "route_build",
+                        "output": {
+                            "route_id": str(saved_route.id),
+                            "stops": len(route.stops),
+                            "province": province_label,
+                        },
+                    },
+                ]
+                trace = ExecutionTrace(
+                    id=uuid4(),
+                    execution_type="route",
+                    execution_id=str(saved_route.id),
+                    user_id=dto.user_id,
+                    username=dto.username,
+                    user_profile_type=dto.user_profile_type,
+                    query=dto.query,
+                    pipeline_mode="route_generation",
+                    steps=trace_steps,
+                    summary={
+                        "total_results": len(selected_chunks),
+                        "elapsed_ms": round(elapsed_ms, 1),
+                        "route_title": title[:80],
+                        "stops_count": len(selected_chunks),
+                    },
+                    feedback_value=None,
+                    status="success",
+                    created_at=datetime.now(timezone.utc),
+                )
+                await self._trace_repo.save(trace)
+            except Exception:
+                logger.warning("Failed to save execution trace", exc_info=True)
+
         return result
 
     def _to_dto(self, route) -> VirtualRouteDTO:

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+import time
 
 from src.application.rag.dto.rag_dto import RAGQueryDTO, RAGResponseDTO, SourceDTO
 from src.config import settings
@@ -57,17 +60,26 @@ class RAGQueryUseCase:
         )
 
     async def execute(self, dto: RAGQueryDTO) -> RAGResponseDTO:
+        t0 = time.perf_counter()
         logger.info("RAG pipeline start: query=%s", dto.query[:80])
 
         # 1. Embed the user query (with instruction prefix for Qwen3)
         # Normalize to lowercase for consistent embedding/reranking regardless of casing
         search_query = dto.query.lower()
         query_text = wrap_query_for_embedding(search_query, settings.embedding_query_instruction)
+        t_embed = time.perf_counter()
         embeddings = await self._embedding_port.embed([query_text])
+        embed_ms = (time.perf_counter() - t_embed) * 1000
         query_embedding = embeddings[0]
         logger.info(
             "Query embedded: %d chars → %d-dim vector", len(dto.query), len(query_embedding),
         )
+
+        # Helper to return an abstention response
+        def _abstain_response() -> RAGResponseDTO:
+            return RAGResponseDTO(
+                answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
+            )
 
         # 2. Retrieve chunks — pure similarity or full hybrid pipeline
         vector_chunks = await self._vector_search_port.search(
@@ -88,9 +100,7 @@ class RAGQueryUseCase:
             )
             if not filtered_chunks:
                 logger.info("Abstaining: no chunks passed similarity threshold")
-                return RAGResponseDTO(
-                    answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
-                )
+                return _abstain_response()
             if self._reranker_enabled:
                 # Neural reranking on similarity-only candidates
                 final_chunks = await self._reranking_service.rerank(
@@ -98,9 +108,7 @@ class RAGQueryUseCase:
                 )
                 if not final_chunks:
                     logger.info("Abstaining: neural reranker returned no results")
-                    return RAGResponseDTO(
-                        answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
-                    )
+                    return _abstain_response()
             else:
                 final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
             for i, chunk in enumerate(final_chunks, 1):
@@ -117,6 +125,7 @@ class RAGQueryUseCase:
                 province=dto.province_filter,
                 municipality=dto.municipality_filter,
             )
+
             fused_chunks = self._hybrid_search_service.fuse(
                 vector_results=vector_chunks,
                 text_results=text_chunks,
@@ -129,9 +138,8 @@ class RAGQueryUseCase:
             )
             if not filtered_chunks:
                 logger.info("Abstaining: no chunks passed relevance threshold")
-                return RAGResponseDTO(
-                    answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
-                )
+                return _abstain_response()
+
             if self._reranker_enabled:
                 final_chunks = await self._reranking_service.rerank(
                     query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
@@ -142,9 +150,7 @@ class RAGQueryUseCase:
                 )
             if not final_chunks:
                 logger.info("Abstaining: all chunks discarded by lexical filter")
-                return RAGResponseDTO(
-                    answer=ABSTENTION_ANSWER, sources=[], query=dto.query, abstained=True,
-                )
+                return _abstain_response()
 
         # 7. Assemble context from retrieved chunks
         context = self._context_assembly_service.assemble(final_chunks)
@@ -158,11 +164,13 @@ class RAGQueryUseCase:
         )
 
         # 9. Generate answer via LLM
+        t_llm = time.perf_counter()
         answer = await self._llm_port.generate(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=user_prompt,
             context_chunks=final_chunks,
         )
+        llm_ms = (time.perf_counter() - t_llm) * 1000
 
         # 10. Map to response DTO
         sources = [
@@ -185,6 +193,8 @@ class RAGQueryUseCase:
             len(answer), len(sources),
         )
         logger.debug("RAG LLM answer:\n%s", answer)
+
+        elapsed_ms = (time.perf_counter() - t0) * 1000
 
         return RAGResponseDTO(
             answer=answer,

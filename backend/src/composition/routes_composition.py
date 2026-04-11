@@ -56,6 +56,9 @@ from src.infrastructure.search.adapters.filter_metadata_adapter import (
 from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
+from src.infrastructure.shared.repositories.trace_repository import (
+    SqlAlchemyTraceRepository,
+)
 
 
 def build_routes_application_service(
@@ -87,6 +90,8 @@ def build_routes_application_service(
     query_extraction_service = QueryExtractionService()
 
     # Use cases
+    trace_repository = SqlAlchemyTraceRepository(db)
+
     generate_route_use_case = GenerateRouteUseCase(
         rag_port=rag_adapter,
         llm_port=llm_adapter,
@@ -95,6 +100,7 @@ def build_routes_application_service(
         query_extraction_service=query_extraction_service,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
         unit_of_work=uow,
+        trace_repository=trace_repository,
     )
     guide_query_use_case = GuideQueryUseCase(
         llm_port=llm_adapter,
