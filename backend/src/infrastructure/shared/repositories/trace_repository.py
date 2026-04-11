@@ -39,6 +39,10 @@ class SqlAlchemyTraceRepository(TraceRepository):
             created_at=trace.created_at,
         )
         await self._db.execute(stmt)
+        # NOTE: Intentional direct commit — trace saving operates independently
+        # of the main UoW transaction. The trace repository receives its own
+        # session or runs after the main UoW has already committed, so using
+        # flush() + UoW would either be redundant or miss the commit entirely.
         await self._db.commit()
 
     async def list_traces(
