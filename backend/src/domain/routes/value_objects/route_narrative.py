@@ -24,3 +24,5 @@ class RouteNarrative:
     introduction: str
     segments: dict[int, str] = field(default_factory=dict)
     conclusion: str = ""
+    raw_response: str | None = None
+    parse_method: str | None = None

@@ -82,6 +82,7 @@ class RAGQueryUseCase:
             )
 
         # 2. Retrieve chunks — pure similarity or full hybrid pipeline
+        t_vsearch = time.perf_counter()
         vector_chunks = await self._vector_search_port.search(
             query_embedding=query_embedding,
             top_k=self._retrieval_k,
@@ -89,6 +90,12 @@ class RAGQueryUseCase:
             province=dto.province_filter,
             municipality=dto.municipality_filter,
         )
+        vsearch_ms = (time.perf_counter() - t_vsearch) * 1000
+
+        # Track text search and reranker timing (set defaults for similarity-only)
+        tsearch_ms: float = 0.0
+        text_chunks: list = []
+        rerank_ms: float = 0.0
 
         if self._similarity_only:
             # Pure similarity: vector search only, no fusion or reranking
@@ -103,9 +110,11 @@ class RAGQueryUseCase:
                 return _abstain_response()
             if self._reranker_enabled:
                 # Neural reranking on similarity-only candidates
+                t_rerank = time.perf_counter()
                 final_chunks = await self._reranking_service.rerank(
                     query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
                 )
+                rerank_ms = (time.perf_counter() - t_rerank) * 1000
                 if not final_chunks:
                     logger.info("Abstaining: neural reranker returned no results")
                     return _abstain_response()
@@ -118,6 +127,7 @@ class RAGQueryUseCase:
                 )
         else:
             # Full hybrid pipeline: text search + RRF fusion + reranking
+            t_tsearch = time.perf_counter()
             text_chunks = await self._text_search_port.search(
                 query=search_query,
                 top_k=self._retrieval_k,
@@ -125,6 +135,7 @@ class RAGQueryUseCase:
                 province=dto.province_filter,
                 municipality=dto.municipality_filter,
             )
+            tsearch_ms = (time.perf_counter() - t_tsearch) * 1000
 
             fused_chunks = self._hybrid_search_service.fuse(
                 vector_results=vector_chunks,
@@ -141,13 +152,17 @@ class RAGQueryUseCase:
                 return _abstain_response()
 
             if self._reranker_enabled:
+                t_rerank = time.perf_counter()
                 final_chunks = await self._reranking_service.rerank(
                     query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
                 )
+                rerank_ms = (time.perf_counter() - t_rerank) * 1000
             else:
+                t_rerank = time.perf_counter()
                 final_chunks = self._reranking_service.rerank(
                     query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
                 )
+                rerank_ms = (time.perf_counter() - t_rerank) * 1000
             if not final_chunks:
                 logger.info("Abstaining: all chunks discarded by lexical filter")
                 return _abstain_response()
@@ -196,8 +211,88 @@ class RAGQueryUseCase:
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
 
+        # Build pipeline_steps for traceability
+        try:
+            filter_parts = []
+            if dto.heritage_type_filter:
+                filter_parts.append(f"type={dto.heritage_type_filter}")
+            if dto.province_filter:
+                filter_parts.append(f"province={dto.province_filter}")
+            if dto.municipality_filter:
+                filter_parts.append(f"municipality={dto.municipality_filter}")
+            filter_str = ", ".join(filter_parts) if filter_parts else "none"
+
+            pipeline_steps: list[dict] = [
+                {
+                    "step": "embedding",
+                    "input": {"text": dto.query[:80], "chars": len(dto.query)},
+                    "output": {"dim": len(query_embedding)},
+                    "elapsed_ms": round(embed_ms, 1),
+                },
+                {
+                    "step": "vector_search",
+                    "input": {"top_k": self._retrieval_k, "filters": filter_str},
+                    "output": {
+                        "count": len(vector_chunks),
+                        "top_score": round(vector_chunks[0].score, 4) if vector_chunks else None,
+                    },
+                    "results": [
+                        {
+                            "rank": i, "score": round(c.score, 4),
+                            "title": c.title[:60], "type": c.heritage_type,
+                            "document_id": c.document_id,
+                        }
+                        for i, c in enumerate(vector_chunks[:15], 1)
+                    ],
+                    "elapsed_ms": round(vsearch_ms, 1),
+                },
+            ]
+
+            if not self._similarity_only and text_chunks:
+                pipeline_steps.append({
+                    "step": "text_search",
+                    "input": {"query": search_query[:80], "top_k": self._retrieval_k},
+                    "output": {"count": len(text_chunks)},
+                    "elapsed_ms": round(tsearch_ms, 1),
+                })
+                pipeline_steps.append({
+                    "step": "fusion",
+                    "input": {"vector_count": len(vector_chunks), "text_count": len(text_chunks)},
+                    "output": {"fused_count": len(filtered_chunks)},
+                })
+
+            if self._reranker_enabled:
+                pipeline_steps.append({
+                    "step": "reranker",
+                    "input": {"candidates": len(filtered_chunks), "top_k": dto.top_k},
+                    "output": {
+                        "count": len(final_chunks),
+                        "top_score": round(final_chunks[0].score, 4) if final_chunks else None,
+                    },
+                    "results": [
+                        {
+                            "rank": i, "score": round(c.score, 4),
+                            "title": c.title[:60], "type": c.heritage_type,
+                            "document_id": c.document_id,
+                        }
+                        for i, c in enumerate(final_chunks[:15], 1)
+                    ],
+                    "elapsed_ms": round(rerank_ms, 1),
+                })
+
+            pipeline_steps.append({
+                "step": "llm_generate",
+                "input": {"context_chunks": len(final_chunks), "prompt_chars": len(user_prompt)},
+                "output": {"answer_chars": len(answer)},
+                "elapsed_ms": round(llm_ms, 1),
+            })
+        except Exception:
+            logger.warning("Failed to build RAG pipeline_steps", exc_info=True)
+            pipeline_steps = []
+
         return RAGResponseDTO(
             answer=answer,
             sources=sources,
             query=dto.query,
+            pipeline_steps=pipeline_steps,
         )

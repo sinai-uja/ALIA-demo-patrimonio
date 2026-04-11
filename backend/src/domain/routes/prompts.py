@@ -11,7 +11,8 @@ QUERY_EXTRACTION_SYSTEM_PROMPT = (
     "- MANTÉN los nombres geograficos (provincias, municipios) que el "
     "usuario haya escrito, ya que aportan valor semantico.\n"
     "- Si la consulta del usuario ya es clara y corta, devuelvela TAL CUAL.\n"
-    "- Responde SOLO con la consulta, sin explicaciones ni formato adicional."
+    "- Responde SOLO con la consulta, sin explicaciones ni formato adicional.\n"
+    "- Responde SOLO con la consulta en UNA LINEA. Sin notas, sin explicaciones, sin 'Nota:', sin texto adicional."
 )
 
 

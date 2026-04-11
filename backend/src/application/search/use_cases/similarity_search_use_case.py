@@ -293,6 +293,11 @@ class SimilaritySearchUseCase:
                             "count": len(vector_chunks),
                             "top_score": round(vector_chunks[0].score, 4) if vector_chunks else None,
                         },
+                        "results": [
+                            {"rank": i, "score": round(c.score, 4), "title": c.title[:60],
+                             "type": c.heritage_type, "document_id": c.document_id}
+                            for i, c in enumerate(vector_chunks[:15], 1)
+                        ],
                         "elapsed_ms": round(vsearch_ms, 1),
                     },
                 ]

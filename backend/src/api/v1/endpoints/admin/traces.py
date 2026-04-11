@@ -94,9 +94,21 @@ async def get_trace(
 
     # Enrich with per-result feedbacks for search traces
     result_feedbacks: dict[str, int] | None = None
+    feedback_value = detail.feedback_value
     if detail.execution_type == "search" and detail.execution_id:
         repo = build_trace_repository(db)
         result_feedbacks = await repo.get_result_feedbacks(detail.execution_id) or None
+    elif detail.execution_type == "route" and detail.execution_id:
+        from sqlalchemy import select as sa_select
+        from src.infrastructure.feedback.models import UserFeedbackModel
+        stmt = sa_select(UserFeedbackModel.value).where(
+            UserFeedbackModel.target_type == "route",
+            UserFeedbackModel.target_id == detail.execution_id,
+        ).limit(1)
+        fb_result = await db.execute(stmt)
+        fb_row = fb_result.scalar_one_or_none()
+        if fb_row is not None:
+            feedback_value = fb_row
 
     return TraceDetailResponse(
         id=detail.id,
@@ -109,7 +121,7 @@ async def get_trace(
         pipeline_mode=detail.pipeline_mode,
         steps=detail.steps,
         summary=detail.summary,
-        feedback_value=detail.feedback_value,
+        feedback_value=feedback_value,
         result_feedbacks=result_feedbacks,
         status=detail.status,
         created_at=detail.created_at,

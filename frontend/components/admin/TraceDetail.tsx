@@ -143,14 +143,55 @@ function buildStepSummary(step: TracePipelineStep): string {
       return `${input.candidates ?? "?"} candidatos → ${output.count ?? "?"} resultados (top: ${output.top_score != null ? Number(output.top_score).toFixed(4) : "-"})`;
     case "results":
       return `${output.total_results ?? "?"} resultados, página ${output.page ?? "?"}/${output.total_pages ?? "?"}`;
+    case "query_extraction":
+      return `"${String(input.original_query ?? "").slice(0, 80)}" → "${String(output.extracted_query ?? "").slice(0, 80)}"`;
+    case "rag_query":
+      return `query: "${String(input.query ?? "").slice(0, 60)}", top_k=${input.top_k ?? "?"} → ${output.chunks_returned ?? "?"} chunks`;
+    case "stop_selection":
+      return `${input.candidates ?? "?"} candidatos → ${output.selected ?? "?"} paradas seleccionadas`;
+    case "heritage_asset_lookup":
+      return `${input.asset_ids ?? "?"} assets solicitados → ${output.previews_found ?? "?"} encontrados`;
+    case "narrative_generation": {
+      const method = output.parse_method ? ` [${output.parse_method}]` : "";
+      return `"${String(output.title ?? "").slice(0, 60)}" — ${output.segments ?? "?"} segmentos, ${output.narrative_chars ?? "?"} chars${method}`;
+    }
+    case "route_build":
+      return `${output.stops ?? "?"} paradas, ${output.province ?? "?"}`;
     default:
       return Object.entries(output).map(([k, v]) => `${k}: ${v}`).join(", ") || "";
   }
 }
 
+function ExpandableText({ label, text }: { label: string; text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="mt-1.5">
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-stone-700 transition-colors"
+      >
+        <svg
+          className={`h-3 w-3 transition-transform ${expanded ? "rotate-90" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        </svg>
+        {label}
+      </button>
+      {expanded && (
+        <pre className="mt-1.5 rounded-lg bg-stone-50 p-3 text-[11px] text-stone-600 overflow-x-auto border border-stone-100 max-h-64 overflow-y-auto whitespace-pre-wrap">
+          {text}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 function PipelineStep({ step, isLast, resultFeedbacks }: { step: TracePipelineStep; isLast: boolean; resultFeedbacks?: Record<string, number> | null }) {
   const label = STEP_LABELS[step.step] ?? step.step;
   const summary = buildStepSummary(step);
+  const input = step.input || {};
+  const output = step.output || {};
 
   return (
     <div className="relative flex gap-3">
@@ -175,6 +216,16 @@ function PipelineStep({ step, isLast, resultFeedbacks }: { step: TracePipelineSt
         <p className="mt-0.5 text-xs text-stone-500">{summary}</p>
         {step.results && step.results.length > 0 && (
           <StepResults results={step.results} label="Ver resultados" resultFeedbacks={resultFeedbacks} />
+        )}
+        {/* Expandable prompts & responses for LLM steps */}
+        {typeof input.system_prompt === "string" && (
+          <ExpandableText label="Ver system prompt" text={input.system_prompt} />
+        )}
+        {typeof input.user_prompt === "string" && (
+          <ExpandableText label="Ver user prompt" text={input.user_prompt} />
+        )}
+        {typeof output.raw_response === "string" && (
+          <ExpandableText label="Ver respuesta LLM (cruda)" text={output.raw_response} />
         )}
       </div>
     </div>

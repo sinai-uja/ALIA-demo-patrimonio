@@ -80,14 +80,16 @@ class GenerateRouteUseCase:
             municipality_filter=dto.municipality_filter,
         )
         t_extract = time.perf_counter()
-        extracted_query = await self._llm_port.generate_structured(
+        raw_extraction = await self._llm_port.generate_structured(
             system_prompt=QUERY_EXTRACTION_SYSTEM_PROMPT,
             user_prompt=extraction_prompt,
         )
         extract_ms = (time.perf_counter() - t_extract) * 1000
         extracted_query = (
-            extracted_query.strip().strip('"').strip("'")
+            raw_extraction.strip().strip('"').strip("'")
         )
+        # Keep only first line (LLM sometimes adds "Nota:" explanations)
+        extracted_query = extracted_query.split("\n")[0].strip()
         logger.info(
             "Route generation: user=%s extracted_query=%r from user_query=%r",
             user_label, extracted_query, dto.query[:80],
@@ -95,7 +97,7 @@ class GenerateRouteUseCase:
 
         # 3. Single RAG call with extracted query + filters
         t_rag = time.perf_counter()
-        _, chunks = await self._rag_port.query(
+        _, chunks, rag_pipeline_steps = await self._rag_port.query(
             question=extracted_query,
             top_k=dto.num_stops * 3,
             heritage_type_filter=dto.heritage_type_filter,
@@ -110,6 +112,7 @@ class GenerateRouteUseCase:
         )
 
         # 4. SELECT STOPS FIRST (before narrative generation)
+        t_select = time.perf_counter()
         selected_chunks = self._route_builder_service.select_diverse_stops(
             chunks=chunks,
             num_stops=dto.num_stops,
@@ -122,6 +125,8 @@ class GenerateRouteUseCase:
                 chunk.get("heritage_type", ""), chunk.get("province", ""),
             )
 
+        select_ms = (time.perf_counter() - t_select) * 1000
+
         # 5. Resolve province label
         province_label = (
             dto.province_filter[0]
@@ -132,6 +137,7 @@ class GenerateRouteUseCase:
         )
 
         # 6. Look up heritage asset previews (images, coordinates)
+        t_lookup = time.perf_counter()
         asset_ids = []
         for chunk in selected_chunks:
             doc_id = chunk.get("document_id", "")
@@ -140,6 +146,8 @@ class GenerateRouteUseCase:
         asset_previews = await self._heritage_asset_lookup_port.get_asset_previews(
             [aid for aid in asset_ids if aid]
         )
+
+        lookup_ms = (time.perf_counter() - t_lookup) * 1000
 
         # 7. Build context string ONLY from selected stops
         stops_context_parts: list[str] = []
@@ -186,6 +194,7 @@ class GenerateRouteUseCase:
         narrative = "\n\n".join(p for p in narrative_parts if p)
 
         # 10. Build route entity with enriched data
+        t_build = time.perf_counter()
         route = self._route_builder_service.build(
             selected_chunks=selected_chunks,
             province=province_label,
@@ -196,6 +205,8 @@ class GenerateRouteUseCase:
             narrative_segments=narrative_segments,
             asset_previews=asset_previews,
         )
+
+        build_ms = (time.perf_counter() - t_build) * 1000
 
         # 11. Save and return
         user_uuid = UUID(dto.user_id) if dto.user_id else None
@@ -218,39 +229,58 @@ class GenerateRouteUseCase:
                 trace_steps = [
                     {
                         "step": "query_extraction",
-                        "input": {"user_query": dto.query[:80], "cleaned_text": cleaned_text[:80]},
-                        "output": {"extracted_query": extracted_query[:80]},
+                        "input": {
+                            "original_query": dto.query,
+                            "cleaned_query": cleaned_text,
+                            "system_prompt": QUERY_EXTRACTION_SYSTEM_PROMPT,
+                            "user_prompt": extraction_prompt,
+                        },
+                        "output": {
+                            "extracted_query": extracted_query,
+                            "raw_response": raw_extraction,
+                        },
                         "elapsed_ms": round(extract_ms, 1),
                     },
-                    {
-                        "step": "rag_query",
-                        "input": {"query": extracted_query[:80], "top_k": dto.num_stops * 3},
-                        "output": {"chunks_returned": len(chunks)},
-                        "elapsed_ms": round(rag_ms, 1),
-                    },
+                ]
+                # Insert RAG pipeline steps (embedding, vector_search, reranker)
+                # Filter out llm_generate — routes don't use the RAG answer
+                trace_steps.extend(
+                    s for s in (rag_pipeline_steps or []) if s.get("step") != "llm_generate"
+                )
+                trace_steps.extend([
                     {
                         "step": "stop_selection",
                         "input": {"candidates": len(chunks), "num_stops": dto.num_stops},
-                        "output": {
-                            "selected": len(selected_chunks),
-                            "stops": [
-                                {"title": c.get("title", "")[:60], "type": c.get("heritage_type", "")}
-                                for c in selected_chunks
-                            ],
-                        },
+                        "output": {"selected": len(selected_chunks)},
+                        "results": [
+                            {"rank": i, "title": c.get("title", "")[:60],
+                             "type": c.get("heritage_type", ""),
+                             "province": c.get("province", "")}
+                            for i, c in enumerate(selected_chunks, 1)
+                        ],
+                        "elapsed_ms": round(select_ms, 1),
                     },
                     {
                         "step": "heritage_asset_lookup",
                         "input": {"asset_ids": len(asset_ids)},
                         "output": {"previews_found": len(asset_previews)},
+                        "elapsed_ms": round(lookup_ms, 1),
                     },
                     {
                         "step": "narrative_generation",
-                        "input": {"stops_context_chars": len(stops_context)},
+                        "input": {
+                            "system_prompt": ROUTE_SYSTEM_PROMPT,
+                            "user_prompt": route_prompt,
+                            "stops_context_chars": len(stops_context),
+                        },
                         "output": {
-                            "title": title[:60],
-                            "narrative_chars": len(narrative),
+                            "title": title,
                             "segments": len(narrative_segments),
+                            "narrative_chars": len(introduction or "") + sum(len(s) for s in narrative_segments.values()) + len(conclusion or ""),
+                            "raw_response": route_narrative.raw_response if route_narrative.raw_response else None,
+                            "parse_method": route_narrative.parse_method,
+                            "parsed_introduction": introduction or "",
+                            "parsed_conclusion": conclusion or "",
                         },
                         "elapsed_ms": round(narrative_ms, 1),
                     },
@@ -261,8 +291,9 @@ class GenerateRouteUseCase:
                             "stops": len(route.stops),
                             "province": province_label,
                         },
+                        "elapsed_ms": round(build_ms, 1),
                     },
-                ]
+                ])
                 trace = ExecutionTrace(
                     id=uuid4(),
                     execution_type="route",

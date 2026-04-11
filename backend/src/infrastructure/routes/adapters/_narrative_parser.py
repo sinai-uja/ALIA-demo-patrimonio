@@ -112,6 +112,8 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
             introduction=introduction,
             segments=segments,
             conclusion=conclusion,
+            raw_response=raw,
+            parse_method="json",
         )
     except (json.JSONDecodeError, AttributeError, TypeError):
         pass
@@ -184,6 +186,8 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
                 introduction=introduction,
                 segments=segments,
                 conclusion=conclusion,
+                raw_response=raw,
+                parse_method="regex_fallback",
             )
 
     # 3. Plain-text fallback.
@@ -196,4 +200,6 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
         introduction=fallback_text,
         segments={},
         conclusion="",
+        raw_response=raw,
+        parse_method="plaintext_fallback",
     )
