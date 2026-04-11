@@ -45,12 +45,22 @@ logger = logging.getLogger("iaph.routes.generate_route_stream")
 
 
 def _strip_markdown(text: str) -> str:
-    """Remove common markdown formatting from LLM output."""
+    """Remove common markdown formatting and LLM meta-text artifacts."""
     text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
     text = re.sub(r"\*([^*]+)\*", r"\1", text)
     text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
     text = re.sub(r"^---+$", "", text, flags=re.MULTILINE)
-    return text.strip()
+    # Remove LLM echo prefixes like "Narrativa para...: " or "Conclusión para...: "
+    text = re.sub(
+        r'^(?:Narrativa|Conclusion|Conclusión)\s+para\s+.*?:\s*',
+        '', text, count=1, flags=re.IGNORECASE,
+    )
+    # Remove trailing parenthetical meta-instructions
+    text = re.sub(
+        r'\s*\((?:Transición|Transicion)\s+natural\b[^)]*\)\s*$',
+        '', text, flags=re.IGNORECASE,
+    )
+    return text.strip().strip('"')
 
 
 class GenerateRouteStreamUseCase:

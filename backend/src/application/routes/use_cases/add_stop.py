@@ -125,14 +125,24 @@ class AddStopUseCase:
                 user_prompt=narrative_prompt,
                 max_tokens=300,
             )
-            # Strip markdown formatting (LLM may add **bold**, ### headings, etc.)
+            # Strip markdown + LLM meta-text artifacts
             import re
             narrative_segment = raw_narrative.strip()
             narrative_segment = re.sub(r"\*\*([^*]+)\*\*", r"\1", narrative_segment)
             narrative_segment = re.sub(r"\*([^*]+)\*", r"\1", narrative_segment)
             narrative_segment = re.sub(r"^#+\s*", "", narrative_segment, flags=re.MULTILINE)
             narrative_segment = re.sub(r"^---+$", "", narrative_segment, flags=re.MULTILINE)
-            narrative_segment = narrative_segment.strip()
+            # Remove LLM echo prefixes like "Narrativa para...: " or "Conclusión para...: "
+            narrative_segment = re.sub(
+                r'^(?:Narrativa|Conclusion|Conclusión)\s+para\s+.*?:\s*',
+                '', narrative_segment, count=1, flags=re.IGNORECASE,
+            )
+            # Remove trailing parenthetical meta-instructions
+            narrative_segment = re.sub(
+                r'\s*\((?:Transición|Transicion)\s+natural\b[^)]*\)\s*$',
+                '', narrative_segment, flags=re.IGNORECASE,
+            )
+            narrative_segment = narrative_segment.strip().strip('"')
 
             # Build the new stop dict
             new_stop = {

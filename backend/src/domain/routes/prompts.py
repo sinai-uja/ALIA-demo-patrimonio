@@ -200,12 +200,14 @@ SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT = (
     "Eres un experto guia turistico del patrimonio historico andaluz del "
     "IAPH. Genera narrativas concisas y atractivas para paradas "
     "individuales de rutas culturales en espanol.\n\n"
-    "Reglas:\n"
-    "- Responde UNICAMENTE con el texto narrativo (2-3 frases), sin "
-    "formato JSON, sin markdown, sin asteriscos ni almohadillas.\n"
-    "- Describe el bien patrimonial de forma concisa y atractiva.\n"
-    "- Si hay paradas anteriores o posteriores, crea una transicion "
-    "natural hacia/desde ellas.\n"
+    "Reglas ESTRICTAS:\n"
+    "- Responde UNICAMENTE con el texto narrativo (2-3 frases). "
+    "NO empieces con 'Narrativa para...', 'Conclusion para...', ni ningun encabezado.\n"
+    "- NO incluyas acotaciones entre parentesis como '(Transicion natural...)' ni instrucciones meta.\n"
+    "- NO uses formato JSON, markdown, asteriscos ni almohadillas.\n"
+    "- Describe el bien patrimonial de forma concisa y atractiva, como un guia hablando al visitante.\n"
+    "- Habla SOLO de esta parada concreta. NO menciones otras paradas de la ruta.\n"
+    "- NO crees transiciones hacia paradas anteriores o siguientes.\n"
     "- Usa SOLO la informacion proporcionada. No inventes datos."
 )
 
@@ -220,24 +222,11 @@ def build_single_stop_narrative_prompt(
     next_stop_title: str | None = None,
 ) -> str:
     """Build a prompt for generating narrative for ONE stop in an existing route."""
-    context_parts = [
-        f"Ruta: {route_title}",
-        f"Parada actual: {stop_title} ({stop_type}, {stop_province})",
-    ]
-    if previous_stop_title:
-        context_parts.append(f"Parada anterior: {previous_stop_title}")
-    if next_stop_title:
-        context_parts.append(f"Parada siguiente: {next_stop_title}")
-
-    context_parts.append(
-        f"\nInformacion de la parada:\n{stop_description}"
-    )
-
     return (
-        "Genera una narrativa de 2-3 frases para esta parada en el "
-        "contexto de la ruta indicada.\n\n"
-        + "\n".join(context_parts)
-        + "\n\nNarrativa:"
+        "Escribe 2-3 frases describiendo esta parada para el visitante.\n\n"
+        f"Ruta: {route_title}\n"
+        f"Parada: {stop_title} ({stop_type}, {stop_province})\n\n"
+        f"Informacion de la parada:\n{stop_description}"
     )
 
 
