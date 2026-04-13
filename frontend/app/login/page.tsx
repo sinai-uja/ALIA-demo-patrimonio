@@ -41,7 +41,7 @@ export default function LoginPage() {
   const passwordError = error === "Introduce tu contraseña";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-stone-50 to-green-50/30">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[13vh] bg-gradient-to-br from-stone-50 to-green-50/30">
       <div className="w-full max-w-lg rounded-2xl border border-stone-200/60 bg-white p-8 shadow-lg">
         {/* Logo + title */}
         <div className="mb-6 flex flex-col items-center gap-2.5">
