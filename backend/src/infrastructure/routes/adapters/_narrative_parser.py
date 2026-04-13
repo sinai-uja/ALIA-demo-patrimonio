@@ -11,8 +11,8 @@ import json
 import logging
 import re
 
-from src.domain.routes.value_objects.route_narrative import RouteNarrative
 from src.application.shared.exceptions import LLMResponseParseError
+from src.domain.routes.value_objects.route_narrative import RouteNarrative
 
 logger = logging.getLogger("iaph.routes.llm")
 
@@ -112,6 +112,8 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
             introduction=introduction,
             segments=segments,
             conclusion=conclusion,
+            raw_response=raw,
+            parse_method="json",
         )
     except (json.JSONDecodeError, AttributeError, TypeError):
         pass
@@ -184,6 +186,8 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
                 introduction=introduction,
                 segments=segments,
                 conclusion=conclusion,
+                raw_response=raw,
+                parse_method="regex_fallback",
             )
 
     # 3. Plain-text fallback.
@@ -196,4 +200,6 @@ def parse_narrative_json(raw: str, province: str) -> RouteNarrative:
         introduction=fallback_text,
         segments={},
         conclusion="",
+        raw_response=raw,
+        parse_method="plaintext_fallback",
     )

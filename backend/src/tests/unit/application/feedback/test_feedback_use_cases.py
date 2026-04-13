@@ -13,7 +13,6 @@ from src.application.feedback.use_cases.get_feedback_batch import GetFeedbackBat
 from src.application.feedback.use_cases.submit_feedback import SubmitFeedbackUseCase
 from src.domain.feedback.entities.feedback import Feedback
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -147,3 +146,68 @@ async def test_delete_feedback_uow_wraps_write(delete_uc, mock_uow):
     await uc.execute(_USER_ID, "search", "s1")
     mock_uow.__aenter__.assert_awaited()
     mock_uow.__aexit__.assert_awaited()
+
+
+# ---------------------------------------------------------------------------
+# SubmitFeedbackUseCase — search_result target_type
+# ---------------------------------------------------------------------------
+
+
+def _make_search_result_feedback_entity(metadata=None):
+    return Feedback(
+        id=uuid.uuid4(),
+        user_id=_USER_ID,
+        target_type="search_result",
+        target_id="ficha-inmueble-12345",
+        value=1,
+        metadata=metadata,
+        created_at=_NOW,
+        updated_at=_NOW,
+    )
+
+
+@pytest.mark.asyncio
+async def test_submit_search_result_feedback_happy_path(mock_uow):
+    repo = AsyncMock()
+    repo.upsert.return_value = _make_search_result_feedback_entity()
+    uc = SubmitFeedbackUseCase(feedback_repository=repo, unit_of_work=mock_uow)
+
+    dto = SubmitFeedbackDTO(
+        target_type="search_result",
+        target_id="ficha-inmueble-12345",
+        value=1,
+    )
+    result = await uc.execute(_USER_ID, dto)
+
+    assert isinstance(result, FeedbackDTO)
+    assert result.target_type == "search_result"
+    assert result.target_id == "ficha-inmueble-12345"
+    assert result.user_id == _USER_ID
+    assert result.value == 1
+
+
+@pytest.mark.asyncio
+async def test_submit_search_result_feedback_with_metadata(mock_uow):
+    meta = {
+        "search_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "query": "test",
+        "heritage_type": "inmueble",
+    }
+    repo = AsyncMock()
+    repo.upsert.return_value = _make_search_result_feedback_entity(metadata=meta)
+    uc = SubmitFeedbackUseCase(feedback_repository=repo, unit_of_work=mock_uow)
+
+    dto = SubmitFeedbackDTO(
+        target_type="search_result",
+        target_id="ficha-inmueble-12345",
+        value=1,
+        metadata=meta,
+    )
+    result = await uc.execute(_USER_ID, dto)
+
+    assert isinstance(result, FeedbackDTO)
+    assert result.target_type == "search_result"
+    repo.upsert.assert_awaited_once()
+    call_args = repo.upsert.call_args
+    saved_feedback = call_args[0][0]
+    assert saved_feedback.metadata == meta

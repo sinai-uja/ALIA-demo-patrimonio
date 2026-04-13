@@ -3,15 +3,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.application.routes.services.routes_application_service import (
     RoutesApplicationService,
 )
+from src.application.routes.use_cases.add_stop import AddStopUseCase
 from src.application.routes.use_cases.delete_route import (
     DeleteRouteUseCase,
 )
 from src.application.routes.use_cases.generate_route import (
     GenerateRouteUseCase,
 )
+from src.application.routes.use_cases.generate_route_stream import (
+    GenerateRouteStreamUseCase,
+)
 from src.application.routes.use_cases.get_route import GetRouteUseCase
 from src.application.routes.use_cases.guide_query import GuideQueryUseCase
 from src.application.routes.use_cases.list_routes import ListRoutesUseCase
+from src.application.routes.use_cases.remove_stop import RemoveStopUseCase
 from src.application.routes.use_cases.route_filter_values import (
     RouteFilterValuesUseCase,
 )
@@ -56,6 +61,9 @@ from src.infrastructure.search.adapters.filter_metadata_adapter import (
 from src.infrastructure.shared.adapters.sqlalchemy_unit_of_work import (
     SqlAlchemyUnitOfWork,
 )
+from src.infrastructure.shared.repositories.trace_repository import (
+    SqlAlchemyTraceRepository,
+)
 
 
 def build_routes_application_service(
@@ -87,6 +95,8 @@ def build_routes_application_service(
     query_extraction_service = QueryExtractionService()
 
     # Use cases
+    trace_repository = SqlAlchemyTraceRepository(db)
+
     generate_route_use_case = GenerateRouteUseCase(
         rag_port=rag_adapter,
         llm_port=llm_adapter,
@@ -95,6 +105,7 @@ def build_routes_application_service(
         query_extraction_service=query_extraction_service,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
         unit_of_work=uow,
+        trace_repository=trace_repository,
     )
     guide_query_use_case = GuideQueryUseCase(
         llm_port=llm_adapter,
@@ -117,6 +128,26 @@ def build_routes_application_service(
     route_filter_values_use_case = RouteFilterValuesUseCase(
         filter_metadata_port=filter_metadata_adapter,
     )
+    remove_stop_use_case = RemoveStopUseCase(
+        route_repository=route_repository,
+        unit_of_work=uow,
+    )
+    add_stop_use_case = AddStopUseCase(
+        route_repository=route_repository,
+        heritage_asset_lookup_port=heritage_asset_lookup_adapter,
+        llm_port=llm_adapter,
+        unit_of_work=uow,
+    )
+    generate_route_stream_use_case = GenerateRouteStreamUseCase(
+        rag_port=rag_adapter,
+        llm_port=llm_adapter,
+        route_repository=route_repository,
+        route_builder_service=route_builder_service,
+        query_extraction_service=query_extraction_service,
+        heritage_asset_lookup_port=heritage_asset_lookup_adapter,
+        unit_of_work=uow,
+        trace_repository=trace_repository,
+    )
 
     return RoutesApplicationService(
         generate_route_use_case=generate_route_use_case,
@@ -126,4 +157,35 @@ def build_routes_application_service(
         delete_route_use_case=delete_route_use_case,
         route_suggestions_use_case=route_suggestions_use_case,
         route_filter_values_use_case=route_filter_values_use_case,
+        remove_stop_use_case=remove_stop_use_case,
+        add_stop_use_case=add_stop_use_case,
+        generate_route_stream_use_case=generate_route_stream_use_case,
     )
+
+
+async def run_add_stop_in_background(
+    route_id: str,
+    document_id: str,
+    position: int | None,
+    user_id: str,
+) -> None:
+    """Run add_stop in a background task with its own DB session.
+
+    Used by the API layer when ``background=true`` to avoid blocking
+    the HTTP response while the LLM generates the narrative.
+    """
+    from src.infrastructure.shared.persistence.engine import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as session:
+            service = build_routes_application_service(session)
+            await service.add_stop(route_id, document_id, position, user_id=user_id)
+    except Exception:
+        import logging
+
+        logging.getLogger("iaph.routes.background").warning(
+            "Background add_stop failed: route=%s doc=%s",
+            route_id,
+            document_id,
+            exc_info=True,
+        )

@@ -26,7 +26,7 @@ class InProcessRAGAdapter(RAGPort):
         heritage_type_filter: list[str] | None = None,
         province_filter: list[str] | None = None,
         municipality_filter: list[str] | None = None,
-    ) -> tuple[str, list[dict]]:
+    ) -> tuple[str, list[dict], list[dict]]:
         logger.info(
             "RAG query start question=%r top_k=%d heritage_type=%r province=%r municipality=%r",
             question[:80], top_k, heritage_type_filter, province_filter, municipality_filter,
@@ -77,4 +77,4 @@ class InProcessRAGAdapter(RAGPort):
             for source in result.sources
         ]
 
-        return result.answer, sources
+        return result.answer, sources, result.pipeline_steps

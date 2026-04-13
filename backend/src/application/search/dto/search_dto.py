@@ -12,6 +12,8 @@ class SimilaritySearchDTO:
     province_filter: list[str] | None = None
     municipality_filter: list[str] | None = None
     user_id: str | None = None
+    username: str | None = None
+    user_profile_type: str | None = None
 
 
 @dataclass(frozen=True)

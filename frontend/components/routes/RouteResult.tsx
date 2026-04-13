@@ -19,14 +19,6 @@ const HERITAGE_TYPE_LABELS: Record<string, string> = {
   paisaje_cultural: "Paisaje Cultural",
 };
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-  if (hours > 0) return `${hours}h`;
-  return `${mins}min`;
-}
-
 interface RouteResultProps {
   route: VirtualRoute;
 }
@@ -102,22 +94,6 @@ function LegacyLayout({ route }: { route: VirtualRoute }) {
                     <span className="text-xs text-stone-400">
                       {stop.municipality ? `${stop.municipality}, ` : ""}
                       {stop.province}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                        />
-                      </svg>
-                      {formatDuration(stop.visit_duration_minutes)}
                     </span>
                   </div>
                   <p className="text-sm text-stone-600 mt-2 leading-relaxed">
@@ -199,22 +175,6 @@ export function RouteResult({ route }: RouteResultProps) {
             {route.province}
           </span>
           <span>{route.stops.length} paradas</span>
-          <span className="inline-flex items-center gap-1">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-              />
-            </svg>
-            {formatDuration(route.total_duration_minutes)}
-          </span>
           <FeedbackButtons targetType="route" targetId={route.id} />
         </div>
       </div>

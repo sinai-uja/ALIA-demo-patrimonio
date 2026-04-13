@@ -10,6 +10,7 @@ import src.infrastructure.documents.models  # noqa: F401
 import src.infrastructure.feedback.models  # noqa: F401
 import src.infrastructure.heritage.models  # noqa: F401
 import src.infrastructure.routes.models  # noqa: F401
+import src.infrastructure.shared.models.execution_trace_model  # noqa: F401
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config

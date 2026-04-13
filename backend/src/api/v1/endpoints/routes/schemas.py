@@ -23,7 +23,6 @@ class RouteStopSchema(BaseModel):
     municipality: str | None
     url: str
     description: str
-    visit_duration_minutes: int
     heritage_asset_id: str | None = None
     narrative_segment: str = ""
     image_url: str | None = None
@@ -36,7 +35,6 @@ class VirtualRouteSchema(BaseModel):
     title: str
     province: str
     stops: list[RouteStopSchema]
-    total_duration_minutes: int
     narrative: str
     introduction: str | None = None
     conclusion: str | None = None
@@ -84,3 +82,20 @@ class RouteFilterValuesResponse(BaseModel):
     heritage_types: list[str]
     provinces: list[str]
     municipalities: list[str]
+
+
+class AddStopRequest(BaseModel):
+    document_id: str = Field(
+        ...,
+        min_length=1,
+        description="Document ID of the heritage asset to add as a stop",
+    )
+    position: int | None = Field(
+        default=None,
+        ge=1,
+        description="1-indexed position to insert the stop. None = append at end",
+    )
+    background: bool = Field(
+        default=False,
+        description="If true, return 202 immediately and generate narrative in background",
+    )

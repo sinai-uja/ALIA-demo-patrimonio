@@ -3,7 +3,7 @@
 import { useFeedbackStore } from "@/store/feedback";
 
 interface FeedbackButtonsProps {
-  targetType: "route" | "search";
+  targetType: "route" | "search" | "search_result";
   targetId: string;
   metadata?: Record<string, unknown>;
   size?: "sm" | "md";
@@ -26,15 +26,15 @@ export function FeedbackButtons({
     : "flex items-center justify-center w-8 h-8 rounded-lg transition-colors";
 
   return (
-    <div className="flex items-center gap-1" aria-label="Valorar resultado">
+    <div className="flex items-center gap-0.5" aria-label="Valorar resultado">
       {/* Thumbs up */}
       <button
         type="button"
         onClick={() => submitFeedback(targetType, targetId, 1, metadata)}
         className={`${btnBase} ${
           current === 1
-            ? "bg-green-100 text-green-700"
-            : "text-stone-300 hover:text-green-600 hover:bg-green-50"
+            ? "bg-green-100 text-green-600 ring-1 ring-green-300"
+            : "text-stone-400 hover:text-green-600 hover:bg-green-50"
         }`}
         aria-label="Me gusta"
         title="Me gusta"
@@ -60,8 +60,8 @@ export function FeedbackButtons({
         onClick={() => submitFeedback(targetType, targetId, -1, metadata)}
         className={`${btnBase} ${
           current === -1
-            ? "bg-rose-100 text-rose-700"
-            : "text-stone-300 hover:text-rose-600 hover:bg-rose-50"
+            ? "bg-rose-100 text-rose-600 ring-1 ring-rose-300"
+            : "text-stone-400 hover:text-rose-600 hover:bg-rose-50"
         }`}
         aria-label="No me gusta"
         title="No me gusta"

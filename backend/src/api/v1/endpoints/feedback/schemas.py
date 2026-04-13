@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class SubmitFeedbackRequest(BaseModel):
-    target_type: Literal["route", "search"]
+    target_type: Literal["route", "search", "search_result"]
     target_id: str
     value: Literal[-1, 1]
     metadata: dict | None = None

@@ -2,7 +2,6 @@
 
 import { useSearchStore } from "@/store/search";
 import { SearchResultCard } from "./SearchResultCard";
-import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 
 function Pagination() {
   const page = useSearchStore((s) => s.page);
@@ -79,7 +78,6 @@ export function SearchResults() {
   const loading = useSearchStore((s) => s.loading);
   const hasSearched = useSearchStore((s) => s.hasSearched);
   const query = useSearchStore((s) => s.query);
-  const activeFilters = useSearchStore((s) => s.activeFilters);
   const searchId = useSearchStore((s) => s.searchId);
 
   if (loading) {
@@ -132,21 +130,10 @@ export function SearchResults() {
         <p className="text-xs text-stone-400">
           {totalResults} resultado{totalResults !== 1 ? "s" : ""} ordenados por similaridad
         </p>
-        {searchId && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-400">Valorar resultados</span>
-            <FeedbackButtons
-              targetType="search"
-              targetId={searchId}
-              metadata={{ query, filters: activeFilters }}
-              size="sm"
-            />
-          </div>
-        )}
       </div>
       <div className="space-y-3">
         {results.map((r, i) => (
-          <SearchResultCard key={r.document_id} result={r} rank={startRank + i + 1} />
+          <SearchResultCard key={r.document_id} result={r} rank={startRank + i + 1} searchId={searchId} query={query} />
         ))}
       </div>
       <Pagination />

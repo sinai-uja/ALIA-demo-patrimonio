@@ -35,3 +35,4 @@ class RAGResponseDTO:
     sources: list[SourceDTO] = field(default_factory=list)
     query: str = ""
     abstained: bool = False
+    pipeline_steps: list[dict] = field(default_factory=list)

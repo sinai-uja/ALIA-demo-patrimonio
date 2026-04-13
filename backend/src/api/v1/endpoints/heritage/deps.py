@@ -7,10 +7,10 @@ from fastapi import Depends
 from src.application.heritage.services.heritage_application_service import (
     HeritageApplicationService,
 )
+from src.composition.database import get_db
 from src.composition.heritage_composition import (
     build_heritage_application_service,
 )
-from src.composition.database import get_db
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession

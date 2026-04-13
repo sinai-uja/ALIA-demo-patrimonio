@@ -2,12 +2,11 @@
 
 import uuid
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 
 from src.application.auth.dto.auth_dto import (
-    CreateProfileTypeDTO,
     CreateUserDTO,
     UpdateProfileTypeDTO,
     UpdateUserDTO,
@@ -22,7 +21,6 @@ from src.application.auth.exceptions import (
 )
 from src.application.auth.services.auth_application_service import AuthApplicationService
 from src.domain.auth.entities.user import User, UserProfileType
-
 
 # ---------------------------------------------------------------------------
 # Helpers

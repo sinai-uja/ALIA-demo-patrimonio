@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -14,7 +14,6 @@ from src.domain.chat.entities.message import Message
 from src.domain.chat.entities.message_role import MessageRole
 from src.domain.chat.services.intent_classifier import IntentClassifier, MessageIntent
 from src.domain.chat.services.query_reformulator import QueryReformulator
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

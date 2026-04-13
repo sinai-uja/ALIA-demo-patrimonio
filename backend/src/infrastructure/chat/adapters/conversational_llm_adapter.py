@@ -3,10 +3,10 @@ from __future__ import annotations
 import logging
 import time
 
+from src.application.shared.exceptions import LLMUnavailableError
 from src.config import settings
 from src.domain.chat.ports.llm_port import ConversationalLLMPort
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.chat.llm")
@@ -62,7 +62,7 @@ class ConversationalLLMAdapter(ConversationalLLMPort):
             f"{self._base_url}/chat/completions",
             payload,
             service_label="vllm.chat",
-            timeout=60.0,
+            timeout=300.0,
             headers=headers or None,
             error_class=LLMUnavailableError,
         )

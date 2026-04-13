@@ -21,6 +21,14 @@ export function Footer() {
             <img src="/images/uja.png" alt="Universidad de Jaén" className="h-6 sm:h-7 w-auto" />
           </a>
           <a
+            href="https://www.juntadeandalucia.es/organismos/iaph.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/iaph.png" alt="Instituto Andaluz de Patrimonio Histórico" className="h-8 sm:h-10 w-auto" />
+          </a>
+          <a
             href="https://alia.gob.es/"
             target="_blank"
             rel="noopener noreferrer"
@@ -35,6 +43,42 @@ export function Footer() {
             className="opacity-80 hover:opacity-100 transition-opacity"
           >
             <img src="/images/innovasur.png" alt="Innovasur" className="h-6 sm:h-7 w-auto" />
+          </a>
+        </div>
+
+        {/* Institutional logos row */}
+        <div className="mt-4 pt-4 border-t border-stone-100 flex flex-wrap items-center justify-center gap-8 sm:gap-12">
+          <a
+            href="https://next-generation-eu.europa.eu/index_es"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/next-negeration.png" alt="NextGenerationEU" className="h-6 sm:h-8 w-auto" />
+          </a>
+          <a
+            href="https://digital.gob.es/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/ministerio.png" alt="Ministerio para la Transformación Digital y de la Función Pública" className="h-6 sm:h-8 w-auto" />
+          </a>
+          <a
+            href="https://planderecuperacion.gob.es/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/plan-recuperación.png" alt="Plan de Recuperación, Transformación y Resiliencia" className="h-6 sm:h-8 w-auto" />
+          </a>
+          <a
+            href="https://www.bsc.es/es"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity"
+          >
+            <img src="/images/bsc.png" alt="Barcelona Supercomputing Center" className="h-6 sm:h-8 w-auto" />
           </a>
         </div>
 

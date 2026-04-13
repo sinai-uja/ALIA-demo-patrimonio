@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import time
 
+from src.application.shared.exceptions import LLMUnavailableError
 from src.config import settings
 from src.domain.routes.ports.llm_port import LLMPort
 from src.domain.routes.value_objects.route_narrative import RouteNarrative
@@ -10,7 +11,6 @@ from src.infrastructure.routes.adapters._narrative_parser import (
     parse_narrative_json,
 )
 from src.infrastructure.shared.auth.token_provider import TokenProvider
-from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.routes.llm")
@@ -75,7 +75,7 @@ class VLLMRoutesAdapter(LLMPort):
             f"{self._base_url}/chat/completions",
             payload,
             service_label="vllm.routes",
-            timeout=120.0,
+            timeout=300.0,
             headers=headers or None,
             error_class=LLMUnavailableError,
         )

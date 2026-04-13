@@ -17,14 +17,6 @@ const HERITAGE_TYPE_LABELS: Record<string, string> = {
   paisaje_cultural: "Paisaje Cultural",
 };
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-  if (hours > 0) return `${hours}h`;
-  return `${mins}min`;
-}
-
 interface RouteStopCardProps {
   stop: RouteStop;
   compact?: boolean;
@@ -105,12 +97,6 @@ export function RouteStopCard({ stop, compact = false }: RouteStopCardProps) {
                 <span className="text-[10px] text-stone-400 truncate">
                   {stop.municipality ? `${stop.municipality}, ` : ""}{stop.province}
                 </span>
-                <span className="inline-flex items-center gap-0.5 rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] text-stone-500 shrink-0">
-                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                  {formatDuration(stop.visit_duration_minutes)}
-                </span>
               </div>
               {stop.description && (
                 <p className="text-xs text-stone-500 mt-1.5 leading-relaxed line-clamp-2">
@@ -152,12 +138,6 @@ export function RouteStopCard({ stop, compact = false }: RouteStopCardProps) {
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeColor}`}>{typeLabel}</span>
                 <span className="text-xs text-stone-400 truncate">
                   {stop.municipality ? `${stop.municipality}, ` : ""}{stop.province}
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500 shrink-0">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                  {formatDuration(stop.visit_duration_minutes)}
                 </span>
               </div>
               {stop.description && (

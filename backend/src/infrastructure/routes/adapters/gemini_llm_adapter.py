@@ -1,13 +1,13 @@
 import logging
 import time
 
+from src.application.shared.exceptions import LLMUnavailableError
 from src.config import settings
 from src.domain.routes.ports.llm_port import LLMPort
 from src.domain.routes.value_objects.route_narrative import RouteNarrative
 from src.infrastructure.routes.adapters._narrative_parser import (
     parse_narrative_json,
 )
-from src.application.shared.exceptions import LLMUnavailableError
 from src.infrastructure.shared.http.httpx_client import post_json
 
 logger = logging.getLogger("iaph.routes.llm")

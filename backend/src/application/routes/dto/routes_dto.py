@@ -14,6 +14,7 @@ class GenerateRouteDTO:
     municipality_filter: list[str] | None = None
     user_id: str | None = None
     username: str | None = None
+    user_profile_type: str | None = None
 
 
 @dataclass(frozen=True)
@@ -27,7 +28,6 @@ class RouteStopDTO:
     municipality: str | None
     url: str
     description: str
-    visit_duration_minutes: int
     heritage_asset_id: str | None = None
     narrative_segment: str = ""
     image_url: str | None = None
@@ -43,7 +43,6 @@ class VirtualRouteDTO:
     title: str
     province: str
     stops: list[RouteStopDTO]
-    total_duration_minutes: int
     narrative: str
     introduction: str = ""
     conclusion: str = ""

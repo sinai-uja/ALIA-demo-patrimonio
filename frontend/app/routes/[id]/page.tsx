@@ -10,6 +10,8 @@ import { RouteStopCard } from "@/components/routes/RouteStopCard";
 import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
 import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 import { useFeedbackStore } from "@/store/feedback";
+import { SearchStopModal } from "@/components/routes/SearchStopModal";
+import DeleteConfirmModal from "@/components/shared/DeleteConfirmModal";
 import ReactMarkdown from "react-markdown";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
@@ -18,14 +20,6 @@ const HERITAGE_TYPE_COLORS: Record<string, string> = {
   patrimonio_inmaterial: "bg-teal-100 text-teal-700",
   paisaje_cultural: "bg-sky-100 text-sky-700",
 };
-
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
-  if (hours > 0) return `${hours}h`;
-  return `${mins}min`;
-}
 
 /** Legacy layout for old routes without introduction/conclusion */
 function LegacyStopsLayout({
@@ -74,7 +68,6 @@ function LegacyStopsLayout({
                       {stop.heritage_type}
                     </span>
                     <span>{stop.municipality ?? stop.province}</span>
-                    <span>{stop.visit_duration_minutes}min</span>
                   </div>
                   <p className="text-sm text-stone-600 mt-2 leading-relaxed line-clamp-3">
                     {stop.description}
@@ -89,6 +82,24 @@ function LegacyStopsLayout({
   );
 }
 
+/** "+" button rendered between stops (and at the end) in edit mode */
+function AddStopButton({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="py-2">
+      <button
+        onClick={onClick}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-stone-300 text-stone-400 hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all text-sm font-medium"
+        aria-label="Añadir nueva parada a la ruta"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Añadir nueva parada a la ruta
+      </button>
+    </div>
+  );
+}
+
 /** New layout with introduction, alternating card/narrative roadmap, and conclusion */
 function InterleavedStopsLayout({
   route,
@@ -97,6 +108,19 @@ function InterleavedStopsLayout({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [twoCol, setTwoCol] = useState(false);
+  const editing = useRoutesStore((s) => s.editing);
+  const editLoading = useRoutesStore((s) => s.editLoading);
+  const removeStop = useRoutesStore((s) => s.removeStop);
+  const addStop = useRoutesStore((s) => s.addStop);
+
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<{ order: number; title: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Search modal state
+  const [searchPosition, setSearchPosition] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -108,6 +132,33 @@ function InterleavedStopsLayout({
     return () => observer.disconnect();
   }, []);
 
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await removeStop(route.id, deleteTarget.order);
+      setDeleteTarget(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Error al eliminar la parada");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleAddStop = async (documentId: string) => {
+    if (searchPosition === null) return;
+    setAdding(true);
+    try {
+      await addStop(route.id, documentId, searchPosition);
+      setSearchPosition(null);
+    } catch {
+      // keep modal open on error
+    } finally {
+      setAdding(false);
+    }
+  };
+
   return (
     <>
       {/* Introduction */}
@@ -116,19 +167,50 @@ function InterleavedStopsLayout({
       )}
 
       {/* Roadmap: alternating card / narrative */}
-      <div ref={containerRef}>
+      <div ref={containerRef} className="relative">
+        {/* Edit loading overlay */}
+        {editing && editLoading && (
+          <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-2 bg-white/90 px-4 py-2 rounded-full shadow-sm border border-stone-200">
+              <svg className="w-4 h-4 animate-spin text-green-600" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              <span className="text-sm text-stone-600">Actualizando ruta...</span>
+            </div>
+          </div>
+        )}
+
         <h2 className="text-xl font-semibold text-stone-900 mb-5">Paradas</h2>
+
+        {/* Add button at the very top in edit mode */}
+        {editing && (
+          <AddStopButton onClick={() => setSearchPosition(1)} />
+        )}
+
         <div className="flex flex-col">
           {route.stops.map((stop, i) => (
             <div key={stop.order}>
               {twoCol ? (
                 <div
-                  className={`flex gap-6 items-center ${
+                  className={`relative flex gap-6 items-center ${
                     i % 2 !== 0 ? "flex-row-reverse" : ""
                   }`}
                 >
-                  <div className="w-1/2">
-                    <RouteStopCard stop={stop}  />
+                  <div className="w-1/2 relative">
+                    <RouteStopCard stop={stop} />
+                    {editing && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget({ order: stop.order, title: stop.title }); }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500/90 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-10"
+                        aria-label={`Eliminar ${stop.title}`}
+                        title="Eliminar parada"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                   {stop.narrative_segment && (
                     <div className="w-1/2">
@@ -140,7 +222,21 @@ function InterleavedStopsLayout({
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  <RouteStopCard stop={stop}  />
+                  <div className="relative">
+                    <RouteStopCard stop={stop} />
+                    {editing && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget({ order: stop.order, title: stop.title }); }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-500/90 text-white flex items-center justify-center shadow-md hover:bg-red-600 transition-colors z-10"
+                        aria-label={`Eliminar ${stop.title}`}
+                        title="Eliminar parada"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                   {stop.narrative_segment && (
                     <p className="text-sm text-stone-600 leading-relaxed px-1">
                       {stop.narrative_segment}
@@ -149,10 +245,20 @@ function InterleavedStopsLayout({
                 </div>
               )}
 
+              {/* Connector + add button between stops */}
               {i < route.stops.length - 1 && (
-                <div className="flex justify-center py-1">
-                  <div className="w-px h-8 bg-stone-200" />
-                </div>
+                editing ? (
+                  <AddStopButton onClick={() => setSearchPosition(stop.order + 1)} />
+                ) : (
+                  <div className="flex justify-center py-1">
+                    <div className="w-px h-8 bg-stone-200" />
+                  </div>
+                )
+              )}
+
+              {/* Add button after the last stop */}
+              {editing && i === route.stops.length - 1 && (
+                <AddStopButton onClick={() => setSearchPosition(stop.order + 1)} />
               )}
             </div>
           ))}
@@ -165,6 +271,27 @@ function InterleavedStopsLayout({
           {route.conclusion}
         </p>
       )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          title="Eliminar parada"
+          entityName={deleteTarget.title}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => { setDeleteTarget(null); setDeleteError(null); }}
+          deleting={deleting}
+          error={deleteError}
+        />
+      )}
+
+      {/* Search stop modal */}
+      {searchPosition !== null && (
+        <SearchStopModal
+          onSelect={handleAddStop}
+          onClose={() => setSearchPosition(null)}
+          adding={adding}
+        />
+      )}
     </>
   );
 }
@@ -172,6 +299,8 @@ function InterleavedStopsLayout({
 export default function RouteDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { activeRoute, selectRoute, loading } = useRoutesStore();
+  const editing = useRoutesStore((s) => s.editing);
+  const setEditMode = useRoutesStore((s) => s.setEditMode);
   const hasDetail = useRoutesStore((s) => s.selectedStopAssetId !== null);
   const closeStopDetail = useRoutesStore((s) => s.closeStopDetail);
   const [guideMessages, setGuideMessages] = useState<
@@ -207,10 +336,13 @@ export default function RouteDetailPage() {
     }
   }, [id, selectRoute]);
 
-  // Close detail panel on unmount
+  // Close detail panel and exit edit mode on unmount
   useEffect(() => {
-    return () => closeStopDetail();
-  }, [closeStopDetail]);
+    return () => {
+      closeStopDetail();
+      setEditMode(false);
+    };
+  }, [closeStopDetail, setEditMode]);
 
   const handleGuideQuestion = async (question: string) => {
     if (!id) return;
@@ -393,7 +525,7 @@ export default function RouteDetailPage() {
         <div className="mx-auto max-w-4xl px-6 py-8 space-y-10">
           {/* Header */}
           <div>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center justify-between mb-3">
               <Link
                 href="/routes"
                 className="inline-flex items-center gap-1 text-sm text-green-700 hover:text-green-700 transition-colors"
@@ -413,10 +545,38 @@ export default function RouteDetailPage() {
                 </svg>
                 Todas las rutas
               </Link>
+              {hasNewFormat && (
+                <button
+                  onClick={() => setEditMode(!editing)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border transition-all ${
+                    editing
+                      ? "border-green-600 bg-green-50 text-green-700 hover:bg-green-100"
+                      : "border-stone-300 text-stone-600 hover:border-green-600 hover:text-green-700"
+                  }`}
+                >
+                  {editing ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                      Dejar de editar
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                      </svg>
+                      Editar ruta
+                    </>
+                  )}
+                </button>
+              )}
             </div>
-            <h1 className="text-3xl font-bold text-stone-900">
-              {activeRoute.title}
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold text-stone-900">
+                {activeRoute.title}
+              </h1>
+            </div>
             <div className="flex items-center gap-3 mt-2 text-sm text-stone-500">
               <span className="inline-flex items-center gap-1">
                 <svg
@@ -440,7 +600,6 @@ export default function RouteDetailPage() {
                 {activeRoute.province}
               </span>
               <span>{activeRoute.stops.length} paradas</span>
-              <span>{formatDuration(activeRoute.total_duration_minutes)}</span>
               <FeedbackButtons targetType="route" targetId={activeRoute.id} />
             </div>
           </div>

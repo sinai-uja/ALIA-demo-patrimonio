@@ -14,7 +14,6 @@ from src.application.shared.exceptions import (
     UnauthorizedActionError,
 )
 
-
 # --- Authentication / token errors (mapped to 401 by the API layer) ---------
 
 

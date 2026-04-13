@@ -201,7 +201,6 @@ def _make_virtual_route(
             municipality=province,
             url=f"https://example.com/stop{i}",
             description=f"Descripcion parada {i}",
-            visit_duration_minutes=60,
         )
         for i in range(1, num_stops + 1)
     ]
@@ -210,7 +209,6 @@ def _make_virtual_route(
         title=title,
         province=province,
         stops=stops,
-        total_duration_minutes=60 * num_stops,
         narrative=narrative,
         introduction=introduction,
         conclusion=conclusion,
@@ -267,7 +265,7 @@ class TestGenerateRouteUseCase:
         self.llm_port.generate_route_narrative.return_value = (
             _make_route_narrative(num_stops=num_stops)
         )
-        self.rag_port.query.return_value = ("answer text", chunks)
+        self.rag_port.query.return_value = ("answer text", chunks, [])
         self.route_builder_service.select_diverse_stops.return_value = chunks
         self.route_builder_service.build.return_value = route
         self.route_repository.save_route.return_value = route

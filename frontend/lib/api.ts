@@ -160,7 +160,6 @@ export interface RouteStop {
   municipality: string | null;
   url: string;
   description: string;
-  visit_duration_minutes: number;
   heritage_asset_id?: string | null;
   narrative_segment?: string;
   image_url?: string | null;
@@ -173,26 +172,98 @@ export interface VirtualRoute {
   title: string;
   province: string;
   stops: RouteStop[];
-  total_duration_minutes: number;
   narrative: string;
   introduction?: string | null;
   conclusion?: string | null;
   created_at: string;
 }
 
+export type GenerateRouteParams = {
+  query: string;
+  num_stops?: number;
+  heritage_type_filter?: string[] | null;
+  province_filter?: string[] | null;
+  municipality_filter?: string[] | null;
+};
+
 export const routes = {
-  generate: (params: {
-    query: string;
-    num_stops?: number;
-    heritage_type_filter?: string[] | null;
-    province_filter?: string[] | null;
-    municipality_filter?: string[] | null;
-  }, signal?: AbortSignal) =>
+  generate: (params: GenerateRouteParams, signal?: AbortSignal) =>
     apiFetch<VirtualRoute>("/routes/generate", {
       method: "POST",
       body: JSON.stringify(params),
       signal,
     }),
+
+  generateStream: async (
+    params: GenerateRouteParams,
+    signal: AbortSignal | undefined,
+    onEvent: (event: { event: string; data: Record<string, unknown> }) => void,
+  ): Promise<void> => {
+    const token = getToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/routes/generate/stream`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(params),
+      signal,
+    });
+
+    if (res.status === 401) {
+      if (typeof document !== "undefined") {
+        document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/login";
+      }
+      throw new Error("Unauthorized");
+    }
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop()!; // keep incomplete line in buffer
+
+        let currentEvent = "message";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              onEvent({ event: currentEvent, data });
+            } catch {
+              // ignore malformed JSON
+            }
+            currentEvent = "message";
+          }
+          // empty lines reset event type per SSE spec
+          if (line === "") {
+            currentEvent = "message";
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  },
 
   suggestions: (query: string) =>
     apiFetch<SuggestionResponse>(
@@ -224,6 +295,23 @@ export const routes = {
       `/routes/${routeId}/guide`,
       { method: "POST", body: JSON.stringify({ question, history: history ?? [] }) }
     ),
+
+  removeStop: (routeId: string, stopOrder: number) =>
+    apiFetch<VirtualRoute>(`/routes/${routeId}/stops/${stopOrder}`, {
+      method: "DELETE",
+    }),
+
+  addStop: (routeId: string, documentId: string, position?: number) =>
+    apiFetch<VirtualRoute>(`/routes/${routeId}/stops`, {
+      method: "POST",
+      body: JSON.stringify({ document_id: documentId, position }),
+    }),
+
+  addStopBackground: (routeId: string, documentId: string) =>
+    apiFetch<{ status: string; message: string }>(`/routes/${routeId}/stops`, {
+      method: "POST",
+      body: JSON.stringify({ document_id: documentId, background: true }),
+    }),
 };
 
 // ── Heritage Assets ──────────────────────────────────────────────────────────
@@ -483,7 +571,7 @@ export interface FeedbackBatchResponse {
 
 export const feedback = {
   submit: (params: {
-    target_type: "route" | "search";
+    target_type: "route" | "search" | "search_result";
     target_id: string;
     value: 1 | -1;
     metadata?: Record<string, unknown>;
@@ -505,6 +593,19 @@ export const feedback = {
     for (const id of targetIds) params.append("target_ids", id);
     return apiFetch<FeedbackBatchResponse>(`/feedback/batch?${params}`);
   },
+};
+
+// ── Health ────────────────────────────────────────────────────────────────────
+export interface ServiceStatus {
+  embedding: { status: "ok" | "warming" | "down" | "local" | "unknown"; is_cloud_run: boolean };
+  llm: { status: "ok" | "warming" | "down" | "local" | "external" | "unknown"; is_cloud_run: boolean };
+  provider: string;
+  last_check: string | null;
+}
+
+export const health = {
+  status: () => apiFetch<ServiceStatus>("/health/services"),
+  keepalive: () => apiFetch<ServiceStatus>("/health/keepalive", { method: "POST" }),
 };
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -568,6 +669,82 @@ export const admin = {
     delete: (id: string) =>
       apiFetch<void>(`/admin/profile-types/${id}`, { method: "DELETE" }),
   },
+};
+
+// ── Admin Traces ──────────────────────────────────────────────────────────────
+export interface TraceResultItem {
+  rank: number;
+  score: number;
+  title: string;
+  heritage_type: string;
+  province: string;
+  document_id?: string;
+}
+
+export interface TracePipelineStep {
+  step: string;
+  elapsed_ms?: number | null;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+  results?: TraceResultItem[] | null;
+}
+
+export interface TraceSummary {
+  id: string;
+  execution_type: string;
+  user_id: string;
+  username: string;
+  user_profile_type: string | null;
+  query: string;
+  pipeline_mode: string | null;
+  status: string;
+  created_at: string;
+  total_results: number;
+  top_score: number | null;
+  elapsed_ms: number | null;
+  feedback_value: number | null;
+}
+
+export interface TraceDetail extends TraceSummary {
+  filters: Record<string, unknown> | null;
+  steps: TracePipelineStep[];
+  llm_response: string | null;
+  result_feedbacks: Record<string, number> | null;
+}
+
+export interface TraceListResponse {
+  traces: TraceSummary[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
+export interface TraceListParams {
+  type?: string;
+  since?: string;
+  until?: string;
+  user_id?: string;
+  query?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export const traces = {
+  list: (params: TraceListParams) => {
+    const searchParams = new URLSearchParams();
+    if (params.type) searchParams.set("type", params.type);
+    if (params.since) searchParams.set("since", params.since);
+    if (params.until) searchParams.set("until", params.until);
+    if (params.user_id) searchParams.set("user_id", params.user_id);
+    if (params.query) searchParams.set("query", params.query);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.page_size) searchParams.set("page_size", String(params.page_size));
+    const qs = searchParams.toString();
+    return apiFetch<TraceListResponse>(`/admin/traces${qs ? `?${qs}` : ""}`);
+  },
+
+  get: (traceId: string) => apiFetch<TraceDetail>(`/admin/traces/${traceId}`),
 };
 
 // ── Accessibility ─────────────────────────────────────────────────────────────

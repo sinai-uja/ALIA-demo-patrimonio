@@ -30,7 +30,6 @@ class GetRouteUseCase:
                     municipality=stop.municipality,
                     url=stop.url,
                     description=stop.description,
-                    visit_duration_minutes=stop.visit_duration_minutes,
                     heritage_asset_id=stop.heritage_asset_id,
                     narrative_segment=stop.narrative_segment,
                     image_url=stop.image_url,
@@ -39,7 +38,7 @@ class GetRouteUseCase:
                 )
                 for stop in route.stops
             ],
-            total_duration_minutes=route.total_duration_minutes,
+
             narrative=route.narrative,
             introduction=route.introduction,
             conclusion=route.conclusion,

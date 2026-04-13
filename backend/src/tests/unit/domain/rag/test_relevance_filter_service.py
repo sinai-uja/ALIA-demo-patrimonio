@@ -1,6 +1,5 @@
 """Unit tests for RelevanceFilterService — pure domain, zero mocks."""
 
-import pytest
 
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 from src.domain.rag.services.relevance_filter_service import RelevanceFilterService

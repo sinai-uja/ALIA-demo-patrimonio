@@ -1,6 +1,6 @@
 """Tests for RAGQueryUseCase — rag context."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -10,7 +10,6 @@ from src.application.rag.use_cases.rag_query_use_case import (
     RAGQueryUseCase,
 )
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -131,7 +130,9 @@ def _dto(**overrides):
 
 
 @pytest.mark.asyncio
-async def test_full_pipeline_happy_path(use_case, embedding_port, vector_search_port, text_search_port, llm_port):
+async def test_full_pipeline_happy_path(
+    use_case, embedding_port, vector_search_port, text_search_port, llm_port,
+):
     result = await use_case.execute(_dto())
     assert isinstance(result, RAGResponseDTO)
     assert result.answer == "LLM generated answer"

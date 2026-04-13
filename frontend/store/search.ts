@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { type ActiveFilter, collectFilters } from "@/lib/filterUtils";
 import { minDelay } from "@/lib/minDelay";
+import { useFeedbackStore } from "@/store/feedback";
 
 interface SearchState {
   query: string;
@@ -62,6 +63,7 @@ function buildCleanQuery(query: string): string {
 }
 
 let _searchController: AbortController | null = null;
+let _searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
 export const useSearchStore = create<SearchState>((set, get) => ({
   query: "",
@@ -108,7 +110,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     const cleanQuery = buildCleanQuery(query);
     if (!cleanQuery) return;
 
-    // Abort any in-flight search to prevent duplicate requests
+    // Debounce to prevent duplicate requests from React strict mode
+    if (_searchDebounce) clearTimeout(_searchDebounce);
     _searchController?.abort();
     const controller = new AbortController();
     _searchController = controller;
@@ -120,6 +123,11 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       selectedAssetId: null,
       selectedAsset: null,
     });
+
+    // Wait one microtask to let any duplicate call abort this one first
+    await new Promise((r) => { _searchDebounce = setTimeout(r, 50); });
+    if (controller.signal.aborted) { set({ loading: false }); return; }
+
     try {
       const filters = collectFilters(activeFilters);
       const res = await minDelay(searchApi.similarity({
@@ -136,6 +144,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         totalPages: res.total_pages,
         searchId: res.search_id,
       });
+
+      // Pre-load feedback state for all results on this page (composite key: searchId:documentId)
+      const feedbackIds = res.results.map((r: SearchResult) => `${res.search_id}:${r.document_id}`);
+      useFeedbackStore.getState().loadFeedbackBatch("search_result", feedbackIds);
     } catch (err) {
       if (controller.signal.aborted) return;
       set({ results: [], totalResults: 0, page: 1, totalPages: 0, searchId: null });

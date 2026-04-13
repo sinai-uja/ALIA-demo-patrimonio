@@ -328,7 +328,11 @@ class TestCRUDHappyPath:
         async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE) as c:
             resp = await c.post(
                 f"{PREFIX}/users",
-                json={"username": "researcher", "password": "secret123", "profile_type": "investigador"},
+                json={
+                    "username": "researcher",
+                    "password": "secret123",
+                    "profile_type": "investigador",
+                },
             )
 
         assert resp.status_code == 201

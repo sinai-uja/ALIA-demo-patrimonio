@@ -14,7 +14,6 @@ from src.application.auth.use_cases.refresh_token_use_case import RefreshTokenUs
 from src.application.auth.use_cases.validate_token_use_case import ValidateTokenUseCase
 from src.domain.auth.entities.user import User, UserProfileType
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

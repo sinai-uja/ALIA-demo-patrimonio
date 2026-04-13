@@ -28,3 +28,21 @@ class RouteRepository(ABC):
     ) -> bool:
         """Delete a route by ID. Returns True if it existed."""
         ...
+
+    @abstractmethod
+    async def update_route(
+        self,
+        route_id: UUID,
+        user_id: UUID | None,
+        *,
+        stops: list[dict],
+        narrative: str,
+        introduction: str | None = None,
+        conclusion: str | None = None,
+        title: str | None = None,
+    ) -> VirtualRoute | None:
+        """Update a route's stops, narrative and metadata.
+
+        Returns the updated VirtualRoute or None if not found / not owned.
+        """
+        ...

@@ -1,7 +1,5 @@
 """Unit tests for RouteBuilderService — pure domain, zero mocks."""
 
-import pytest
-
 from src.domain.routes.services.route_builder_service import RouteBuilderService
 from src.domain.routes.value_objects.asset_preview import AssetPreview
 
@@ -79,39 +77,6 @@ class TestSelectDiverseStops:
 
 
 class TestBuild:
-    @pytest.mark.parametrize("heritage_type,expected_duration", [
-        ("patrimonio_inmueble", 60),
-        ("patrimonio_mueble", 30),
-        ("paisaje_cultural", 90),
-        ("patrimonio_inmaterial", 45),
-    ])
-    def test_assigns_correct_duration_by_heritage_type(self, heritage_type, expected_duration):
-        service = RouteBuilderService()
-        chunks = [_make_stop_chunk(heritage_type=heritage_type)]
-
-        route = service.build(chunks, province="Jaén", title="Test Route", narrative="Narrative")
-
-        assert route.stops[0].visit_duration_minutes == expected_duration
-
-    def test_unknown_heritage_type_gets_default_duration(self):
-        service = RouteBuilderService()
-        chunks = [_make_stop_chunk(heritage_type="unknown_type")]
-
-        route = service.build(chunks, province="Jaén", title="Route", narrative="N")
-
-        assert route.stops[0].visit_duration_minutes == 45  # _DEFAULT_DURATION
-
-    def test_total_duration_is_sum_of_stops(self):
-        service = RouteBuilderService()
-        chunks = [
-            _make_stop_chunk(title="A", heritage_type="patrimonio_inmueble"),   # 60
-            _make_stop_chunk(title="B", heritage_type="patrimonio_mueble"),     # 30
-        ]
-
-        route = service.build(chunks, province="Jaén", title="Route", narrative="N")
-
-        assert route.total_duration_minutes == 90
-
     def test_extract_asset_id_strips_prefix(self):
         service = RouteBuilderService()
         chunks = [_make_stop_chunk(document_id="ficha-inmueble-456")]

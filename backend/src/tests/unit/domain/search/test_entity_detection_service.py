@@ -4,10 +4,12 @@ import pytest
 
 from src.domain.search.services.entity_detection_service import EntityDetectionService
 
-
 PROVINCES = ["Jaén", "Sevilla", "Córdoba", "Málaga", "Granada", "Almería", "Cádiz", "Huelva"]
 MUNICIPALITIES = ["Úbeda", "Baeza", "Linares", "Andújar", "Jaén"]
-HERITAGE_TYPES = ["patrimonio_inmueble", "patrimonio_mueble", "patrimonio_inmaterial", "paisaje_cultural"]
+HERITAGE_TYPES = [
+    "patrimonio_inmueble", "patrimonio_mueble",
+    "patrimonio_inmaterial", "paisaje_cultural",
+]
 
 
 @pytest.fixture
@@ -44,7 +46,9 @@ class TestHeritageTypeDetection:
 
 class TestProvinceDetection:
     def test_detects_province(self, service):
-        entities = service.detect("monumentos en Sevilla", PROVINCES, MUNICIPALITIES, HERITAGE_TYPES)
+        entities = service.detect(
+            "monumentos en Sevilla", PROVINCES, MUNICIPALITIES, HERITAGE_TYPES,
+        )
 
         prov_entities = [e for e in entities if e.entity_type == "province"]
         assert len(prov_entities) == 1

@@ -29,7 +29,10 @@ class ChatRepositoryImpl(ChatRepository):
             await self._db.flush()
             await self._db.refresh(model)
         except Exception:
-            logger.error("Failed to create chat session title=%r user_id=%s", title, user_id, exc_info=True)
+            logger.error(
+                "Failed to create chat session title=%r user_id=%s",
+                title, user_id, exc_info=True,
+            )
             raise
         return self._to_session_entity(model)
 
@@ -42,7 +45,10 @@ class ChatRepositoryImpl(ChatRepository):
         try:
             result = await self._db.execute(stmt)
         except Exception:
-            logger.error("Failed to get chat session session_id=%s user_id=%s", session_id, user_id, exc_info=True)
+            logger.error(
+                "Failed to get chat session session_id=%s user_id=%s",
+                session_id, user_id, exc_info=True,
+            )
             raise
         model = result.scalar_one_or_none()
         if model is None:
@@ -69,7 +75,10 @@ class ChatRepositoryImpl(ChatRepository):
         try:
             await self._db.execute(stmt)
         except Exception:
-            logger.error("Failed to delete chat session session_id=%s user_id=%s", session_id, user_id, exc_info=True)
+            logger.error(
+                "Failed to delete chat session session_id=%s user_id=%s",
+                session_id, user_id, exc_info=True,
+            )
             raise
 
     async def update_session_title(
@@ -86,7 +95,10 @@ class ChatRepositoryImpl(ChatRepository):
             await self._db.execute(stmt)
             await self._db.flush()
         except Exception:
-            logger.error("Failed to update chat session title session_id=%s", session_id, exc_info=True)
+            logger.error(
+                "Failed to update chat session title session_id=%s",
+                session_id, exc_info=True,
+            )
             raise
 
         get_stmt = select(ChatSessionModel).where(ChatSessionModel.id == session_id)
@@ -95,7 +107,10 @@ class ChatRepositoryImpl(ChatRepository):
         try:
             result = await self._db.execute(get_stmt)
         except Exception:
-            logger.error("Failed to re-fetch chat session after title update session_id=%s", session_id, exc_info=True)
+            logger.error(
+                "Failed to re-fetch chat session after title update session_id=%s",
+                session_id, exc_info=True,
+            )
             raise
         model = result.scalar_one_or_none()
         if model is None:
@@ -129,7 +144,10 @@ class ChatRepositoryImpl(ChatRepository):
             await self._db.flush()
             await self._db.refresh(model)
         except Exception:
-            logger.error("Failed to add message to chat session session_id=%s role=%s", session_id, role.value, exc_info=True)
+            logger.error(
+                "Failed to add message to chat session session_id=%s role=%s",
+                session_id, role.value, exc_info=True,
+            )
             raise
         return self._to_message_entity(model)
 
@@ -141,7 +159,10 @@ class ChatRepositoryImpl(ChatRepository):
                 .order_by(ChatMessageModel.created_at.asc())
             )
         except Exception:
-            logger.error("Failed to get messages for chat session session_id=%s", session_id, exc_info=True)
+            logger.error(
+                "Failed to get messages for chat session session_id=%s",
+                session_id, exc_info=True,
+            )
             raise
         return [self._to_message_entity(m) for m in result.scalars().all()]
 
