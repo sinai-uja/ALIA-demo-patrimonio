@@ -5,6 +5,8 @@
        cloud-setup cloud-setup-baked cloud-generate-sa-key cloud-deploy cloud-deploy-baked cloud-deploy-skip-build \
        cloud-llm-setup cloud-llm-setup-model cloud-llm-setup-baked cloud-llm-generate-sa-key \
        cloud-llm-deploy cloud-llm-deploy-baked cloud-llm-deploy-skip-build cloud-llm-deploy-baked-skip-build \
+       cloud-llm-setup-llamacpp cloud-llm-setup-llamacpp-model cloud-llm-setup-llamacpp-baked \
+       cloud-llm-deploy-llamacpp cloud-llm-deploy-llamacpp-baked cloud-llm-deploy-llamacpp-baked-skip-build \
        migrate test lint db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose
@@ -61,6 +63,14 @@ help:
 	@echo "  cloud-llm-deploy-baked       Rebuild with model baked in"
 	@echo "  cloud-llm-deploy-skip-build  Redeploy without rebuilding (GCS FUSE)"
 	@echo "  cloud-llm-deploy-baked-skip-build  Redeploy baked image without rebuilding"
+	@echo ""
+	@echo "Cloud Run (LLM service — llama.cpp + GGUF alternative):"
+	@echo "  cloud-llm-setup-llamacpp       First-time setup + deploy (GCS FUSE)"
+	@echo "  cloud-llm-setup-llamacpp-model Setup + upload GGUF to GCS"
+	@echo "  cloud-llm-setup-llamacpp-baked Setup + bake GGUF into image"
+	@echo "  cloud-llm-deploy-llamacpp      Rebuild and redeploy llama.cpp"
+	@echo "  cloud-llm-deploy-llamacpp-baked Rebuild llama.cpp with GGUF baked in"
+	@echo "  cloud-llm-deploy-llamacpp-baked-skip-build  Redeploy baked llama.cpp without rebuilding"
 	@echo ""
 	@echo "Database:"
 	@echo "  db-export        Export database (local)"
@@ -208,6 +218,28 @@ cloud-llm-deploy-skip-build:
 
 cloud-llm-deploy-baked-skip-build:
 	./llm/scripts/deploy.sh --bake-model --skip-build
+
+# ---------------------------------------------------------------------------
+# Cloud Run (LLM service — llama.cpp + GGUF alternative)
+# ---------------------------------------------------------------------------
+
+cloud-llm-setup-llamacpp:
+	./llm/scripts/setup.sh --engine llamacpp
+
+cloud-llm-setup-llamacpp-model:
+	./llm/scripts/setup.sh --engine llamacpp --upload-model
+
+cloud-llm-setup-llamacpp-baked:
+	./llm/scripts/setup.sh --engine llamacpp --bake-model
+
+cloud-llm-deploy-llamacpp:
+	./llm/scripts/deploy.sh --engine llamacpp
+
+cloud-llm-deploy-llamacpp-baked:
+	./llm/scripts/deploy.sh --engine llamacpp --bake-model
+
+cloud-llm-deploy-llamacpp-baked-skip-build:
+	./llm/scripts/deploy.sh --engine llamacpp --bake-model --skip-build
 
 # ---------------------------------------------------------------------------
 # Other

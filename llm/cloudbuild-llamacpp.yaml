@@ -1,0 +1,31 @@
+# =============================================================================
+# cloudbuild-llamacpp.yaml — Build LLM service base image (llama.cpp, no model)
+#
+# Used when --engine llamacpp is selected without --bake-model. The model
+# (GGUF) is mounted at runtime via Cloud Run GCS FUSE volume.
+#
+# Usage:
+#   gcloud builds submit ./llm --config=llm/cloudbuild-llamacpp.yaml
+#   # Or via scripts: ./llm/scripts/deploy.sh --engine llamacpp
+# =============================================================================
+
+substitutions:
+  _IMAGE: 'europe-west1-docker.pkg.dev/innovasur-uja-alia/iaph-rag/llm-llamacpp'
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '-f'
+      - 'Dockerfile.llamacpp'
+      - '.'
+
+images:
+  - '${_IMAGE}:latest'
+
+timeout: '1800s'
+
+options:
+  machineType: 'E2_HIGHCPU_8'

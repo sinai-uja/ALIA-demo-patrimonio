@@ -6,24 +6,46 @@
 # exists (run setup.sh first).
 #
 # Usage:
-#   ./llm/scripts/deploy.sh                # from monorepo root (GCS FUSE)
-#   ./llm/scripts/deploy.sh --bake-model   # bake model into image
-#   ./llm/scripts/deploy.sh --skip-build   # deploy only (reuse existing image)
-#   make cloud-llm-deploy                  # via Makefile
-#   make cloud-llm-deploy-baked            # via Makefile (baked)
+#   ./llm/scripts/deploy.sh                         # vLLM (default)
+#   ./llm/scripts/deploy.sh --engine llamacpp        # llama.cpp + GGUF
+#   ./llm/scripts/deploy.sh --bake-model             # bake model into image
+#   ./llm/scripts/deploy.sh --skip-build             # deploy only (reuse image)
+#   make cloud-llm-deploy                            # vLLM via Makefile
+#   make cloud-llm-deploy-baked                      # vLLM baked via Makefile
+#   make cloud-llm-deploy-llamacpp                   # llama.cpp via Makefile
+#   make cloud-llm-deploy-llamacpp-baked             # llama.cpp baked
 # =============================================================================
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# Configuration (must match setup.sh)
+# Flags (engine first)
+# ---------------------------------------------------------------------------
+ENGINE="vllm"
+SKIP_BUILD=false
+BAKE_MODEL=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --engine)       ENGINE="$2"; shift 2 ;;
+    --engine=*)     ENGINE="${1#*=}"; shift ;;
+    --skip-build)   SKIP_BUILD=true; shift ;;
+    --bake-model)   BAKE_MODEL=true; shift ;;
+    *)              shift ;;
+  esac
+done
+
+if [[ "${ENGINE}" != "vllm" && "${ENGINE}" != "llamacpp" ]]; then
+  echo "Unknown --engine: ${ENGINE}. Expected: vllm | llamacpp" >&2
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Shared configuration (both engines)
 # ---------------------------------------------------------------------------
 PROJECT_ID="innovasur-uja-alia"
 REGION="europe-west4"
 AR_REGION="europe-west1"
-SERVICE_NAME="uja-llm"
 REPO_NAME="iaph-rag"
 BUCKET_NAME="${PROJECT_ID}-iaph-models"
-IMAGE="${AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
 
 # Cloud Run service settings
 CPU=20
@@ -33,24 +55,31 @@ MAX_INSTANCES=1
 MIN_INSTANCES=0
 PORT=8000
 
-# Model configuration (GPTQ for Cloud Run — fits on A100 40GB, fast cold start)
-MODEL_NAME="agustim/ALIA-40b-GPTQ-INT4"
-MODEL_DIR_NAME="ALIA-40b-GPTQ-INT4"
-MAX_MODEL_LEN=32768
-QUANTIZATION_ARGS="--quantization,gptq,--dtype,float16"
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LLM_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Flags
-SKIP_BUILD=false
-BAKE_MODEL=false
-for arg in "$@"; do
-  case "$arg" in
-    --skip-build)  SKIP_BUILD=true ;;
-    --bake-model)  BAKE_MODEL=true ;;
-  esac
-done
+# ---------------------------------------------------------------------------
+# Engine-specific configuration
+# ---------------------------------------------------------------------------
+if [[ "${ENGINE}" == "vllm" ]]; then
+  SERVICE_NAME="uja-llm"
+  IMAGE="${AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm"
+  CLOUDBUILD_BAKED_CFG="${LLM_DIR}/cloudbuild-baked.yaml"
+  MODEL_NAME="agustim/ALIA-40b-GPTQ-INT4"
+  MODEL_DIR_NAME="ALIA-40b-GPTQ-INT4"
+  MAX_MODEL_LEN=32768
+  QUANTIZATION_ARGS="--quantization,gptq,--dtype,float16"
+else
+  SERVICE_NAME="uja-llm-llamacpp"
+  IMAGE="${AR_REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/llm-llamacpp"
+  CLOUDBUILD_BAKED_CFG="${LLM_DIR}/cloudbuild-baked-llamacpp.yaml"
+  CLOUDBUILD_BASE_CFG="${LLM_DIR}/cloudbuild-llamacpp.yaml"
+  GGUF_FILE="${LLM_GGUF_FILE:-ALIA-40b-instruct-2601.Q4_K_M.gguf}"
+  MODEL_DIR_NAME="${LLM_GGUF_MODEL_DIR:-ALIA-40b-instruct-2601-GGUF}"
+  SERVED_ALIAS="${LLM_GGUF_ALIAS:-ALIA-40b-instruct-2601}"
+  CTX_SIZE="${LLM_CTX_SIZE:-8192}"
+  N_GPU_LAYERS="${LLM_N_GPU_LAYERS:-999}"
+fi
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -80,12 +109,20 @@ if [[ "${SKIP_BUILD}" == "true" ]]; then
   skip "Using existing image ${IMAGE}:${IMAGE_TAG}"
 elif [[ "${BAKE_MODEL}" == "true" ]]; then
   step "1/3 Building BAKED image (Cloud Build)"
-  info "Building base + baking model from GCS..."
+  info "Engine: ${ENGINE} — building base + baking model from GCS..."
   gcloud builds submit "${LLM_DIR}" \
-    --config="${LLM_DIR}/cloudbuild-baked.yaml" \
+    --config="${CLOUDBUILD_BAKED_CFG}" \
     --timeout=3600 \
     --quiet
   ok "Baked image built: ${IMAGE}:latest (includes model)"
+elif [[ "${ENGINE}" == "llamacpp" ]]; then
+  step "1/3 Building container image (llama.cpp, Cloud Build)"
+  info "Submitting build from ${LLM_DIR}/ using Dockerfile.llamacpp..."
+  gcloud builds submit "${LLM_DIR}" \
+    --config="${CLOUDBUILD_BASE_CFG}" \
+    --timeout=1800 \
+    --quiet
+  ok "Image built: ${IMAGE}:latest"
 else
   step "1/3 Building container image (Cloud Build)"
   info "Submitting build from ${LLM_DIR}/ ..."
@@ -122,26 +159,51 @@ DEPLOY_ARGS=(
   --quiet
 )
 
-if [[ "${BAKE_MODEL}" == "true" ]]; then
-  # Baked: model inside image at /app/model
-  DEPLOY_ARGS+=(
-    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=30,timeoutSeconds=10,periodSeconds=15,failureThreshold=40"
-    --clear-volume-mounts
-    --clear-volumes
-    --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--served-model-name,${MODEL_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--enforce-eager,--port,${PORT}"
-  )
-  info "Deploy mode: BAKED (model in image, no GCS volumes)"
+if [[ "${ENGINE}" == "vllm" ]]; then
+  # ─── vLLM engine (existing behavior, unchanged) ──────────────────────────
+  if [[ "${BAKE_MODEL}" == "true" ]]; then
+    # Baked: model inside image at /app/model
+    DEPLOY_ARGS+=(
+      --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=30,timeoutSeconds=10,periodSeconds=15,failureThreshold=40"
+      --clear-volume-mounts
+      --clear-volumes
+      --command="python3"
+      --args="-m,vllm.entrypoints.openai.api_server,--model,/app/model,--served-model-name,${MODEL_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--enforce-eager,--port,${PORT}"
+    )
+    info "Deploy mode: BAKED (model in image, no GCS volumes)"
+  else
+    # GCS FUSE: mount bucket, model loaded from GCS
+    DEPLOY_ARGS+=(
+      --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=60,timeoutSeconds=10,periodSeconds=15,failureThreshold=80"
+      --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
+      --add-volume-mount="volume=models,mount-path=/gcs-models"
+      --command="python3"
+      --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--enforce-eager,--port,${PORT}"
+    )
+    info "Deploy mode: GCS FUSE (model mounted from gs://${BUCKET_NAME})"
+  fi
 else
-  # GCS FUSE: mount bucket, model loaded from GCS
-  DEPLOY_ARGS+=(
-    --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=60,timeoutSeconds=10,periodSeconds=15,failureThreshold=80"
-    --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
-    --add-volume-mount="volume=models,mount-path=/gcs-models"
-    --command="python3"
-    --args="-m,vllm.entrypoints.openai.api_server,--model,/gcs-models/${MODEL_DIR_NAME},${QUANTIZATION_ARGS},--max-model-len,${MAX_MODEL_LEN},--gpu-memory-utilization,0.9,--enforce-eager,--port,${PORT}"
-  )
-  info "Deploy mode: GCS FUSE (model mounted from gs://${BUCKET_NAME})"
+  # ─── llama.cpp engine (new) ──────────────────────────────────────────────
+  LLAMACPP_ARGS="--alias,${SERVED_ALIAS},--host,0.0.0.0,--port,${PORT},--ctx-size,${CTX_SIZE},--n-gpu-layers,${N_GPU_LAYERS},--parallel,1,--threads-http,8,--no-warmup,--jinja"
+  if [[ "${BAKE_MODEL}" == "true" ]]; then
+    # Baked: GGUF inside image at /app/model/<file>
+    DEPLOY_ARGS+=(
+      --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=30,timeoutSeconds=10,periodSeconds=10,failureThreshold=30"
+      --clear-volume-mounts
+      --clear-volumes
+      --args="--model,/app/model/${GGUF_FILE},${LLAMACPP_ARGS}"
+    )
+    info "Deploy mode: BAKED llama.cpp (GGUF in image, no GCS volumes)"
+  else
+    # GCS FUSE: mount bucket, GGUF streamed from GCS
+    DEPLOY_ARGS+=(
+      --startup-probe="httpGet.path=/health,httpGet.port=${PORT},initialDelaySeconds=60,timeoutSeconds=10,periodSeconds=15,failureThreshold=60"
+      --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
+      --add-volume-mount="volume=models,mount-path=/gcs-models"
+      --args="--model,/gcs-models/${MODEL_DIR_NAME}/${GGUF_FILE},${LLAMACPP_ARGS}"
+    )
+    info "Deploy mode: GCS FUSE llama.cpp (GGUF from gs://${BUCKET_NAME})"
+  fi
 fi
 
 gcloud run deploy "${SERVICE_NAME}" "${DEPLOY_ARGS[@]}"
@@ -185,13 +247,18 @@ for attempt in 1 2 3 4 5; do
   fi
 done
 
-# Chat completion test
+# Chat completion test — use engine-specific served-model name
+if [[ "${ENGINE}" == "vllm" ]]; then
+  TEST_MODEL="${MODEL_NAME}"
+else
+  TEST_MODEL="${SERVED_ALIAS}"
+fi
 info "Testing POST /v1/chat/completions ..."
 CHAT_RESP=$(curl -s -w "\n%{http_code}" -X POST --max-time 120 \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "'"${MODEL_NAME}"'",
+    "model": "'"${TEST_MODEL}"'",
     "messages": [{"role": "user", "content": "Describe brevemente la Alhambra de Granada."}],
     "max_tokens": 128,
     "temperature": 0.1

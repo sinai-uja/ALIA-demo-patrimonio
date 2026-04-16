@@ -1,0 +1,39 @@
+# =============================================================================
+# LLM Service — llama.cpp-server with CUDA (alternative to vLLM)
+#
+# Build context: llm/
+# Base: ghcr.io/ggml-org/llama.cpp:server-cuda-<build>
+#
+# Serves LLM inference via the OpenAI-compatible chat/completions API
+# (/v1/chat/completions, /v1/models, /health) using llama.cpp, which consumes
+# pre-quantized GGUF files (e.g. Q4_K_M).
+#
+# Coexists with Dockerfile (vLLM). Select which engine to use via the
+# --engine flag on llm/scripts/setup.sh and llm/scripts/deploy.sh.
+#
+# The GGUF file is NOT baked here — mount it at runtime via:
+#   - GCS FUSE mount (Cloud Run): /gcs-models/<DIR>/<FILE>.gguf
+#   - Host volume (docker compose): /app/model/<FILE>.gguf
+#
+# Runtime args are passed via Cloud Run --args or docker compose command.
+# Typical flags:
+#   --model <path>          — absolute path to .gguf
+#   --alias <name>          — reported model name in /v1/models
+#   --host 0.0.0.0 --port 8000
+#   --ctx-size 8192         — context window
+#   --n-gpu-layers 999      — offload every layer to GPU
+#   --parallel 1            — concurrent request slots
+#   --threads-http 8        — HTTP worker threads
+#   --no-warmup             — skip built-in warmup (startup probe does it)
+#   --jinja                 — honor embedded ChatML/Jinja template
+# =============================================================================
+
+ARG LLAMA_CPP_TAG=server-cuda-b4927
+FROM ghcr.io/ggml-org/llama.cpp:${LLAMA_CPP_TAG}
+
+# Standardize bind address/port to the Cloud Run contract used by vLLM too.
+ENV LLAMA_ARG_HOST=0.0.0.0 \
+    LLAMA_ARG_PORT=8000
+
+# ENTRYPOINT is inherited from the base image (/app/llama-server).
+# All runtime flags come from Cloud Run --args or docker compose `command:`.

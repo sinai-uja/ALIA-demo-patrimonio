@@ -1,0 +1,24 @@
+# =============================================================================
+# Dockerfile.llamacpp.baked — llama.cpp-server with GGUF baked into image
+#
+# Uses a single GGUF file placed in the build context by cloudbuild-baked-llamacpp.yaml.
+# The file is copied to /app/model/<FILE>.gguf at build time.
+#
+# Result: larger image (~28 GB for Q4_K_M of 40B), but cold start drops
+# significantly because no GCS FUSE or HF download is needed at runtime.
+#
+# Build via Cloud Build:
+#   gcloud builds submit ./llm --config=llm/cloudbuild-baked-llamacpp.yaml
+#
+# Or via scripts: ./llm/scripts/deploy.sh --engine llamacpp --bake-model
+# =============================================================================
+
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# Single GGUF file provided in the build context (downloaded by Cloud Build step).
+# The filename is passed via build arg so we can swap quantizations (Q4_K_M,
+# Q5_K_M, etc.) without editing this Dockerfile.
+ARG GGUF_FILENAME=ALIA-40b-instruct-2601.Q4_K_M.gguf
+
+COPY models/${GGUF_FILENAME} /app/model/${GGUF_FILENAME}
