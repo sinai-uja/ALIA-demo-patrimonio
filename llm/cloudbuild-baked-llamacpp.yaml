@@ -1,0 +1,74 @@
+# =============================================================================
+# cloudbuild-baked-llamacpp.yaml — LLM service image (llama.cpp) with GGUF baked in
+#
+# Three-step build:
+#   1. Build base image (Dockerfile.llamacpp — llama.cpp-server + CUDA, no model)
+#   2. Download single GGUF file from GCS into workspace
+#   3. Build baked image (base + GGUF copied from workspace context)
+#
+# Usage:
+#   gcloud builds submit ./llm \
+#     --config=llm/cloudbuild-baked-llamacpp.yaml \
+#     --timeout=1800
+#
+# Or via scripts: ./llm/scripts/deploy.sh --engine llamacpp --bake-model
+# =============================================================================
+
+substitutions:
+  _IMAGE: 'europe-west1-docker.pkg.dev/innovasur-uja-alia/iaph-rag/llm-llamacpp'
+  _GCS_BUCKET: 'innovasur-uja-alia-iaph-models'
+  _MODEL_DIR: 'ALIA-40b-instruct-2601-GGUF'
+  _GGUF_FILE: 'ALIA-40b-instruct-2601.Q4_K_M.gguf'
+
+steps:
+  # Step 1: Build base image (llama.cpp-server CUDA, no model)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:base'
+      - '-f'
+      - 'Dockerfile.llamacpp'
+      - '.'
+
+  # Step 2: Download the single GGUF file from GCS into workspace.
+  # Cloud Build service account has storage access; docker build does not.
+  # GGUF Q4_K_M for ALIA-40b is ~24.7 GB (single file).
+  - name: 'gcr.io/cloud-builders/gsutil'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        mkdir -p models
+        gsutil -o GSUtil:parallel_composite_upload_threshold=150M \
+          cp gs://${_GCS_BUCKET}/${_MODEL_DIR}/${_GGUF_FILE} \
+          models/${_GGUF_FILE}
+
+  # Step 3: Build baked image (base + GGUF now in workspace/models/).
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '-t'
+      - '${_IMAGE}:baked'
+      - '--build-arg'
+      - 'BASE_IMAGE=${_IMAGE}:base'
+      - '--build-arg'
+      - 'GGUF_FILENAME=${_GGUF_FILE}'
+      - '-f'
+      - 'Dockerfile.llamacpp.baked'
+      - '.'
+
+images:
+  - '${_IMAGE}:latest'
+  - '${_IMAGE}:baked'
+  - '${_IMAGE}:base'
+
+# 30 min timeout (single 24.7 GB file + image packing, no multi-file dir copy).
+timeout: '1800s'
+
+options:
+  # Larger machine speeds up packing the 25 GB layer into the image.
+  machineType: 'E2_HIGHCPU_32'
+  diskSizeGb: '100'

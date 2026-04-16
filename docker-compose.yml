@@ -106,6 +106,42 @@ services:
       - uja-net
 
   # ---------------------------------------------------------------------------
+  # LLM service — llama.cpp-server + GGUF (alternative to vLLM).
+  # Mutually exclusive with llm-service on a single GPU host; activate ONE of
+  # the two profiles. Uses a pre-quantized GGUF file (e.g. Q4_K_M). OpenAI-
+  # compatible API — identical /v1/chat/completions surface.
+  #
+  # Start with: docker compose --profile llm-llamacpp up -d
+  # ---------------------------------------------------------------------------
+  llm-service-llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:${LLAMA_CPP_TAG:-server-cuda-b4927}
+    container_name: uja-llm-service-llamacpp
+    profiles:
+      - llm-llamacpp
+    volumes:
+      - ./backend/models/${LLM_GGUF_MODEL_DIR:-ALIA-40b-instruct-2601-GGUF}:/app/model:ro
+    command: >
+      --model /app/model/${LLM_GGUF_FILE:-ALIA-40b-instruct-2601.Q4_K_M.gguf}
+      --alias ${LLM_GGUF_ALIAS:-ALIA-40b-instruct-2601}
+      --host 0.0.0.0
+      --port 8000
+      --ctx-size ${LLM_CTX_SIZE:-8192}
+      --n-gpu-layers ${LLM_N_GPU_LAYERS:-999}
+      --parallel 1
+      --threads-http 8
+      --no-warmup
+      --jinja
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - uja-net
+
+  # ---------------------------------------------------------------------------
   # Backend API — FastAPI
   # ---------------------------------------------------------------------------
   api:
