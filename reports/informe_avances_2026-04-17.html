@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Avances &mdash; IAPH RAG Monorepo &mdash; 2026-04-17</title>
+<style>
+  :root {
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-400: #fbbf24; --amber-500: #f59e0b; --amber-600: #d97706;
+    --orange-400: #fb923c; --orange-500: #f97316; --orange-600: #ea580c;
+    --rose-400: #fb7185; --rose-500: #f43f5e; --rose-600: #e11d48;
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --green-100: #dcfce7; --green-500: #22c55e; --green-700: #15803d;
+    --red-100: #fee2e2; --red-500: #ef4444; --red-700: #b91c1c;
+    --blue-100: #dbeafe; --blue-500: #3b82f6; --blue-700: #1d4ed8;
+    --purple-100: #f3e8ff; --purple-500: #a855f7; --purple-700: #7e22ce;
+    --yellow-100: #fef9c3; --yellow-500: #eab308; --yellow-700: #a16207;
+    --teal-100: #ccfbf1; --teal-500: #14b8a6; --teal-700: #0f766e;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-800);
+    line-height: 1.6; font-size: 15px;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500), var(--rose-500));
+    padding: 0 2rem; box-shadow: var(--shadow-md);
+  }
+  nav .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  nav .nav-inner::-webkit-scrollbar { display: none; }
+  nav .brand {
+    font-weight: 800; font-size: 1.1rem; color: #fff;
+    padding: .85rem 0; text-decoration: none; flex-shrink: 0;
+  }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    font-size: .82rem; font-weight: 500; padding: .85rem .25rem;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    flex-shrink: 0;
+  }
+  nav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,.6); }
+  .hero {
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+    color: #fff; padding: 3rem 2rem 2.5rem; text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--amber-400), var(--orange-400), var(--rose-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--slate-400); margin-top: .5rem; font-size: .95rem; }
+  .hero .meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.2rem; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: var(--slate-300);
+  }
+  .hero .meta code {
+    background: rgba(255,255,255,.1); padding: .15rem .5rem;
+    border-radius: 6px; font-size: .78rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; }
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+    margin-bottom: 1.2rem; padding-bottom: .5rem;
+    border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--amber-500), var(--orange-500), var(--rose-500)) 1;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--slate-200);
+    padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; color: var(--slate-900); }
+  .card h4 { font-size: .9rem; font-weight: 600; margin: .8rem 0 .3rem; color: var(--slate-700); }
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; line-height: 1.4;
+  }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-orange { background: #fff7ed; color: var(--orange-600); }
+  .badge-rose { background: #fff1f2; color: var(--rose-600); }
+  .badge-green { background: var(--green-100); color: var(--green-700); }
+  .badge-blue { background: var(--blue-100); color: var(--blue-700); }
+  .badge-purple { background: var(--purple-100); color: var(--purple-700); }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-red { background: var(--red-100); color: var(--red-700); }
+  .badge-yellow { background: var(--yellow-100); color: var(--yellow-700); }
+  .badge-slate { background: var(--slate-100); color: var(--slate-600); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    text-align: left; padding: .65rem .8rem;
+    background: var(--slate-800); color: #fff;
+    font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: .6rem .8rem; border-bottom: 1px solid var(--slate-100); }
+  tr:nth-child(even) td { background: var(--slate-50); }
+  tr:hover td { background: var(--amber-50); }
+  .pbar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .pbar {
+    flex: 1; height: 8px; background: var(--slate-200);
+    border-radius: 999px; overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+  }
+  .pbar-label { font-size: .78rem; color: var(--slate-500); min-width: 3.5rem; text-align: right; }
+  pre {
+    background: var(--slate-900); color: #e2e8f0;
+    padding: 1.2rem 1.4rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: .82rem; line-height: 1.55;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    margin: .8rem 0;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .85em;
+  }
+  :not(pre) > code {
+    background: var(--slate-100); padding: .15rem .4rem;
+    border-radius: 4px; color: var(--orange-600); font-size: .83em;
+  }
+  .kw { color: #c084fc; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm { color: #64748b; font-style: italic; }
+  .fn { color: #67e8f9; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid; text-align: center;
+  }
+  .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+  .stat-card .stat-label { font-size: .78rem; color: var(--slate-500); margin-top: .2rem; }
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .flow-step {
+    background: #fff; border: 2px solid var(--slate-200); border-radius: var(--radius);
+    padding: 1rem 1.5rem; width: 100%; max-width: 600px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .flow-step .step-num {
+    position: absolute; top: -.7rem; left: 1rem;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .flow-step h4 { font-size: .9rem; font-weight: 700; color: var(--slate-800); margin-bottom: .25rem; }
+  .flow-step p { font-size: .8rem; color: var(--slate-500); }
+  .flow-arrow {
+    width: 2px; height: 24px;
+    background: linear-gradient(180deg, var(--amber-400), var(--orange-400));
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--orange-400);
+  }
+  .gap-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid;
+    margin-bottom: .8rem;
+  }
+  .gap-card.high { border-left-color: var(--red-500); }
+  .gap-card.medium { border-left-color: var(--yellow-500); }
+  .gap-card.resolved { border-left-color: var(--green-500); }
+  .gap-card.mitigated { border-left-color: var(--blue-500); }
+  .gap-card.progress { border-left-color: var(--amber-500); }
+  .gap-card .gap-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .gap-card p { font-size: .85rem; color: var(--slate-600); margin-top: .3rem; }
+  .kv { display: grid; grid-template-columns: 180px 1fr; gap: .3rem .8rem; font-size: .88rem; }
+  .kv dt { color: var(--slate-500); font-weight: 500; }
+  .kv dd { color: var(--slate-800); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .todo-done { color: var(--green-700); }
+  .todo-done::before { content: '\2713 '; font-weight: 700; }
+  .todo-item { padding: .6rem 0; border-bottom: 1px solid var(--slate-100); display: flex; align-items: flex-start; gap: .6rem; }
+  .todo-check { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .todo-check.done { background: var(--green-100); color: var(--green-700); }
+  .todo-check.pending { background: var(--red-100); color: var(--red-700); }
+  .todo-check.progress { background: var(--yellow-100); color: var(--yellow-700); }
+  .todo-check.cancelled { background: var(--slate-100); color: var(--slate-500); }
+  .quote {
+    border-left: 4px solid var(--amber-500); background: var(--amber-50);
+    padding: .9rem 1.1rem; font-size: .88rem; color: var(--slate-700);
+    margin: .8rem 0; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    nav .nav-inner { gap: .8rem; }
+    .container { padding: 1rem; }
+    .kv { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav { position: static; }
+    .hero { padding: 1.5rem; }
+    .card, .flow-step, .gap-card, .stat-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">IAPH RAG</a>
+    <a href="#resumen">Resumen</a>
+    <a href="#reunion">Reuni&oacute;n 10-abr</a>
+    <a href="#commits">Commits</a>
+    <a href="#tracing">Tracing</a>
+    <a href="#rutas">Edici&oacute;n rutas</a>
+    <a href="#llamacpp">llama.cpp</a>
+    <a href="#cloudrun">Cloud Run</a>
+    <a href="#gaps">Gaps</a>
+    <a href="#config">Config</a>
+    <a href="#tests">Tests</a>
+    <a href="#proxima">Pr&oacute;xima reuni&oacute;n</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Informe de Avances</h1>
+  <p>Agente conversacional RAG &mdash; Instituto Andaluz de Patrimonio Hist&oacute;rico (IAPH)</p>
+  <p style="color: var(--slate-500); font-size: .82rem; margin-top: .3rem;">Comisionado por la Universidad de Ja&eacute;n</p>
+  <div class="meta">
+    <span>&#128197; <code>2026-04-17</code></span>
+    <span>&#127795; Rama: <code>develop</code></span>
+    <span>&#128640; HEAD: <code>8812222</code></span>
+    <span>&#128203; Baseline: <code>e5c095a</code> (10-abr)</span>
+    <span>&#127991; Versi&oacute;n: <code>1.0.4 &rarr; 1.0.8</code></span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 1. RESUMEN ===================== -->
+<section id="resumen">
+  <h2 class="section-title"><span class="icon">&#128200;</span> Resumen Ejecutivo</h2>
+
+  <p style="margin-bottom: 1.2rem; font-size: .92rem; color: var(--slate-600);">
+    En la semana posterior a la reuni&oacute;n con la UJA del 2026-04-10 se han cerrado las <strong>5 tareas asignadas a Juan</strong>
+    y una tarea de Arturo, ademas de desplegar dos capacidades adicionales solicitadas: un <strong>sistema de trazas de
+    ejecuci&oacute;n</strong> con vista admin y un motor <strong>llama.cpp + GGUF</strong> que coexiste con vLLM.
+    La semana concentra <strong>27 commits</strong> en 4 d&iacute;as de trabajo (10, 11, 13 y 16 de abril)
+    y promueve la versi&oacute;n de 1.0.4 a <strong>1.0.8</strong>.
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">27</div>
+      <div class="stat-label">Commits</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--orange-500);">
+      <div class="stat-value" style="color: var(--orange-600);">156</div>
+      <div class="stat-label">Archivos modificados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">5/5</div>
+      <div class="stat-label">TODOs Juan</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--rose-500);">
+      <div class="stat-value" style="color: var(--rose-600);">13</div>
+      <div class="stat-label">Migraciones (+2)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">308</div>
+      <div class="stat-label">Tests (+1)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple-500);">
+      <div class="stat-value" style="color: var(--purple-700);">1.0.8</div>
+      <div class="stat-label">Versi&oacute;n</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>M&eacute;tricas comparativas</h3>
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>10-abr</th><th>16-abr</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Versi&oacute;n</td><td>1.0.4</td><td><strong>1.0.8</strong></td><td><span class="badge badge-green">+4 bumps</span></td></tr>
+        <tr><td>Commits en el periodo</td><td>&mdash;</td><td><strong>27</strong></td><td><span class="badge badge-amber">7 d&iacute;as</span></td></tr>
+        <tr><td>Migraciones Alembic</td><td>11</td><td><strong>13</strong></td><td><span class="badge badge-green">+2</span></td></tr>
+        <tr><td>Tests (funciones)</td><td>307</td><td><strong>308</strong></td><td><span class="badge badge-green">+1</span></td></tr>
+        <tr><td>Motores LLM disponibles</td><td>1 (vLLM)</td><td><strong>2 (vLLM + llama.cpp)</strong></td><td><span class="badge badge-green">+1</span></td></tr>
+        <tr><td>Sistema de trazas</td><td>No</td><td><strong>S&iacute;</strong></td><td><span class="badge badge-green">Nuevo</span></td></tr>
+        <tr><td>Edici&oacute;n de rutas</td><td>No</td><td><strong>S&iacute;</strong></td><td><span class="badge badge-green">Nuevo</span></td></tr>
+        <tr><td>Feedback por resultado</td><td>Por lista</td><td><strong>Por resultado</strong></td><td><span class="badge badge-green">Granular</span></td></tr>
+        <tr><td>TODOs Juan reuni&oacute;n</td><td>0/5</td><td><strong>5/5</strong></td><td><span class="badge badge-green">100%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 2. REUNION ===================== -->
+<section id="reunion">
+  <h2 class="section-title"><span class="icon">&#128172;</span> Cumplimiento de la Reuni&oacute;n 2026-04-10</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    La reuni&oacute;n del 10 de abril con la UJA (Juan Isern, Arturo Montejo, Samuel S&aacute;nchez Carrasco, Fernando Mart&iacute;nez Santiago, Sergio Gonz&aacute;lez)
+    dej&oacute; <strong>5 TODOs asignados a Juan</strong>, una tarea a Arturo y 4 tareas de exploraci&oacute;n/coordinaci&oacute;n. El estado al cierre de la semana:
+  </p>
+
+  <h3 style="margin-bottom: .5rem;">2.1 TODOs de Juan &mdash; 5/5 cerrados el 2026-04-13</h3>
+
+  <div class="quote">
+    <strong>Cita textual de la nota de reuni&oacute;n:</strong>
+    <ul style="margin-top: .5rem; margin-left: 1rem;">
+      <li>Juan: A&ntilde;adir logos de financiaci&oacute;n (Plan Recuperaci&oacute;n, BSC, Ministerio, UE) en 2 niveles &mdash; inmediato</li>
+      <li>Juan: Mover feedback thumbs up/down a cada resultado individual (no a la lista completa)</li>
+      <li>Juan: A&ntilde;adir vista de debugging/trazabilidad del pipeline en la secci&oacute;n admin (prompts, RAG, re-ranking, respuesta LLM)</li>
+      <li>Juan: Implementar edici&oacute;n de rutas: eliminar elementos + a&ntilde;adir desde b&uacute;squeda</li>
+      <li>Juan: Quitar estimaci&oacute;n de tiempo de visita de las rutas</li>
+    </ul>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>TODO</th><th>Cierre</th><th>Commits</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>J1</td>
+          <td>Logos de financiaci&oacute;n en 2 niveles (Plan Recuperaci&oacute;n, BSC, Ministerio, NextGen, UE)</td>
+          <td>2026-04-13</td>
+          <td><code>3f45f70</code>, <code>5375566</code>, <code>a602ddf</code>, <code>855d3b2</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+        </tr>
+        <tr>
+          <td>J2</td>
+          <td>Feedback por resultado individual (clave compuesta query+document_id)</td>
+          <td>2026-04-13</td>
+          <td><code>cd589ed</code>, <code>965cc6a</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+        </tr>
+        <tr>
+          <td>J3</td>
+          <td>Vista admin de trazabilidad del pipeline (backend + frontend)</td>
+          <td>2026-04-13</td>
+          <td><code>c085198</code>, <code>1040fa4</code>, <code>46ae6e2</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+        </tr>
+        <tr>
+          <td>J4</td>
+          <td>Edici&oacute;n de rutas: eliminar paradas + a&ntilde;adir desde b&uacute;squeda + SSE streaming</td>
+          <td>2026-04-13 / 14</td>
+          <td><code>67376a7</code>, <code>4c683ab</code>, <code>2e00f60</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+        </tr>
+        <tr>
+          <td>J5</td>
+          <td>Quitar estimaci&oacute;n de duraci&oacute;n total de visita</td>
+          <td>2026-04-13</td>
+          <td><code>4d194bb</code> + migraci&oacute;n <code>abf44d053886</code></td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem;">2.2 TODO de Arturo &mdash; cerrado 2026-04-17</h3>
+
+  <div class="quote">
+    <strong>Cita textual:</strong> &laquo;Arturo: Pasar modelo cuantizado m&aacute;s ligero del ALIA 40B&raquo;
+  </div>
+
+  <div class="card">
+    <div class="kv">
+      <dt>Estado</dt><dd><span class="badge badge-green">COMPLETADO</span> 2026-04-17</dd>
+      <dt>Implementaci&oacute;n</dt><dd><code>c46e0c6</code> &mdash; motor llama.cpp alternativo con GGUF Q4_K_M</dd>
+      <dt>Tama&ntilde;o</dt><dd>24,7 GB (Q4_K_M) vs ~80 GB original sin cuantizar</dd>
+      <dt>Cold start</dt><dd>~30-60 s (llama.cpp) vs ~5 min (vLLM con bitsandbytes)</dd>
+    </div>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem;">2.3 TODOs pendientes (no bloqueantes)</h3>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>TODO</th><th>Responsable</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr style="background: var(--red-100);">
+          <td>Consultar a Jos&eacute; Luis (IAPH) sobre geolocalizaci&oacute;n de cat&aacute;logo y fuentes alternativas</td>
+          <td>Arturo</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+        </tr>
+        <tr style="background: var(--red-100);">
+          <td>Explorar fuente DERA (patrimonio) &mdash; viabilidad de matching con cat&aacute;logo IAPH</td>
+          <td>Fernando</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+        </tr>
+        <tr style="background: var(--red-100);">
+          <td>Preparar informe si DERA viable &rarr; posible reuni&oacute;n con IAPH</td>
+          <td>Fernando</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+        </tr>
+        <tr style="background: var(--red-100);">
+          <td>Reuni&oacute;n con IAPH por agendar (Arturo coordina)</td>
+          <td>Todos</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem;">2.4 &Iacute;tems adicionales identificados y resueltos</h3>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>&Iacute;tem</th><th>Estado</th><th>Referencia</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Encadenar llamadas al LLM (una por parada) para evitar degradaci&oacute;n por contexto largo</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td><code>2e00f60</code> &mdash; prompts de narrativa por parada auto-contenidos</td>
+        </tr>
+        <tr>
+          <td>Evaluar paralelismo con varias GPUs vs cuantizaci&oacute;n m&aacute;s agresiva</td>
+          <td><span class="badge badge-green">COMPLETADO</span></td>
+          <td><code>c46e0c6</code> &mdash; cuantizaci&oacute;n GGUF elegida frente a paralelismo</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 1rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">7</div>
+      <div class="stat-label">Completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">4</div>
+      <div class="stat-label">Pendientes (externos)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 3. COMMITS ===================== -->
+<section id="commits">
+  <h2 class="section-title"><span class="icon">&#128221;</span> Tabla de Commits (27)</h2>
+
+  <div class="card" style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+    <table>
+      <thead><tr><th>Hash</th><th>Fecha</th><th>Tipo</th><th>Mensaje</th></tr></thead>
+      <tbody>
+        <tr><td><code>01d0772</code></td><td>2026-04-10</td><td><span class="badge badge-slate">docs</span></td><td>add frontend user guide with application screenshots</td></tr>
+        <tr><td><code>45f397c</code></td><td>2026-04-10</td><td><span class="badge badge-slate">docs</span></td><td>add progress report 2026-03-27 to 2026-04-10</td></tr>
+        <tr><td><code>12f0cf4</code></td><td>2026-04-10</td><td><span class="badge badge-blue">chore</span></td><td>bump version to 1.0.5</td></tr>
+        <tr><td><code>855d3b2</code></td><td>2026-04-10</td><td><span class="badge badge-green">feat</span></td><td>add IAPH logo to footer and login page partner logos</td></tr>
+        <tr><td><code>a602ddf</code></td><td>2026-04-10</td><td><span class="badge badge-amber">fix</span></td><td>adjust login modal width and logo sizes for 5-logo row layout</td></tr>
+        <tr><td><code>5375566</code></td><td>2026-04-10</td><td><span class="badge badge-green">feat</span></td><td>add institutional logos row and update IAPH link in footer and login</td></tr>
+        <tr><td><code>3f45f70</code></td><td>2026-04-10</td><td><span class="badge badge-green">feat</span></td><td>add institutional partner logo images (IAPH, BSC, Ministerio, NextGen, Plan Recuperaci&oacute;n)</td></tr>
+        <tr><td><code>4d194bb</code></td><td>2026-04-10</td><td><span class="badge badge-purple">refactor</span></td><td>remove visit duration estimation from routes across all layers</td></tr>
+        <tr><td><code>dfd4ff2</code></td><td>2026-04-10</td><td><span class="badge badge-yellow">style</span></td><td>apply ruff linting fixes across backend</td></tr>
+        <tr><td><code>cd589ed</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>move search feedback to per-result level with composite key</td></tr>
+        <tr><td><code>965cc6a</code></td><td>2026-04-11</td><td><span class="badge badge-yellow">style</span></td><td>improve feedback button colors and search result card layout</td></tr>
+        <tr><td><code>c085198</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>add execution tracing system with admin API and search/route instrumentation</td></tr>
+        <tr><td><code>1040fa4</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>add admin tracing screen with filterable pipeline timeline detail</td></tr>
+        <tr><td><code>ad17ac8</code></td><td>2026-04-11</td><td><span class="badge badge-amber">fix</span></td><td>increase vLLM HTTP timeout to 300s to absorb Cloud Run cold starts</td></tr>
+        <tr><td><code>46ae6e2</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>enrich end-to-end traces with granular pipeline steps, full prompts, and raw LLM responses</td></tr>
+        <tr><td><code>67376a7</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>add route stop editing and SSE streaming generation with real-time preview</td></tr>
+        <tr><td><code>4c683ab</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>add-to-route from search results with background processing and hexagonal fixes</td></tr>
+        <tr><td><code>f4ec183</code></td><td>2026-04-11</td><td><span class="badge badge-slate">docs</span></td><td>document intentional direct commit in trace_repository as architectural exception</td></tr>
+        <tr><td><code>bbf2df5</code></td><td>2026-04-11</td><td><span class="badge badge-green">feat</span></td><td>add Cloud Run keepalive health checks and service status indicator</td></tr>
+        <tr><td><code>2e00f60</code></td><td>2026-04-11</td><td><span class="badge badge-amber">fix</span></td><td>make route stop narrative prompts self-contained per stop</td></tr>
+        <tr><td><code>54fe328</code></td><td>2026-04-13</td><td><span class="badge badge-green">feat</span></td><td>replace metadata health checks with real inference probes for Cloud Run readiness</td></tr>
+        <tr><td><code>ffdf856</code></td><td>2026-04-13</td><td><span class="badge badge-blue">chore</span></td><td>bump version to 1.0.6</td></tr>
+        <tr><td><code>aab22c2</code></td><td>2026-04-13</td><td><span class="badge badge-amber">fix</span></td><td>scope gitignore models/ rule to root so ORM model files are tracked</td></tr>
+        <tr><td><code>1ac8894</code></td><td>2026-04-13</td><td><span class="badge badge-blue">chore</span></td><td>bump version to 1.0.7</td></tr>
+        <tr><td><code>c46e0c6</code></td><td>2026-04-17</td><td><span class="badge badge-green">feat</span></td><td>add llama.cpp LLM engine alongside vLLM with GGUF deployment support</td></tr>
+        <tr><td><code>954f7ef</code></td><td>2026-04-17</td><td><span class="badge badge-amber">fix</span></td><td>use scheme://host as Cloud Run IAM token audience to avoid 403</td></tr>
+        <tr><td><code>8812222</code></td><td>2026-04-17</td><td><span class="badge badge-blue">chore</span></td><td>bump version to 1.0.8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Por tipo</h3>
+      <div class="kv">
+        <dt>feat</dt><dd><strong>10</strong> funcionalidades nuevas</dd>
+        <dt>fix</dt><dd><strong>5</strong> correcciones</dd>
+        <dt>chore</dt><dd><strong>3</strong> version bumps</dd>
+        <dt>docs</dt><dd><strong>3</strong> documentaci&oacute;n</dd>
+        <dt>style</dt><dd><strong>2</strong> estilo (ruff + UI)</dd>
+        <dt>refactor</dt><dd><strong>1</strong> refactor (quitar duraci&oacute;n)</dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Por d&iacute;a de trabajo</h3>
+      <div class="kv">
+        <dt>2026-04-10</dt><dd>9 commits &mdash; logos + quitar duraci&oacute;n + docs</dd>
+        <dt>2026-04-11</dt><dd>11 commits &mdash; tracing + rutas + keepalive</dd>
+        <dt>2026-04-13</dt><dd>4 commits &mdash; inference probes + bumps</dd>
+        <dt>2026-04-17</dt><dd>3 commits &mdash; llama.cpp + IAM fix + 1.0.8</dd>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 4. TRACING ===================== -->
+<section id="tracing">
+  <h2 class="section-title"><span class="icon">&#128269;</span> Avance 1 &mdash; Sistema de Trazas de Ejecuci&oacute;n (TODO J3)</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Nuevo subcontexto compartido <strong>shared/traces</strong> con arquitectura hexagonal completa. Captura todo el pipeline
+    de cada b&uacute;squeda, ruta o chat para que un administrador pueda diagnosticar prompts, tama&ntilde;os de contexto y respuestas
+    del LLM. Responde al TODO J3 de Arturo en la reuni&oacute;n del 10 de abril.
+  </p>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Backend &mdash; 4 capas hexagonales</h3>
+      <div class="kv">
+        <dt>Domain</dt><dd><code>domain/shared/entities/execution_trace.py</code>, <code>ports/trace_repository.py</code></dd>
+        <dt>Application</dt><dd><code>use_cases/save_trace.py</code>, <code>list_traces.py</code>, <code>get_trace.py</code>, servicio <code>TraceApplicationService</code></dd>
+        <dt>Infrastructure</dt><dd><code>infrastructure/shared/repositories/trace_repository.py</code> (190 l&iacute;neas)</dd>
+        <dt>API</dt><dd><code>api/v1/endpoints/admin/traces.py</code> (122 l&iacute;neas)</dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Frontend &mdash; vista admin</h3>
+      <div class="kv">
+        <dt>P&aacute;gina</dt><dd><code>app/admin/traces/page.tsx</code> (481 l&iacute;neas)</dd>
+        <dt>Detalle</dt><dd><code>components/admin/TraceDetail.tsx</code> (362 l&iacute;neas)</dd>
+        <dt>Filtros</dt><dd>tipo, usuario, fecha, query</dd>
+        <dt>Paginaci&oacute;n</dt><dd>20 / 50 / 100 resultados por p&aacute;gina</dd>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Migraci&oacute;n Alembic <code>f1a2b3c4d5e6_create_execution_traces_table.py</code></h3>
+<pre><span class="kw">CREATE TABLE</span> execution_traces (
+    id UUID <span class="kw">PRIMARY KEY</span>,
+    execution_type <span class="kw">VARCHAR</span>(32) <span class="kw">NOT NULL</span>,      <span class="cm">-- search | route | chat</span>
+    execution_id <span class="kw">VARCHAR</span>(128) <span class="kw">NOT NULL</span>,
+    user_id UUID <span class="kw">REFERENCES</span> users(id) <span class="kw">ON DELETE SET NULL</span>,
+    username <span class="kw">VARCHAR</span>(128),
+    user_profile_type <span class="kw">VARCHAR</span>(64),
+    query <span class="kw">TEXT</span>,
+    pipeline_mode <span class="kw">VARCHAR</span>(32),
+    steps JSONB <span class="kw">NOT NULL</span> <span class="kw">DEFAULT</span> <span class="str">'[]'</span>,        <span class="cm">-- array de etapas con timing</span>
+    summary JSONB <span class="kw">NOT NULL</span> <span class="kw">DEFAULT</span> <span class="str">'{}'</span>,
+    feedback_value <span class="kw">SMALLINT</span>,
+    status <span class="kw">VARCHAR</span>(16) <span class="kw">DEFAULT</span> <span class="str">'success'</span>,
+    created_at <span class="kw">TIMESTAMPTZ</span> <span class="kw">NOT NULL</span> <span class="kw">DEFAULT</span> <span class="fn">NOW</span>()
+);
+<span class="kw">CREATE INDEX</span> ix_execution_traces_type_date <span class="kw">ON</span> execution_traces(execution_type, created_at DESC);
+<span class="kw">CREATE INDEX</span> ix_execution_traces_user <span class="kw">ON</span> execution_traces(user_id, created_at DESC);
+<span class="kw">CREATE INDEX</span> ix_execution_traces_execution_id <span class="kw">ON</span> execution_traces(execution_id);</pre>
+  </div>
+
+  <div class="card">
+    <h3>Etapas registradas por tipo de ejecuci&oacute;n</h3>
+    <div class="split">
+      <div>
+        <h4>RAG</h4>
+        <p style="font-size: .85rem; color: var(--slate-600);">
+          <code>query_embed</code> &rarr; <code>vector_search</code> &rarr; <code>text_search</code> &rarr;
+          <code>rrf_fusion</code> &rarr; <code>relevance_filter</code> &rarr; <code>reranking</code> &rarr;
+          <code>context_assembly</code> &rarr; <code>llm_call</code>
+        </p>
+      </div>
+      <div>
+        <h4>Routes</h4>
+        <p style="font-size: .85rem; color: var(--slate-600);">
+          <code>llm_query_extract</code> &rarr; <code>entity_detection</code> &rarr; <code>asset_selection</code> &rarr;
+          <code>narrative_generation</code> (por parada) &rarr; <code>enrichment</code>
+        </p>
+      </div>
+    </div>
+    <p style="margin-top: .8rem; font-size: .85rem; color: var(--slate-600);">
+      Cada etapa guarda <strong>prompts completos</strong> y <strong>respuestas raw</strong> del LLM para diagnostico (commit <code>46ae6e2</code>).
+    </p>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--amber-500);">
+    <h3>Excepci&oacute;n arquitect&oacute;nica documentada (commit <code>f4ec183</code>)</h3>
+    <p style="font-size: .88rem; color: var(--slate-700);">
+      El <code>PgTraceRepository</code> hace <strong>commit directo</strong> a la sesi&oacute;n en <code>save_trace</code> para no perder trazas
+      cuando la transacci&oacute;n principal hace rollback. Un error en el pipeline RAG no debe impedir que la traza del fallo
+      quede registrada. Se documenta expl&iacute;citamente como excepci&oacute;n al patr&oacute;n UnitOfWork.
+    </p>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Flujo de captura y consulta</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <h4>UseCase ejecuta el pipeline</h4>
+        <p>Cada etapa emite un evento granular con timing, payload y resultado</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <h4>TraceApplicationService.save_trace</h4>
+        <p>Serializa a JSONB y persiste con commit directo (excepci&oacute;n UoW)</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <h4>Admin UI <code>/admin/traces</code></h4>
+        <p>Lista paginada + filtros por tipo/usuario/fecha/query</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <h4>TraceDetail &mdash; timeline expandible</h4>
+        <p>Cada etapa muestra prompt, respuesta raw, chunks, duraci&oacute;n</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5. RUTAS ===================== -->
+<section id="rutas">
+  <h2 class="section-title"><span class="icon">&#128205;</span> Avance 2 &mdash; Edici&oacute;n de Rutas (TODO J4)</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    La reuni&oacute;n decidi&oacute; que el usuario debe poder <strong>eliminar paradas</strong> de una ruta generada por la IA
+    y <strong>a&ntilde;adir paradas desde los resultados de b&uacute;squeda</strong>. Se implementan dos nuevos casos de uso y se refactoriza
+    la generaci&oacute;n para soportar streaming SSE. Commits: <code>67376a7</code> (2435 l&iacute;neas, 20 archivos), <code>4c683ab</code>, <code>2e00f60</code>.
+  </p>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--rose-500);">
+      <h3><code>RemoveStopUseCase</code></h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        <code>backend/src/application/routes/use_cases/remove_stop.py</code> (132 l&iacute;neas)
+      </p>
+      <ul style="font-size: .85rem; margin-top: .5rem; margin-left: 1.2rem; color: var(--slate-700);">
+        <li>Valida ownership (<code>route.user_id == current_user.id</code>)</li>
+        <li>Reordena las paradas tras el borrado</li>
+        <li>Persiste v&iacute;a <code>UnitOfWork</code></li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3><code>AddStopUseCase</code></h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        <code>backend/src/application/routes/use_cases/add_stop.py</code> (269 l&iacute;neas)
+      </p>
+      <ul style="font-size: .85rem; margin-top: .5rem; margin-left: 1.2rem; color: var(--slate-700);">
+        <li>Acepta <code>document_id</code> y <code>position</code> opcional</li>
+        <li>Consulta <code>HeritageAssetLookupPort</code> (preview + descripci&oacute;n)</li>
+        <li>Narrativa <strong>auto-contenida por parada</strong> con <code>SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT</code></li>
+        <li>Inserta en posici&oacute;n indicada y reordena el resto</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3><code>GenerateRouteStreamUseCase</code></h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        <code>backend/src/application/routes/use_cases/generate_route_stream.py</code> (592 l&iacute;neas)
+      </p>
+      <ul style="font-size: .85rem; margin-top: .5rem; margin-left: 1.2rem; color: var(--slate-700);">
+        <li>Reimplementaci&oacute;n en <strong>SSE</strong> (Server-Sent Events)</li>
+        <li>Eventos: <code>title_generated</code>, <code>introduction_chunk</code>, <code>stop_generated</code>, <code>conclusion_chunk</code>, <code>route_complete</code></li>
+        <li>Permite render en vivo mientras el LLM genera</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1rem;">
+    <h3>Componentes frontend nuevos</h3>
+    <ul style="font-size: .88rem; margin-left: 1.2rem; color: var(--slate-700);">
+      <li><code>frontend/components/routes/RouteStreamingPreview.tsx</code> (174 l&iacute;neas) &mdash; vista en vivo durante la generaci&oacute;n</li>
+      <li><code>frontend/components/routes/SearchStopModal.tsx</code> (438 l&iacute;neas) &mdash; buscador integrado para a&ntilde;adir paradas</li>
+      <li><code>frontend/components/search/AddToRouteModal.tsx</code> (253 l&iacute;neas) &mdash; desde un resultado de b&uacute;squeda, elegir a que ruta existente a&ntilde;adirlo</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--orange-500);">
+    <h3>Auto-contenci&oacute;n de prompts (commit <code>2e00f60</code>)</h3>
+    <p style="font-size: .88rem; color: var(--slate-700); margin-bottom: .5rem;">
+      Con este cambio se evita que a&ntilde;adir una parada 10 obligue al LLM a re-procesar las 9 paradas anteriores en contexto.
+      Cada parada recibe un prompt <strong>auto-contenido</strong> con solo sus datos, evitando degradaci&oacute;n por contexto largo.
+      Responde al debate de la reuni&oacute;n sobre encadenar llamadas al LLM por parada.
+    </p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <h4>Ruta existente con 9 paradas</h4>
+        <p>Usuario decide a&ntilde;adir parada 10 desde b&uacute;squeda</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <h4>Prompt auto-contenido con datos de parada 10</h4>
+        <p>No incluye las 9 anteriores &mdash; contexto peque&ntilde;o, respuesta r&aacute;pida</p>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <h4>LLM genera narrativa ~2 KB</h4>
+        <p>Inserci&oacute;n sin degradar narrativa del resto de la ruta</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 6. LLAMA.CPP ===================== -->
+<section id="llamacpp">
+  <h2 class="section-title"><span class="icon">&#128293;</span> Avance 3 &mdash; Motor llama.cpp + GGUF (TODO A1)</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Respuesta al TODO de Arturo: se a&ntilde;ade un <strong>segundo motor de inferencia</strong> que coexiste con vLLM, consumiendo
+    una cuantizaci&oacute;n GGUF Q4_K_M mas ligera y con cold start mucho m&aacute;s r&aacute;pido. Commit <code>c46e0c6</code> (823 l&iacute;neas, 13 archivos).
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th></th><th>vLLM (actual)</th><th>llama.cpp (nuevo)</th></tr></thead>
+      <tbody>
+        <tr><td>Formato</td><td>HF safetensors + GPTQ/bitsandbytes</td><td>GGUF Q4_K_M (24,7 GB)</td></tr>
+        <tr><td>Imagen baked</td><td>~100 GB</td><td>~28 GB</td></tr>
+        <tr><td>Cold start</td><td>~5 min con bitsandbytes</td><td>~30&ndash;60 s</td></tr>
+        <tr><td>Tok/s A100</td><td>40&ndash;60</td><td>25&ndash;35</td></tr>
+        <tr><td><code>/health</code></td><td>200 prematuro</td><td>503 durante load, 200 cuando ready</td></tr>
+        <tr><td>Target Makefile</td><td><code>cloud-llm-deploy-baked</code></td><td><code>cloud-llm-deploy-llamacpp-baked</code></td></tr>
+        <tr><td>Profile compose</td><td><code>llm</code></td><td><code>llm-llamacpp</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>Archivos nuevos</h3>
+      <ul style="font-size: .85rem; margin-left: 1.2rem; color: var(--slate-700);">
+        <li><code>llm/Dockerfile.llamacpp</code> &mdash; base <code>server-cuda-b4927</code></li>
+        <li><code>llm/Dockerfile.llamacpp.baked</code> &mdash; GGUF bakeado</li>
+        <li><code>llm/cloudbuild-llamacpp.yaml</code> y <code>llm/cloudbuild-baked-llamacpp.yaml</code></li>
+        <li><code>llm/README.md</code> (153 l&iacute;neas)</li>
+        <li><code>backend/docs/LLM_ENGINES.md</code></li>
+        <li><code>backend/scripts/download_alia_gguf.sh</code></li>
+      </ul>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--teal-500);">
+      <h3>Variables de entorno (opcionales)</h3>
+      <div class="kv" style="font-size: .82rem;">
+        <dt><code>LLAMA_CPP_TAG</code></dt><dd>server-cuda-b4927</dd>
+        <dt><code>LLM_GGUF_MODEL_DIR</code></dt><dd>ALIA-40b-instruct-2601-GGUF</dd>
+        <dt><code>LLM_GGUF_FILE</code></dt><dd>ALIA-40b-instruct-2601.Q4_K_M.gguf</dd>
+        <dt><code>LLM_GGUF_ALIAS</code></dt><dd>ALIA-40b-instruct-2601</dd>
+        <dt><code>LLM_CTX_SIZE</code></dt><dd>8192</dd>
+        <dt><code>LLM_N_GPU_LAYERS</code></dt><dd>999 (todas las capas a GPU)</dd>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--green-500);">
+    <p style="font-size: .88rem; color: var(--slate-700);">
+      <strong>El backend no cambia:</strong> ambos motores exponen el mismo API OpenAI-compatible (<code>/v1/chat/completions</code>, <code>/v1/models</code>, <code>/health</code>).
+      El nombre del modelo se alinea v&iacute;a <code>LLM_GGUF_ALIAS=ALIA-40b-instruct-2601</code> (coincide con <code>LLM_MODEL_NAME</code>).
+      Quedan disponibles ambos y la decisi&oacute;n de cu&aacute;ndo migrar se toma tras una prueba de usuario real.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 7. CLOUD RUN ===================== -->
+<section id="cloudrun">
+  <h2 class="section-title"><span class="icon">&#9889;</span> Avance 4 &mdash; Robustez Cloud Run</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Cuatro mejoras operativas para reforzar el despliegue Cloud Run tras la experiencia de la demo del 10 de abril (cold starts, falsos positivos de readiness).
+  </p>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>Keepalive + status indicator (<code>bbf2df5</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Endpoint <code>GET /api/v1/health/services</code> hace ping en paralelo a embedding-service y LLM-service.
+        La <code>NavBar</code> muestra un indicador (verde/&aacute;mbar/rojo) para que el usuario vea si los servicios
+        est&aacute;n calientes antes de lanzar una query. 636 l&iacute;neas, 8 archivos.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--orange-500);">
+      <h3>Inference probes reales (<code>54fe328</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        vLLM responde 200 en <code>/health</code> antes de terminar de cargar pesos. Reemplazado por
+        <strong>prueba real de inferencia</strong> (<code>POST /v1/chat/completions</code> con <code>max_tokens=1</code>)
+        &mdash; &uacute;nica se&ntilde;al fiable. Identica para vLLM y llama.cpp.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--rose-500);">
+      <h3>Fix IAM audience (<code>954f7ef</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Bug producci&oacute;n: token IAM pedido con audience <code>https://uja-llm-xxx.run.app/v1</code> &rarr; Cloud Run 403.
+        Fix: usar solo <code>scheme://host</code> como origin del audience.
+      </p>
+<pre><span class="kw">def</span> <span class="fn">_audience_for</span>(target_url: <span class="kw">str</span>) -&gt; <span class="kw">str</span>:
+    parsed = <span class="fn">urlparse</span>(target_url)
+    <span class="kw">if</span> parsed.scheme <span class="kw">and</span> parsed.netloc:
+        <span class="kw">return</span> <span class="str">f"{parsed.scheme}://{parsed.netloc}"</span>
+    <span class="kw">return</span> target_url</pre>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>Timeout vLLM 300 s (<code>ad17ac8</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Cliente HTTP del backend eleva el timeout a 300 s para absorber cold starts largos de Cloud Run mientras vLLM carga pesos ALIA-40b.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 8. OTROS ===================== -->
+<section id="otros">
+  <h2 class="section-title"><span class="icon">&#128295;</span> Otros cambios notables</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Logos de financiaci&oacute;n (TODO J1)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Commits <code>3f45f70</code>, <code>5375566</code>, <code>a602ddf</code>, <code>855d3b2</code>.
+        2 niveles: partners (ALIA, UJA, Innovasur, SINAI, IAPH) + financiaci&oacute;n (Plan Recuperaci&oacute;n, Ministerio, BSC, NextGenerationEU).
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Feedback por resultado (TODO J2)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Commits <code>cd589ed</code>, <code>965cc6a</code>. Clave compuesta <code>(user_id, search_id, document_id)</code>.
+        Tests añadidos en <code>test_feedback_endpoints.py</code> y <code>test_feedback_use_cases.py</code>.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--purple-500);">
+      <h3>Quitar duraci&oacute;n (TODO J5)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        Commit <code>4d194bb</code> &mdash; migraci&oacute;n <code>abf44d053886</code> elimina <code>virtual_routes.total_duration_minutes</code>.
+        19 archivos, -163 l&iacute;neas, -1 test.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Ruff autofix (<code>dfd4ff2</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        45 archivos Python reformateados &mdash; +207 / -99 l&iacute;neas.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>Gitignore models/ (<code>aab22c2</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        La regla general <code>models/</code> ignoraba los archivos ORM <code>infrastructure/*/models.py</code>.
+        Scope limitado a la ra&iacute;z para que los models.py se rastreen.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--teal-500);">
+      <h3>Gu&iacute;a de usuario (<code>01d0772</code>)</h3>
+      <p style="font-size: .85rem; color: var(--slate-600);">
+        9 capturas de pantalla en <code>frontend/docs/images/</code> (01 home, 02 login, ..., 08 admin).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 9. GAPS ===================== -->
+<section id="gaps">
+  <h2 class="section-title"><span class="icon">&#128203;</span> Estado de gaps anteriores</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Gap</th><th>Estado anterior</th><th>Estado actual</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>G3</td>
+          <td>Datos sucios (~270 registros)</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td>Sin cambios</td>
+        </tr>
+        <tr>
+          <td>G4</td>
+          <td>Tests m&iacute;nimos</td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td>308 funciones (+1 por tests de feedback composite key)</td>
+        </tr>
+        <tr>
+          <td>G5</td>
+          <td>LLM sin fine-tuning / cuantizado m&aacute;s ligero</td>
+          <td><span class="badge badge-amber">PARCIAL</span></td>
+          <td><span class="badge badge-amber">AVANCE</span></td>
+          <td>Motor llama.cpp + GGUF Q4_K_M disponible</td>
+        </tr>
+        <tr>
+          <td>G6</td>
+          <td>96,6% assets sin coordenadas</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td>Exploraci&oacute;n DERA por Fernando sigue pendiente</td>
+        </tr>
+        <tr>
+          <td>G7</td>
+          <td>Paisaje Cultural sin contenido buscable</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td>Sin cambios</td>
+        </tr>
+        <tr>
+          <td>G8</td>
+          <td>Chat y Accesibilidad deshabilitados en UI</td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td><span class="badge badge-red">PENDIENTE</span></td>
+          <td>Chat funciona en rutas; modulo standalone desactivado</td>
+        </tr>
+        <tr>
+          <td>G9</td>
+          <td>Autenticaci&oacute;n hardcoded</td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td>Estable</td>
+        </tr>
+        <tr>
+          <td>G10</td>
+          <td>Embedder y LLM no desplegados en Cloud Run</td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td><span class="badge badge-green">REFORZADO</span></td>
+          <td>+keepalive, +inference probes, +status indicator, +IAM audience fix</td>
+        </tr>
+        <tr>
+          <td>G11</td>
+          <td>Sin tests para auth, chunks v4, clarificaci&oacute;n</td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td><span class="badge badge-green">RESUELTO</span></td>
+          <td>Estable</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top: 1.5rem;">Distribuci&oacute;n</h3>
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">4</div>
+      <div class="stat-label">Resueltos</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">1</div>
+      <div class="stat-label">Avance parcial</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">4</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 1.5rem;">Excepci&oacute;n arquitect&oacute;nica documentada</h3>
+  <div class="gap-card resolved">
+    <div class="gap-title">
+      <span class="badge badge-green">RESUELTO-POR-DISE&Ntilde;O</span> E1: Commit directo en <code>PgTraceRepository</code>
+    </div>
+    <p>
+      El repositorio de trazas hace commit directo a la sesi&oacute;n en <code>save_trace</code> (fuera del <code>UnitOfWork</code>)
+      para que un rollback del pipeline principal no borre la propia traza del fallo. Es intencional. Documentado en <code>f4ec183</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 10. CONFIG ===================== -->
+<section id="config">
+  <h2 class="section-title"><span class="icon">&#9881;</span> Migraciones y configuraci&oacute;n</h2>
+
+  <div class="card">
+    <h3>Migraciones Alembic (+2)</h3>
+    <table>
+      <thead><tr><th>#</th><th>Revision</th><th>Descripci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr><td>12</td><td><code>abf44d053886</code></td><td>drop total_duration_minutes from virtual_routes</td></tr>
+        <tr><td>13</td><td><code>f1a2b3c4d5e6</code></td><td>create execution_traces table (3 &iacute;ndices)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Variables de entorno</h3>
+    <p style="font-size: .88rem; color: var(--slate-600); margin-bottom: .8rem;">
+      <strong>Backend:</strong> sin cambios. El sistema de trazas reusa la infraestructura existente (misma BBDD, mismo token provider).
+    </p>
+    <p style="font-size: .88rem; color: var(--slate-600); margin-bottom: .8rem;">
+      <strong>llama.cpp (opcionales, solo si se activa el motor alternativo):</strong>
+    </p>
+    <table>
+      <thead><tr><th>Variable</th><th>Default</th><th>Prop&oacute;sito</th></tr></thead>
+      <tbody>
+        <tr><td><code>LLAMA_CPP_TAG</code></td><td><code>server-cuda-b4927</code></td><td>Tag imagen base llama.cpp-server</td></tr>
+        <tr><td><code>LLM_GGUF_MODEL_DIR</code></td><td><code>ALIA-40b-instruct-2601-GGUF</code></td><td>Directorio bajo <code>backend/models/</code></td></tr>
+        <tr><td><code>LLM_GGUF_FILE</code></td><td><code>ALIA-40b-instruct-2601.Q4_K_M.gguf</code></td><td>Nombre del archivo GGUF</td></tr>
+        <tr><td><code>LLM_GGUF_ALIAS</code></td><td><code>ALIA-40b-instruct-2601</code></td><td>Nombre reportado por <code>/v1/models</code></td></tr>
+        <tr><td><code>LLM_CTX_SIZE</code></td><td><code>8192</code></td><td>Ventana de contexto</td></tr>
+        <tr><td><code>LLM_N_GPU_LAYERS</code></td><td><code>999</code></td><td>Capas a GPU (999 = todas)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 11. TESTS ===================== -->
+<section id="tests">
+  <h2 class="section-title"><span class="icon">&#129514;</span> Estado de tests</h2>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>10-abr</th><th>16-abr</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Archivos de test</td><td>34</td><td><strong>34</strong></td><td>0</td></tr>
+        <tr><td>Funciones de test</td><td>307</td><td><strong>308</strong></td><td><span class="badge badge-green">+1</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: .8rem; font-size: .88rem; color: var(--slate-600);">
+      El delta es peque&ntilde;o porque la semana prioriz&oacute; feature delivery tras la reuni&oacute;n del 10 de abril.
+      Los tests a&ntilde;adidos cubren feedback con clave compuesta
+      (<code>test_feedback_endpoints.py</code> y <code>test_feedback_use_cases.py</code>). Se elimin&oacute;
+      <code>test_route_builder_service::test_total_duration_estimation</code> (obsoleto tras quitar la feature).
+      No hay regresiones en la suite.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 12. PROXIMA REUNION ===================== -->
+<section id="proxima">
+  <h2 class="section-title"><span class="icon">&#128197;</span> Preparaci&oacute;n de la pr&oacute;xima reuni&oacute;n</h2>
+
+  <div class="card" style="border-top: 4px solid var(--amber-500);">
+    <ol style="margin-left: 1.2rem; font-size: .9rem; color: var(--slate-700); line-height: 1.9;">
+      <li><strong>Demo vista de trazas</strong> &mdash; mostrar a Arturo la pantalla <code>/admin/traces</code> con prompts, timing y respuestas raw para validar granularidad</li>
+      <li><strong>Demo edici&oacute;n de rutas</strong> &mdash; eliminar + a&ntilde;adir desde b&uacute;squeda + SSE streaming</li>
+      <li><strong>Comparar llama.cpp vs vLLM</strong> &mdash; cold start y calidad; decidir producci&oacute;n</li>
+      <li><strong>Pendiente Fernando</strong> &mdash; estado de la exploraci&oacute;n de DERA (patrimonio geolocalizado)</li>
+      <li><strong>Pendiente Arturo</strong> &mdash; contacto con Jos&eacute; Luis (IAPH) sobre fuentes de geolocalizaci&oacute;n</li>
+      <li><strong>Scheduler Cloud Run</strong> &mdash; decisi&oacute;n sobre activar <code>min-instances=1</code> en horario laboral (coste vs UX)</li>
+      <li><strong>Fine-tuning ALIA</strong> &mdash; estado por parte de la UJA</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ===================== 13. EXECUTIVE SUMMARY ===================== -->
+<section id="executive">
+  <h2 class="section-title"><span class="icon">&#128221;</span> Resumen Ejecutivo</h2>
+
+  <div class="card" style="border-top: 4px solid var(--amber-500);">
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-bottom: 1rem;">
+      La semana <strong>2026-04-10 al 2026-04-17</strong> se caracteriza por una ejecuci&oacute;n muy ajustada al acta de la reuni&oacute;n
+      del 10 de abril: las 5 tareas que Juan se llev&oacute; cerraron al d&iacute;a siguiente completo de trabajo (13 de abril),
+      dejando el resto de la semana para reforzar la capa de infraestructura (keepalive, inference probes, IAM audience)
+      y abrir la puerta a un motor LLM alternativo (llama.cpp + GGUF) que Arturo hab&iacute;a solicitado como &laquo;cuantizado m&aacute;s ligero&raquo;.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-bottom: 1rem;">
+      El <strong>sistema de trazas de ejecuci&oacute;n</strong> es el hito t&eacute;cnico m&aacute;s notable: aporta a Arturo y al equipo de UJA
+      una herramienta de diagn&oacute;stico que cubre todo el pipeline (embed, retrieval, fusion, filtro, rerank, assembly, LLM) y persiste
+      prompts completos y respuestas raw en <code>execution_traces</code>. Es una inversi&oacute;n en observabilidad que reducir&aacute;
+      iteraciones en las pr&oacute;ximas sesiones de tuning. Se acompa&ntilde;a de una <strong>excepci&oacute;n arquitect&oacute;nica documentada</strong>:
+      el repositorio de trazas hace commit directo para no perder el log cuando el pipeline principal falla.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-bottom: 1rem;">
+      La <strong>edici&oacute;n de rutas</strong> (eliminar + a&ntilde;adir desde b&uacute;squeda + SSE streaming) conecta los dos casos de uso
+      (b&uacute;squeda + rutas) como pidi&oacute; Arturo, y prepara el terreno para el futurible de que un t&eacute;cnico del IAPH o un ayuntamiento
+      pueda crear sus propias rutas. Los prompts de narrativa por parada se hicieron auto-contenidos para evitar degradaci&oacute;n
+      por contexto largo.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7;">
+      Los puntos pendientes son <strong>externos al equipo</strong>: la consulta de Arturo a Jos&eacute; Luis (IAPH) sobre geolocalizaci&oacute;n,
+      la exploraci&oacute;n de la fuente <strong>DERA</strong> por Fernando, y el agendamiento de la reuni&oacute;n con IAPH. En el lado t&eacute;cnico
+      queda abierta la decisi&oacute;n de cu&aacute;ndo activar llama.cpp en producci&oacute;n frente a vLLM (la semana a&ntilde;ade la capacidad;
+      la prueba de usuario decidir&aacute;).
+    </p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer style="background: var(--slate-900); color: var(--slate-400); padding: 2rem; text-align: center; font-size: .82rem;">
+  <p>Informe de avances generado autom&aacute;ticamente &mdash; Periodo: <code style="color: var(--amber-400);">2026-04-10</code> &rarr; <code style="color: var(--amber-400);">2026-04-17</code></p>
+  <p style="margin-top: .3rem;">Rama <code style="color: var(--amber-400);">develop</code>, commit HEAD <code style="color: var(--amber-400);">8812222</code> &bull; Versi&oacute;n <code style="color: var(--amber-400);">1.0.8</code></p>
+  <p style="margin-top: .3rem;">IAPH RAG Monorepo &bull; Universidad de Ja&eacute;n &bull; 2026-04-17</p>
+</footer>
+
+<!-- Smooth scroll -->
+<script>
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
