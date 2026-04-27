@@ -7,15 +7,20 @@ from src.application.routes.dto.routes_dto import (
     GenerateRouteDTO,
     RouteFilterValuesDTO,
 )
+from src.application.routes.use_cases.add_stop import AddStopUseCase
 from src.application.routes.use_cases.generate_route import GenerateRouteUseCase
+from src.application.routes.use_cases.remove_stop import RemoveStopUseCase
 from src.application.routes.use_cases.route_filter_values import RouteFilterValuesUseCase
 from src.application.routes.use_cases.route_suggestions import RouteSuggestionsUseCase
 from src.domain.routes.services.query_extraction_service import QueryExtractionService
 from src.domain.routes.services.route_builder_service import RouteBuilderService
+from src.domain.routes.value_objects.asset_preview import AssetPreview
 from src.domain.routes.value_objects.detected_entity import DetectedEntityResult
 from src.domain.routes.value_objects.route_narrative import RouteNarrative
 from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
+from src.domain.shared.entities.execution_trace import ExecutionTrace
+from src.domain.shared.ports.trace_repository import TraceRepository
 
 # ---------------------------------------------------------------------------
 # RouteSuggestionsUseCase
@@ -407,3 +412,374 @@ class TestGenerateRouteUseCase:
 
         build_kwargs = self.route_builder_service.build.call_args.kwargs
         assert build_kwargs["title"] == "Ruta cultural por Malaga"
+
+
+# ---------------------------------------------------------------------------
+# Fake TraceRepository for capturing saved traces in unit tests
+# ---------------------------------------------------------------------------
+
+
+class FakeTraceRepository(TraceRepository):
+    """In-memory TraceRepository that records every saved trace."""
+
+    def __init__(self, save_should_raise: Exception | None = None) -> None:
+        self.saved: list[ExecutionTrace] = []
+        self._save_should_raise = save_should_raise
+
+    async def save(self, trace: ExecutionTrace) -> None:
+        if self._save_should_raise is not None:
+            raise self._save_should_raise
+        self.saved.append(trace)
+
+    async def list_traces(
+        self,
+        *,
+        execution_type=None,
+        user_id=None,
+        since=None,
+        until=None,
+        query=None,
+        exclude_admin_except=None,
+        page=1,
+        page_size=20,
+    ):
+        return ([], 0)
+
+    async def get_by_id(self, trace_id, *, exclude_admin_except=None):
+        return None
+
+    async def list_by_execution_id(
+        self,
+        execution_id,
+        *,
+        execution_type=None,
+        exclude_admin_except=None,
+    ):
+        return []
+
+
+# ---------------------------------------------------------------------------
+# AddStopUseCase
+# ---------------------------------------------------------------------------
+
+
+def _make_route_with_stops(num_stops: int = 2) -> VirtualRoute:
+    """Build a VirtualRoute with `num_stops` populated stops."""
+    stops = [
+        RouteStop(
+            order=i,
+            title=f"Parada {i}",
+            heritage_type="patrimonio_inmueble",
+            province="Granada",
+            municipality="Granada",
+            url=f"https://example.com/stop{i}",
+            description=f"Descripcion {i}",
+            heritage_asset_id=f"asset-{i}",
+            document_id=f"doc-{i}",
+            narrative_segment=f"Segmento narrativo {i}.",
+        )
+        for i in range(1, num_stops + 1)
+    ]
+    return VirtualRoute(
+        id=uuid4(),
+        title="Ruta de prueba",
+        province="Granada",
+        stops=stops,
+        narrative="Narrativa monolitica.",
+        introduction="Intro de la ruta.",
+        conclusion="Conclusion de la ruta.",
+    )
+
+
+class TestAddStopUseCase:
+    def setup_method(self):
+        self.route_repository = AsyncMock()
+        self.heritage_asset_lookup_port = AsyncMock()
+        self.llm_port = AsyncMock()
+        self.unit_of_work = AsyncMock()
+        self.unit_of_work.__aenter__ = AsyncMock(return_value=self.unit_of_work)
+        self.unit_of_work.__aexit__ = AsyncMock(return_value=False)
+        self.trace_repo = FakeTraceRepository()
+
+        self.use_case = AddStopUseCase(
+            route_repository=self.route_repository,
+            heritage_asset_lookup_port=self.heritage_asset_lookup_port,
+            llm_port=self.llm_port,
+            unit_of_work=self.unit_of_work,
+            trace_repository=self.trace_repo,
+        )
+
+    def _setup_defaults(self, existing_route: VirtualRoute | None = None):
+        """Configure default mock responses for a happy-path add_stop."""
+        route = existing_route or _make_route_with_stops(num_stops=2)
+        self.route_repository.get_route.return_value = route
+
+        # heritage asset lookup
+        preview = AssetPreview(
+            id="new-asset-id",
+            image_url="https://example.com/img.jpg",
+            latitude=37.0,
+            longitude=-3.5,
+            description=None,
+            municipality="Granada",
+        )
+        self.heritage_asset_lookup_port.get_asset_previews.return_value = {
+            "new-asset-id": preview,
+        }
+        # The use case calls get_asset_full_descriptions twice: once directly
+        # (for description_text) and once inside _lookup_asset_info.
+        self.heritage_asset_lookup_port.get_asset_full_descriptions.return_value = {
+            "new-asset-id": (
+                "Nombre oficial: Catedral de Granada\n"
+                "Ubicacion: Granada, Granada\n"
+                "Descripcion completa del monumento."
+            ),
+        }
+
+        # LLM returns a raw narrative with markdown that should be stripped.
+        self.llm_port.generate_structured.return_value = (
+            "**Narrativa para la nueva parada:** Texto generado por el LLM."
+        )
+
+        # update_route returns the updated route — for simplicity, return a
+        # new VirtualRoute that has one extra stop.
+        def _update_route_side_effect(route_uuid, user_uuid, **kwargs):
+            new_stops_dicts = kwargs["stops"]
+            new_stops = [
+                RouteStop(
+                    order=s["order"],
+                    title=s["title"],
+                    heritage_type=s["heritage_type"],
+                    province=s["province"],
+                    municipality=s["municipality"],
+                    url=s["url"],
+                    description=s["description"],
+                    heritage_asset_id=s.get("heritage_asset_id"),
+                    document_id=s.get("document_id"),
+                    narrative_segment=s.get("narrative_segment", ""),
+                    image_url=s.get("image_url"),
+                    latitude=s.get("latitude"),
+                    longitude=s.get("longitude"),
+                )
+                for s in new_stops_dicts
+            ]
+            return VirtualRoute(
+                id=route.id,
+                title=route.title,
+                province=route.province,
+                stops=new_stops,
+                narrative=kwargs["narrative"],
+                introduction=kwargs["introduction"],
+                conclusion=kwargs["conclusion"],
+            )
+
+        self.route_repository.update_route.side_effect = _update_route_side_effect
+        return route
+
+    async def test_saves_trace_with_expected_metadata(self):
+        route = self._setup_defaults()
+        user_id = str(uuid4())
+
+        result = await self.use_case.execute(
+            route_id=str(route.id),
+            document_id="new-asset-id",
+            position=2,
+            user_id=user_id,
+            username="alice",
+            user_profile_type="researcher",
+        )
+
+        # Returns a VirtualRouteDTO
+        assert result.id == str(route.id)
+
+        # Exactly one trace was persisted
+        assert len(self.trace_repo.saved) == 1
+        trace = self.trace_repo.saved[0]
+
+        assert trace.execution_type == "route"
+        assert trace.pipeline_mode == "route_add_stop"
+        assert trace.execution_id == str(route.id)
+        assert trace.summary["action"] == "add_stop"
+        assert trace.summary["position"] == 2
+        assert trace.username == "alice"
+        assert trace.user_profile_type == "researcher"
+        # Steps: request, lookup, narrative, update -> at least 3
+        assert len(trace.steps) >= 3
+        narrative_steps = [
+            s for s in trace.steps if s.get("step") == "narrative_generation"
+        ]
+        assert len(narrative_steps) == 1
+        assert narrative_steps[0]["output"]["raw_response"]
+
+    async def test_succeeds_when_trace_save_raises(self):
+        """A failure in the trace repository must NOT bubble up."""
+        # Use a repo whose save() blows up.
+        failing_repo = FakeTraceRepository(save_should_raise=RuntimeError("db down"))
+        self.use_case = AddStopUseCase(
+            route_repository=self.route_repository,
+            heritage_asset_lookup_port=self.heritage_asset_lookup_port,
+            llm_port=self.llm_port,
+            unit_of_work=self.unit_of_work,
+            trace_repository=failing_repo,
+        )
+        route = self._setup_defaults()
+
+        # Should not raise: the use case swallows trace persistence errors.
+        result = await self.use_case.execute(
+            route_id=str(route.id),
+            document_id="new-asset-id",
+            position=2,
+            user_id=str(uuid4()),
+            username="alice",
+            user_profile_type="researcher",
+        )
+
+        assert result.id == str(route.id)
+        # Nothing was actually persisted (save raised).
+        assert failing_repo.saved == []
+
+    async def test_works_without_trace_repository(self):
+        """The use case must work when trace_repository=None."""
+        self.use_case = AddStopUseCase(
+            route_repository=self.route_repository,
+            heritage_asset_lookup_port=self.heritage_asset_lookup_port,
+            llm_port=self.llm_port,
+            unit_of_work=self.unit_of_work,
+            trace_repository=None,
+        )
+        route = self._setup_defaults()
+
+        result = await self.use_case.execute(
+            route_id=str(route.id),
+            document_id="new-asset-id",
+            position=2,
+            user_id=str(uuid4()),
+        )
+
+        assert result.id == str(route.id)
+
+
+# ---------------------------------------------------------------------------
+# RemoveStopUseCase
+# ---------------------------------------------------------------------------
+
+
+class TestRemoveStopUseCase:
+    def setup_method(self):
+        self.route_repository = AsyncMock()
+        self.unit_of_work = AsyncMock()
+        self.unit_of_work.__aenter__ = AsyncMock(return_value=self.unit_of_work)
+        self.unit_of_work.__aexit__ = AsyncMock(return_value=False)
+        self.trace_repo = FakeTraceRepository()
+
+        self.use_case = RemoveStopUseCase(
+            route_repository=self.route_repository,
+            unit_of_work=self.unit_of_work,
+            trace_repository=self.trace_repo,
+        )
+
+    def _setup_defaults(self, num_stops: int = 3) -> VirtualRoute:
+        route = _make_route_with_stops(num_stops=num_stops)
+        self.route_repository.get_route.return_value = route
+
+        def _update_route_side_effect(route_uuid, user_uuid, **kwargs):
+            new_stops_dicts = kwargs["stops"]
+            new_stops = [
+                RouteStop(
+                    order=s["order"],
+                    title=s["title"],
+                    heritage_type=s["heritage_type"],
+                    province=s["province"],
+                    municipality=s["municipality"],
+                    url=s["url"],
+                    description=s["description"],
+                    heritage_asset_id=s.get("heritage_asset_id"),
+                    document_id=s.get("document_id"),
+                    narrative_segment=s.get("narrative_segment", ""),
+                    image_url=s.get("image_url"),
+                    latitude=s.get("latitude"),
+                    longitude=s.get("longitude"),
+                )
+                for s in new_stops_dicts
+            ]
+            return VirtualRoute(
+                id=route.id,
+                title=route.title,
+                province=route.province,
+                stops=new_stops,
+                narrative=kwargs["narrative"],
+                introduction=kwargs["introduction"],
+                conclusion=kwargs["conclusion"],
+            )
+
+        self.route_repository.update_route.side_effect = _update_route_side_effect
+        return route
+
+    async def test_saves_trace_with_expected_metadata(self):
+        route = self._setup_defaults(num_stops=3)
+        user_id = str(uuid4())
+
+        result = await self.use_case.execute(
+            route_id=str(route.id),
+            stop_order=2,
+            user_id=user_id,
+            username="alice",
+            user_profile_type="researcher",
+        )
+
+        assert result.id == str(route.id)
+
+        assert len(self.trace_repo.saved) == 1
+        trace = self.trace_repo.saved[0]
+
+        assert trace.execution_type == "route"
+        assert trace.pipeline_mode == "route_remove_stop"
+        assert trace.execution_id == str(route.id)
+        assert trace.summary["action"] == "remove_stop"
+        assert trace.summary["removed_order"] == 2
+        assert trace.username == "alice"
+        assert trace.user_profile_type == "researcher"
+
+        removal_steps = [
+            s for s in trace.steps if s.get("step") == "stop_removal"
+        ]
+        assert len(removal_steps) == 1
+        # The removed stop title must be captured in the step output.
+        # Stop with order=2 from _make_route_with_stops has title "Parada 2".
+        assert removal_steps[0]["output"]["removed_stop_title"] == "Parada 2"
+
+    async def test_succeeds_when_trace_save_raises(self):
+        failing_repo = FakeTraceRepository(save_should_raise=RuntimeError("db down"))
+        self.use_case = RemoveStopUseCase(
+            route_repository=self.route_repository,
+            unit_of_work=self.unit_of_work,
+            trace_repository=failing_repo,
+        )
+        route = self._setup_defaults(num_stops=3)
+
+        result = await self.use_case.execute(
+            route_id=str(route.id),
+            stop_order=2,
+            user_id=str(uuid4()),
+            username="alice",
+            user_profile_type="researcher",
+        )
+
+        assert result.id == str(route.id)
+        assert failing_repo.saved == []
+
+    async def test_works_without_trace_repository(self):
+        self.use_case = RemoveStopUseCase(
+            route_repository=self.route_repository,
+            unit_of_work=self.unit_of_work,
+            trace_repository=None,
+        )
+        route = self._setup_defaults(num_stops=3)
+
+        result = await self.use_case.execute(
+            route_id=str(route.id),
+            stop_order=2,
+            user_id=str(uuid4()),
+        )
+
+        assert result.id == str(route.id)
