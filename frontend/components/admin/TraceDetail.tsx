@@ -112,6 +112,34 @@ function LlmResponse({ response }: { response: string }) {
   );
 }
 
+export interface PipelineLabel {
+  label: string;
+  className: string;
+}
+
+export function formatPipelineLabel(
+  executionType: string,
+  pipelineMode: string | null | undefined,
+): PipelineLabel {
+  if (executionType === "search") {
+    return { label: "Búsqueda", className: "bg-blue-100 text-blue-700" };
+  }
+  if (executionType === "route") {
+    switch (pipelineMode) {
+      case "route_generation":
+      case "route_generation_stream":
+        return { label: "Generación", className: "bg-amber-100 text-amber-700" };
+      case "route_add_stop":
+        return { label: "+ Adición", className: "bg-green-100 text-green-700" };
+      case "route_remove_stop":
+        return { label: "− Eliminación", className: "bg-red-100 text-red-700" };
+      default:
+        return { label: "Ruta", className: "bg-amber-100 text-amber-700" };
+    }
+  }
+  return { label: executionType, className: "bg-stone-100 text-stone-600" };
+}
+
 const STEP_LABELS: Record<string, string> = {
   embedding: "Embedding",
   vector_search: "Vector Search",
@@ -125,6 +153,9 @@ const STEP_LABELS: Record<string, string> = {
   heritage_asset_lookup: "Lookup assets patrimoniales",
   narrative_generation: "Generación narrativa (LLM)",
   route_build: "Construcción de ruta",
+  stop_addition_request: "Solicitud de adición",
+  stop_removal: "Eliminación de parada",
+  route_update: "Actualización de ruta",
 };
 
 function buildStepSummary(step: TracePipelineStep): string {
@@ -157,6 +188,12 @@ function buildStepSummary(step: TracePipelineStep): string {
     }
     case "route_build":
       return `${output.stops ?? "?"} paradas, ${output.province ?? "?"}`;
+    case "stop_addition_request":
+      return `Posición ${output.insert_idx ?? "?"}: ${output.stops_before ?? "?"} → ${output.stops_after ?? "?"} paradas`;
+    case "stop_removal":
+      return `"${String(output.removed_stop_title ?? "?").slice(0, 50)}" (posición ${input.stop_order ?? "?"}): ${output.stops_before ?? "?"} → ${output.stops_after ?? "?"} paradas`;
+    case "route_update":
+      return `${output.total_stops ?? "?"} paradas, narrativa ${output.narrative_chars ?? "?"} chars`;
     default:
       return Object.entries(output).map(([k, v]) => `${k}: ${v}`).join(", ") || "";
   }
@@ -407,7 +444,21 @@ export default function TraceDetail({ traceId }: TraceDetailProps) {
             </div>
             <div>
               <dt className="text-stone-400">Tipo</dt>
-              <dd className="text-stone-600 capitalize">{trace.execution_type}</dd>
+              <dd>
+                {(() => {
+                  const { label, className } = formatPipelineLabel(
+                    trace.execution_type,
+                    trace.pipeline_mode,
+                  );
+                  return (
+                    <span
+                      className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${className}`}
+                    >
+                      {label}
+                    </span>
+                  );
+                })()}
+              </dd>
             </div>
             {trace.filters && Object.keys(trace.filters).length > 0 && (
               <div>

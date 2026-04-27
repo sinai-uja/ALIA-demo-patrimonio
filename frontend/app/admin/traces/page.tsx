@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/auth";
 import { traces, admin } from "@/lib/api";
 import { minDelay } from "@/lib/minDelay";
-import TraceDetail from "@/components/admin/TraceDetail";
+import TraceDetail, { formatPipelineLabel } from "@/components/admin/TraceDetail";
 import type { TraceSummary, TraceListResponse } from "@/lib/api";
 
 const TYPE_OPTIONS = [
@@ -14,11 +14,6 @@ const TYPE_OPTIONS = [
   { value: "search", label: "Busqueda" },
   { value: "route", label: "Ruta" },
 ];
-
-const TYPE_BADGE: Record<string, string> = {
-  search: "bg-blue-100 text-blue-700",
-  route: "bg-amber-100 text-amber-700",
-};
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -386,7 +381,10 @@ function TraceRow({
   expanded: boolean;
   onClick: () => void;
 }) {
-  const typeBadge = TYPE_BADGE[trace.execution_type] ?? "bg-stone-100 text-stone-600";
+  const { label: typeLabel, className: typeBadge } = formatPipelineLabel(
+    trace.execution_type,
+    trace.pipeline_mode,
+  );
 
   return (
     <>
@@ -404,8 +402,8 @@ function TraceRow({
           <span className="text-xs text-stone-500 capitalize">{trace.user_profile_type ?? "-"}</span>
         </td>
         <td className="px-5 py-3">
-          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${typeBadge}`}>
-            {trace.execution_type}
+          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${typeBadge}`}>
+            {typeLabel}
           </span>
         </td>
         <td className="px-5 py-3 max-w-[200px]">
@@ -441,7 +439,10 @@ function TraceCard({
   expanded: boolean;
   onClick: () => void;
 }) {
-  const typeBadge = TYPE_BADGE[trace.execution_type] ?? "bg-stone-100 text-stone-600";
+  const { label: typeLabel, className: typeBadge } = formatPipelineLabel(
+    trace.execution_type,
+    trace.pipeline_mode,
+  );
 
   return (
     <div>
@@ -453,8 +454,8 @@ function TraceCard({
           <div className="min-w-0 flex-1 space-y-1.5">
             <p className="text-xs text-stone-700 font-medium truncate">{trace.query}</p>
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${typeBadge}`}>
-                {trace.execution_type}
+              <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium ${typeBadge}`}>
+                {typeLabel}
               </span>
               <span className="text-[11px] text-stone-400">{trace.username}</span>
               <span className="text-[11px] text-stone-400 tabular-nums">{formatDate(trace.created_at)}</span>

@@ -12,6 +12,8 @@ import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
 import { useFeedbackStore } from "@/store/feedback";
 import { SearchStopModal } from "@/components/routes/SearchStopModal";
 import DeleteConfirmModal from "@/components/shared/DeleteConfirmModal";
+import RouteHistoryTimeline from "@/components/admin/RouteHistoryTimeline";
+import { useAuthStore } from "@/store/auth";
 import ReactMarkdown from "react-markdown";
 
 const HERITAGE_TYPE_COLORS: Record<string, string> = {
@@ -20,6 +22,51 @@ const HERITAGE_TYPE_COLORS: Record<string, string> = {
   patrimonio_inmaterial: "bg-teal-100 text-teal-700",
   paisaje_cultural: "bg-sky-100 text-sky-700",
 };
+
+function RouteHistoryModal({ routeId, onClose }: { routeId: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
+          <div>
+            <h3 className="font-semibold text-stone-900 text-base">Historial de cambios</h3>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Eventos registrados para esta ruta
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+            aria-label="Cerrar historial"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="overflow-y-auto px-6 py-5">
+          <RouteHistoryTimeline routeId={routeId} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** Legacy layout for old routes without introduction/conclusion */
 function LegacyStopsLayout({
@@ -303,12 +350,15 @@ export default function RouteDetailPage() {
   const setEditMode = useRoutesStore((s) => s.setEditMode);
   const hasDetail = useRoutesStore((s) => s.selectedStopAssetId !== null);
   const closeStopDetail = useRoutesStore((s) => s.closeStopDetail);
+  const profileType = useAuthStore((s) => s.profileType);
+  const isAdmin = profileType === "admin";
   const [guideMessages, setGuideMessages] = useState<
     { role: "user" | "assistant"; content: string; sources?: RagSource[] }[]
   >([]);
   const [guiding, setGuiding] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
@@ -577,7 +627,7 @@ export default function RouteDetailPage() {
                 {activeRoute.title}
               </h1>
             </div>
-            <div className="flex items-center gap-3 mt-2 text-sm text-stone-500">
+            <div className="flex items-center gap-3 mt-2 text-sm text-stone-500 flex-wrap">
               <span className="inline-flex items-center gap-1">
                 <svg
                   className="w-4 h-4"
@@ -601,6 +651,28 @@ export default function RouteDetailPage() {
               </span>
               <span>{activeRoute.stops.length} paradas</span>
               <FeedbackButtons targetType="route" targetId={activeRoute.id} />
+              {isAdmin && (
+                <button
+                  onClick={() => setHistoryOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-stone-500 hover:text-green-700 transition-colors"
+                  aria-label="Ver historial de cambios"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                    />
+                  </svg>
+                  Ver historial de cambios
+                </button>
+              )}
             </div>
           </div>
 
@@ -618,6 +690,11 @@ export default function RouteDetailPage() {
         <aside className="absolute right-0 top-0 bottom-0 w-[560px] z-10 max-md:w-full">
           <RouteDetailPanel />
         </aside>
+      )}
+
+      {/* Route history modal — admin only */}
+      {historyOpen && id && (
+        <RouteHistoryModal routeId={id} onClose={() => setHistoryOpen(false)} />
       )}
     </div>
   );

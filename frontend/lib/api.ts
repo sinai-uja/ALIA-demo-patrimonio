@@ -730,6 +730,19 @@ export interface TraceListParams {
   page_size?: number;
 }
 
+export interface RouteHistoryAggregate {
+  total_events: number;
+  generation_count: number;
+  additions_count: number;
+  removals_count: number;
+}
+
+export interface RouteHistoryResponse {
+  route_id: string;
+  traces: TraceSummary[];
+  aggregate: RouteHistoryAggregate;
+}
+
 export const traces = {
   list: (params: TraceListParams) => {
     const searchParams = new URLSearchParams();
@@ -745,6 +758,9 @@ export const traces = {
   },
 
   get: (traceId: string) => apiFetch<TraceDetail>(`/admin/traces/${traceId}`),
+
+  listRouteHistory: (routeId: string) =>
+    apiFetch<RouteHistoryResponse>(`/admin/traces/by-route/${routeId}`),
 };
 
 // ── Accessibility ─────────────────────────────────────────────────────────────
