@@ -30,3 +30,16 @@ class TraceRepository(ABC):
     async def get_by_id(
         self, trace_id: UUID, *, exclude_admin_except: str | None = None,
     ) -> ExecutionTrace | None: ...
+
+    @abstractmethod
+    async def list_by_execution_id(
+        self,
+        execution_id: str,
+        *,
+        execution_type: str | None = None,
+        exclude_admin_except: str | None = None,
+    ) -> list[ExecutionTrace]:
+        """Return all traces sharing the same execution_id (e.g. a route's history),
+        ordered chronologically by created_at ascending.
+        """
+        ...

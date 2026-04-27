@@ -49,3 +49,20 @@ class TraceDetailResponse(BaseModel):
     result_feedbacks: dict[str, int] | None = None
     status: str = "success"
     created_at: str = ""
+
+
+class RouteHistorySummaryAgg(BaseModel):
+    """Aggregated counters for a route's modification history."""
+
+    total_events: int = 0
+    generation_count: int = 0
+    additions_count: int = 0
+    removals_count: int = 0
+
+
+class RouteHistoryResponse(BaseModel):
+    """Chronological list of all traces (generation + edits) for a route."""
+
+    route_id: str
+    traces: list[TraceSummaryResponse]
+    aggregate: RouteHistorySummaryAgg
