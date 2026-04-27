@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
-from uuid import UUID
+import time
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 from src.application.routes.dto.routes_dto import RouteStopDTO, VirtualRouteDTO
 from src.application.routes.exceptions import RouteNotFoundError
@@ -16,6 +18,8 @@ from src.domain.routes.prompts import (
     SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT,
     build_single_stop_narrative_prompt,
 )
+from src.domain.shared.entities.execution_trace import ExecutionTrace
+from src.domain.shared.ports.trace_repository import TraceRepository
 from src.domain.shared.ports.unit_of_work import UnitOfWork
 from src.domain.shared.value_objects.asset_id import extract_asset_id
 
@@ -31,11 +35,13 @@ class AddStopUseCase:
         heritage_asset_lookup_port: HeritageAssetLookupPort,
         llm_port: LLMPort,
         unit_of_work: UnitOfWork,
+        trace_repository: TraceRepository | None = None,
     ) -> None:
         self._route_repository = route_repository
         self._heritage_asset_lookup = heritage_asset_lookup_port
         self._llm_port = llm_port
         self._uow = unit_of_work
+        self._trace_repo = trace_repository
 
     async def execute(
         self,
@@ -43,7 +49,10 @@ class AddStopUseCase:
         document_id: str,
         position: int | None = None,
         user_id: str | None = None,
+        username: str | None = None,
+        user_profile_type: str | None = None,
     ) -> VirtualRouteDTO:
+        t0 = time.monotonic()
         user_uuid = UUID(user_id) if user_id else None
         route_uuid = UUID(route_id)
 
@@ -56,12 +65,14 @@ class AddStopUseCase:
 
             # Look up the heritage asset
             asset_id = extract_asset_id(document_id)
+            t_lookup = time.perf_counter()
             previews = await self._heritage_asset_lookup.get_asset_previews(
                 [asset_id],
             )
             descriptions = await self._heritage_asset_lookup.get_asset_full_descriptions(
                 [asset_id],
             )
+            lookup_ms = (time.perf_counter() - t_lookup) * 1000
 
             preview = previews.get(asset_id)
             description_text = descriptions.get(asset_id, "")
@@ -120,6 +131,7 @@ class AddStopUseCase:
                 previous_stop_title=prev_title,
                 next_stop_title=next_title,
             )
+            t_narrative = time.perf_counter()
             raw_narrative = await self._llm_port.generate_structured(
                 system_prompt=SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT,
                 user_prompt=narrative_prompt,
@@ -143,6 +155,7 @@ class AddStopUseCase:
                 '', narrative_segment, flags=re.IGNORECASE,
             )
             narrative_segment = narrative_segment.strip().strip('"')
+            narrative_ms = (time.perf_counter() - t_narrative) * 1000
 
             # Build the new stop dict
             new_stop = {
@@ -175,6 +188,7 @@ class AddStopUseCase:
                 conclusion=route.conclusion,
             )
 
+            t_update = time.perf_counter()
             updated_route = await self._route_repository.update_route(
                 route_uuid,
                 user_uuid,
@@ -185,11 +199,99 @@ class AddStopUseCase:
             )
             if updated_route is None:
                 raise RouteNotFoundError(f"Route not found: {route_id}")
+            update_ms = (time.perf_counter() - t_update) * 1000
 
         logger.info(
             "Stop added: route_id=%s document_id=%s position=%d total_stops=%d",
             route_id, document_id, insert_idx + 1, len(current_stops),
         )
+
+        total_ms = (time.monotonic() - t0) * 1000
+
+        # --- Trace instrumentation ---
+        if self._trace_repo is not None:
+            try:
+                trace_steps = [
+                    {
+                        "step": "stop_addition_request",
+                        "input": {
+                            "route_id": route_id,
+                            "document_id": document_id,
+                            "requested_position": position,
+                        },
+                        "output": {
+                            "insert_idx": insert_idx + 1,  # 1-indexed
+                            "stops_before": num_stops,
+                            "stops_after": len(current_stops),
+                            "prev_stop_title": prev_title,
+                            "next_stop_title": next_title,
+                        },
+                    },
+                    {
+                        "step": "heritage_asset_lookup",
+                        "input": {"asset_ids": 1, "document_id": document_id},
+                        "output": {
+                            "preview_found": preview is not None,
+                            "description_chars": len(description_text),
+                            "stop_title": stop_title,
+                            "stop_type": stop_type,
+                            "stop_province": stop_province,
+                        },
+                        "elapsed_ms": round(lookup_ms, 1),
+                    },
+                    {
+                        "step": "narrative_generation",
+                        "input": {
+                            "system_prompt": SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT,
+                            "user_prompt": narrative_prompt,
+                            "stop_title": stop_title,
+                            "prev_stop_title": prev_title,
+                            "next_stop_title": next_title,
+                        },
+                        "output": {
+                            "raw_response": raw_narrative,
+                            "narrative_segment": narrative_segment,
+                            "narrative_chars": len(narrative_segment),
+                        },
+                        "elapsed_ms": round(narrative_ms, 1),
+                    },
+                    {
+                        "step": "route_update",
+                        "output": {
+                            "route_id": str(updated_route.id),
+                            "total_stops": len(updated_route.stops),
+                            "narrative_chars": len(updated_route.narrative or ""),
+                        },
+                        "elapsed_ms": round(update_ms, 1),
+                    },
+                ]
+                trace = ExecutionTrace(
+                    id=uuid4(),
+                    execution_type="route",
+                    execution_id=str(updated_route.id),
+                    user_id=user_id,
+                    username=username,
+                    user_profile_type=user_profile_type,
+                    query=f"+ {stop_title} (posición {insert_idx + 1})",
+                    pipeline_mode="route_add_stop",
+                    steps=trace_steps,
+                    summary={
+                        "action": "add_stop",
+                        "document_id": document_id,
+                        "stop_title": stop_title,
+                        "position": insert_idx + 1,
+                        "stops_before": num_stops,
+                        "stops_after": len(current_stops),
+                        "narrative_chars": len(narrative_segment),
+                        "elapsed_ms": round(total_ms, 1),
+                    },
+                    feedback_value=None,
+                    status="success",
+                    created_at=datetime.now(UTC),
+                )
+                await self._trace_repo.save(trace)
+            except Exception:
+                logger.warning("Failed to save add_stop execution trace", exc_info=True)
 
         return VirtualRouteDTO(
             id=str(updated_route.id),

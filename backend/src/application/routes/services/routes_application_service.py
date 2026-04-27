@@ -89,11 +89,22 @@ class RoutesApplicationService:
         return await self._route_filter_values.execute(provinces)
 
     async def remove_stop(
-        self, route_id: str, stop_order: int, user_id: str | None = None,
+        self,
+        route_id: str,
+        stop_order: int,
+        user_id: str | None = None,
+        username: str | None = None,
+        user_profile_type: str | None = None,
     ) -> VirtualRouteDTO:
         if self._remove_stop is None:
             raise RuntimeError("RemoveStopUseCase not wired")
-        return await self._remove_stop.execute(route_id, stop_order, user_id=user_id)
+        return await self._remove_stop.execute(
+            route_id,
+            stop_order,
+            user_id=user_id,
+            username=username,
+            user_profile_type=user_profile_type,
+        )
 
     async def add_stop(
         self,
@@ -101,11 +112,18 @@ class RoutesApplicationService:
         document_id: str,
         position: int | None = None,
         user_id: str | None = None,
+        username: str | None = None,
+        user_profile_type: str | None = None,
     ) -> VirtualRouteDTO:
         if self._add_stop is None:
             raise RuntimeError("AddStopUseCase not wired")
         return await self._add_stop.execute(
-            route_id, document_id, position=position, user_id=user_id,
+            route_id,
+            document_id,
+            position=position,
+            user_id=user_id,
+            username=username,
+            user_profile_type=user_profile_type,
         )
 
     async def generate_route_stream(
