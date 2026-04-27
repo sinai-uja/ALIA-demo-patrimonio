@@ -201,7 +201,13 @@ async def remove_stop(
     service: RoutesApplicationService = Depends(get_routes_service),
 ) -> VirtualRouteSchema:
     """Remove a stop from a route by its order number."""
-    result = await service.remove_stop(route_id, stop_order, user_id=str(user.id))
+    result = await service.remove_stop(
+        route_id,
+        stop_order,
+        user_id=str(user.id),
+        username=user.username,
+        user_profile_type=user.profile_type.name if user.profile_type else None,
+    )
     return _dto_to_schema(result)
 
 
@@ -217,6 +223,8 @@ async def add_stop(
     If ``background=true``, returns 202 immediately and generates
     the narrative asynchronously.
     """
+    profile_type_name = user.profile_type.name if user.profile_type else None
+
     if request.background:
         import asyncio
 
@@ -224,7 +232,12 @@ async def add_stop(
 
         asyncio.create_task(
             run_add_stop_in_background(
-                route_id, request.document_id, request.position, str(user.id),
+                route_id,
+                request.document_id,
+                request.position,
+                str(user.id),
+                username=user.username,
+                user_profile_type=profile_type_name,
             ),
         )
         return Response(
@@ -234,7 +247,12 @@ async def add_stop(
         )
 
     result = await service.add_stop(
-        route_id, request.document_id, request.position, user_id=str(user.id),
+        route_id,
+        request.document_id,
+        request.position,
+        user_id=str(user.id),
+        username=user.username,
+        user_profile_type=profile_type_name,
     )
     return _dto_to_schema(result)
 

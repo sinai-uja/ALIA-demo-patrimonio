@@ -131,12 +131,14 @@ def build_routes_application_service(
     remove_stop_use_case = RemoveStopUseCase(
         route_repository=route_repository,
         unit_of_work=uow,
+        trace_repository=trace_repository,
     )
     add_stop_use_case = AddStopUseCase(
         route_repository=route_repository,
         heritage_asset_lookup_port=heritage_asset_lookup_adapter,
         llm_port=llm_adapter,
         unit_of_work=uow,
+        trace_repository=trace_repository,
     )
     generate_route_stream_use_case = GenerateRouteStreamUseCase(
         rag_port=rag_adapter,
@@ -168,6 +170,8 @@ async def run_add_stop_in_background(
     document_id: str,
     position: int | None,
     user_id: str,
+    username: str | None = None,
+    user_profile_type: str | None = None,
 ) -> None:
     """Run add_stop in a background task with its own DB session.
 
@@ -179,7 +183,14 @@ async def run_add_stop_in_background(
     try:
         async with AsyncSessionLocal() as session:
             service = build_routes_application_service(session)
-            await service.add_stop(route_id, document_id, position, user_id=user_id)
+            await service.add_stop(
+                route_id,
+                document_id,
+                position,
+                user_id=user_id,
+                username=username,
+                user_profile_type=user_profile_type,
+            )
     except Exception:
         import logging
 

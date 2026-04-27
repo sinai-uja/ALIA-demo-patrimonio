@@ -169,6 +169,36 @@ class SqlAlchemyTraceRepository(TraceRepository):
             return datetime(d.year, d.month, d.day, 23, 59, 59)
         return datetime(d.year, d.month, d.day)
 
+    async def list_by_execution_id(
+        self,
+        execution_id: str,
+        *,
+        execution_type: str | None = None,
+        exclude_admin_except: str | None = None,
+    ) -> list[ExecutionTrace]:
+        """Return all traces with the given execution_id, oldest first."""
+        from sqlalchemy import or_
+
+        stmt = select(ExecutionTraceModel).where(
+            ExecutionTraceModel.execution_id == execution_id,
+        )
+        if execution_type:
+            stmt = stmt.where(
+                ExecutionTraceModel.execution_type == execution_type,
+            )
+        if exclude_admin_except:
+            stmt = stmt.where(
+                or_(
+                    ExecutionTraceModel.user_profile_type != "admin",
+                    ExecutionTraceModel.user_profile_type.is_(None),
+                    ExecutionTraceModel.user_id == self._parse_uuid(exclude_admin_except),
+                ),
+            )
+        stmt = stmt.order_by(ExecutionTraceModel.created_at.asc())
+        result = await self._db.execute(stmt)
+        models = result.scalars().all()
+        return [m.to_domain() for m in models]
+
     async def get_result_feedbacks(self, execution_id: str) -> dict[str, int]:
         """Return {document_id: feedback_value} for search result feedbacks.
 

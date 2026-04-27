@@ -5,6 +5,8 @@ import uuid as _uuid
 from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.endpoints.admin.trace_schemas import (
+    RouteHistoryResponse,
+    RouteHistorySummaryAgg,
     TraceDetailResponse,
     TraceListResponse,
     TraceSummaryResponse,
@@ -77,6 +79,62 @@ async def list_traces(
         page=result.page,
         page_size=result.page_size,
         total_pages=result.total_pages,
+    )
+
+
+@router.get("/by-route/{route_id}", response_model=RouteHistoryResponse)
+async def list_route_history(
+    route_id: str,
+    admin: User = Depends(get_current_admin),
+    service: TraceApplicationService = Depends(_get_trace_service),
+):
+    """Return the chronological history of all traces for a single route.
+
+    Includes the initial generation plus every add_stop / remove_stop event,
+    ordered from oldest to newest. Other admins' traces are excluded.
+    """
+    result = await service.list_route_history(
+        route_id, exclude_admin_except=str(admin.id),
+    )
+    summaries = [
+        TraceSummaryResponse(
+            id=t.id,
+            execution_type=t.execution_type,
+            execution_id=t.execution_id,
+            user_id=t.user_id,
+            username=t.username,
+            user_profile_type=t.user_profile_type,
+            query=t.query,
+            pipeline_mode=t.pipeline_mode,
+            status=t.status,
+            feedback_value=t.feedback_value,
+            total_results=t.total_results,
+            elapsed_ms=t.elapsed_ms,
+            top_score=t.top_score,
+            created_at=t.created_at,
+        )
+        for t in result.traces
+    ]
+    additions = sum(
+        1 for t in result.traces if t.pipeline_mode == "route_add_stop"
+    )
+    removals = sum(
+        1 for t in result.traces if t.pipeline_mode == "route_remove_stop"
+    )
+    generations = sum(
+        1
+        for t in result.traces
+        if t.pipeline_mode in ("route_generation", "route_generation_stream")
+    )
+    return RouteHistoryResponse(
+        route_id=route_id,
+        traces=summaries,
+        aggregate=RouteHistorySummaryAgg(
+            total_events=len(summaries),
+            generation_count=generations,
+            additions_count=additions,
+            removals_count=removals,
+        ),
     )
 
 
