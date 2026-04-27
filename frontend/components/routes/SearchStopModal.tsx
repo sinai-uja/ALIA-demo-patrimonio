@@ -10,6 +10,9 @@ import {
 } from "@/components/shared/SmartInput";
 import { FilterChipsBase } from "@/components/shared/FilterChips";
 import { AssetDetailContent } from "@/components/shared/AssetDetailContent";
+import { FeedbackButtons } from "@/components/shared/FeedbackButtons";
+import { useFeedbackStore } from "@/store/feedback";
+import { useAuthStore } from "@/store/auth";
 
 const HERITAGE_LABELS: Record<string, string> = {
   patrimonio_inmueble: "Inmueble",
@@ -37,15 +40,18 @@ interface SearchStopModalProps {
   onSelect: (documentId: string) => void;
   onClose: () => void;
   adding: boolean;
+  routeId?: string | null;
 }
 
-export function SearchStopModal({ onSelect, onClose, adding }: SearchStopModalProps) {
+export function SearchStopModal({ onSelect, onClose, adding, routeId }: SearchStopModalProps) {
   // ── Local state (isolated from global search store) ──────────────────────
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchId, setSearchId] = useState<string | null>(null);
+  const loadFeedbackBatch = useFeedbackStore((s) => s.loadFeedbackBatch);
 
   // Pagination state
   const [page, setPage] = useState(1);
@@ -170,12 +176,18 @@ export function SearchStopModal({ onSelect, onClose, adding }: SearchStopModalPr
       setPage(res.page);
       setTotalPages(res.total_pages);
       setTotalResults(res.total_results);
+      setSearchId(res.search_id ?? null);
+      // Pre-load feedback values so thumbs reflect prior choices for this search
+      if (res.search_id && res.results.length > 0) {
+        const ids = res.results.map((r) => `${res.search_id}:${r.document_id}`);
+        loadFeedbackBatch("search_result", ids);
+      }
     } catch {
       setResults([]);
     } finally {
       setSearching(false);
     }
-  }, [query, activeFilters]);
+  }, [query, activeFilters, loadFeedbackBatch]);
 
   const handleSearch = useCallback(async () => {
     if (!query.replace(/\s{2,}/g, " ").trim() || searching) return;
@@ -321,27 +333,47 @@ export function SearchStopModal({ onSelect, onClose, adding }: SearchStopModalPr
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          {/* Thumbnail */}
-                          {result.image_url ? (
-                            <img
-                              src={result.image_url}
-                              alt={result.title}
-                              className="w-14 h-14 rounded-lg object-cover bg-stone-100 shrink-0"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
-                              <svg className="w-6 h-6 text-stone-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21" />
-                              </svg>
-                            </div>
-                          )}
+                          {/* Feedback + Thumbnail stacked */}
+                          <div className="shrink-0 flex flex-col items-center gap-1">
+                            {searchId && (
+                              <FeedbackButtons
+                                targetType="search_result"
+                                targetId={`${searchId}:${result.document_id}`}
+                                metadata={{
+                                  search_id: searchId,
+                                  document_id: result.document_id,
+                                  query,
+                                  heritage_type: result.heritage_type,
+                                  province: result.province,
+                                  user_profile_type:
+                                    useAuthStore.getState().profileType ?? undefined,
+                                  context: "route_edit",
+                                  route_id: routeId ?? undefined,
+                                }}
+                                size="sm"
+                              />
+                            )}
+                            {result.image_url ? (
+                              <img
+                                src={result.image_url}
+                                alt={result.title}
+                                className="w-14 h-14 rounded-lg object-cover bg-stone-100"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-lg bg-stone-100 flex items-center justify-center">
+                                <svg className="w-6 h-6 text-stone-300" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Content */}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm text-stone-900 leading-snug line-clamp-1">
                               {result.denomination || result.title}
                             </h4>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1 mb-1.5">
                               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${typeColor}`}>
                                 {typeLabel}
                               </span>
@@ -350,6 +382,19 @@ export function SearchStopModal({ onSelect, onClose, adding }: SearchStopModalPr
                                 {result.province}
                               </span>
                             </div>
+                            {result.description && (
+                              <p
+                                className="text-[11px] text-stone-500 leading-relaxed"
+                                style={{
+                                  overflow: "hidden",
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 3,
+                                  WebkitBoxOrient: "vertical",
+                                }}
+                              >
+                                {result.description.replace(/^DESCRIPCI[OÓ]N\s*/i, "").trim()}
+                              </p>
+                            )}
                           </div>
 
                           {/* Score + actions (right column) */}

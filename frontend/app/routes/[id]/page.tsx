@@ -337,6 +337,7 @@ function InterleavedStopsLayout({
           onSelect={handleAddStop}
           onClose={() => setSearchPosition(null)}
           adding={adding}
+          routeId={route.id}
         />
       )}
     </>
