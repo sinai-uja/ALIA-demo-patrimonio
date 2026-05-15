@@ -181,6 +181,9 @@ def _score_pairs_causal(
         yes_no_logits = logits[:, [reranker_yes_token_id, reranker_no_token_id]]
         scores = torch.softmax(yes_no_logits, dim=-1)[:, 0]  # P(yes)
 
+        # Neutralize any NaN/Inf (treat as fully irrelevant) so downstream
+        # JSON serialization never emits null and consumers don't crash.
+        scores = torch.nan_to_num(scores, nan=0.0, posinf=1.0, neginf=0.0)
         all_scores.extend(scores.cpu().float().tolist())
 
         # Free GPU memory between batches to avoid fragmentation
@@ -231,6 +234,9 @@ def _score_pairs_seq_class(
             # Defensive fallback: sigmoid on the first logit slot
             probs = torch.sigmoid(logits[:, 0])
 
+        # Neutralize any NaN/Inf (treat as fully irrelevant) so downstream
+        # JSON serialization never emits null and consumers don't crash.
+        probs = torch.nan_to_num(probs, nan=0.0, posinf=1.0, neginf=0.0)
         all_scores.extend(probs.cpu().float().tolist())
 
         del inputs, outputs, logits, probs
