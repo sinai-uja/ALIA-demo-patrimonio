@@ -3,8 +3,9 @@ Embedding & Reranker service.
 
 Serves two capabilities from a single FastAPI process:
 
-  POST /embed   — Generate embeddings (MrBERT or Qwen3-Embedding-0.6B)
-  POST /rerank  — Cross-encoder reranking (Qwen3-Reranker-0.6B, optional)
+  POST /embed   — Generate embeddings (MrBERT / Qwen3-Embedding / SINAI-MrBERT-cultural)
+  POST /rerank  — Cross-encoder reranking (Qwen3-Reranker CausalLM OR SINAI-MrBERT
+                  SequenceClassification — auto-detected from config.json)
   GET  /health  — Health check
 
 The embedding model is always loaded. The reranker model is loaded only when
@@ -14,10 +15,17 @@ Both models share the same GPU and process, avoiding the overhead of a second
 Docker container.
 
 Pooling strategy for embeddings is configurable via POOLING_STRATEGY env var:
-  - "mean"       : Mean pooling over all token embeddings (MrBERT default)
+  - "mean"       : Mean pooling over all token embeddings (MrBERT / SINAI default)
   - "last_token" : Last-token pooling with left-padding (Qwen3 default)
+
+The reranker arch is auto-detected from the model's config.json `architectures`
+field at load time. Supported families:
+  - *ForCausalLM   → Qwen3-Reranker-style scoring (chat template + yes/no logits)
+  - *ForSequenceClassification → CrossEncoder-style scoring (text pair → sigmoid
+                                  on the binary relevance head, used by SINAI)
 """
 
+import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -25,7 +33,12 @@ from contextlib import asynccontextmanager
 import torch
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from transformers import AutoModel, AutoModelForCausalLM, AutoTokenizer
+from transformers import (
+    AutoModel,
+    AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+)
 
 logger = logging.getLogger("embedding-service")
 logging.basicConfig(level=logging.INFO)
@@ -52,6 +65,8 @@ reranker_model = None
 reranker_yes_token_id = None
 reranker_no_token_id = None
 reranker_available = False
+# One of "causal" | "seq_class" — set during lifespan based on config.json arch
+reranker_type: str | None = None
 
 device = None
 
@@ -108,8 +123,14 @@ def _format_rerank_pair(query: str, document: str, instruction: str) -> str:
     return f"<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {document}"
 
 
-def _score_pairs(pairs_text: list[str], batch_size: int = RERANKER_BATCH_SIZE) -> list[float]:
-    """Score pairs using the cross-encoder. Returns relevance probabilities (0-1)."""
+def _score_pairs_causal(
+    pairs_text: list[str], batch_size: int = RERANKER_BATCH_SIZE,
+) -> list[float]:
+    """Score pairs with a CausalLM reranker (Qwen3-Reranker style).
+
+    Uses the chat template + yes/no token logits trick:
+        P(relevant) = softmax([logit_yes, logit_no])[0]
+    """
     all_scores = []
 
     for i in range(0, len(pairs_text), batch_size):
@@ -170,6 +191,55 @@ def _score_pairs(pairs_text: list[str], batch_size: int = RERANKER_BATCH_SIZE) -
     return all_scores
 
 
+def _score_pairs_seq_class(
+    query: str, documents: list[str], batch_size: int = RERANKER_BATCH_SIZE,
+) -> list[float]:
+    """Score pairs with a SequenceClassification reranker (CrossEncoder style).
+
+    Used by SINAI/ALIA-MrBERT-es-cultural-reranker and other models trained as
+    `sentence_transformers.CrossEncoder` with `BinaryCrossEntropyLoss`.
+
+    Tokenizes (query, doc) as a text pair (BERT-style: `[CLS] query [SEP] doc [SEP]`)
+    and applies sigmoid on the binary relevance logit:
+        P(relevant) = sigmoid(logit)        if num_labels == 1
+        P(relevant) = softmax(logits)[:, 1] if num_labels == 2
+    """
+    all_scores = []
+
+    for i in range(0, len(documents), batch_size):
+        batch_docs = documents[i : i + batch_size]
+
+        inputs = reranker_tokenizer(
+            [query] * len(batch_docs),
+            batch_docs,
+            padding=True,
+            truncation=True,
+            max_length=RERANKER_MAX_LENGTH,
+            return_tensors="pt",
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+
+        with torch.no_grad():
+            outputs = reranker_model(**inputs)
+
+        logits = outputs.logits
+        if logits.shape[-1] == 1:
+            probs = torch.sigmoid(logits.squeeze(-1))
+        elif logits.shape[-1] == 2:
+            probs = torch.softmax(logits, dim=-1)[:, 1]
+        else:
+            # Defensive fallback: sigmoid on the first logit slot
+            probs = torch.sigmoid(logits[:, 0])
+
+        all_scores.extend(probs.cpu().float().tolist())
+
+        del inputs, outputs, logits, probs
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+
+    return all_scores
+
+
 # ── Lifespan ─────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
@@ -178,6 +248,7 @@ async def lifespan(app: FastAPI):
     global embed_tokenizer, embed_model, device
     global reranker_tokenizer, reranker_model
     global reranker_yes_token_id, reranker_no_token_id, reranker_available
+    global reranker_type
 
     device = _resolve_device(DEVICE)
 
@@ -200,30 +271,66 @@ async def lifespan(app: FastAPI):
     )
 
     # ── Reranker model (optional) ────────────────────────────────────────
-    if os.path.isdir(RERANKER_MODEL_PATH) and os.path.isfile(
-        os.path.join(RERANKER_MODEL_PATH, "config.json"),
-    ):
-        logger.info("Loading reranker tokenizer from %s", RERANKER_MODEL_PATH)
-        reranker_tokenizer = AutoTokenizer.from_pretrained(
-            RERANKER_MODEL_PATH, padding_side="left",
-        )
+    config_path = os.path.join(RERANKER_MODEL_PATH, "config.json")
+    if os.path.isdir(RERANKER_MODEL_PATH) and os.path.isfile(config_path):
+        with open(config_path) as f:
+            rconfig = json.load(f)
+        architectures = rconfig.get("architectures", []) or []
+        arch_str = architectures[0] if architectures else ""
+        logger.info("Reranker arch from config.json: %r", arch_str)
 
-        logger.info("Loading reranker model from %s", RERANKER_MODEL_PATH)
-        reranker_model = AutoModelForCausalLM.from_pretrained(
-            RERANKER_MODEL_PATH, dtype=torch.float16,
-        )
-        reranker_model.to(device)
-        reranker_model.eval()
+        is_causal = "CausalLM" in arch_str
+        is_seq_class = "SequenceClassification" in arch_str
 
-        reranker_yes_token_id = reranker_tokenizer.convert_tokens_to_ids("yes")
-        reranker_no_token_id = reranker_tokenizer.convert_tokens_to_ids("no")
-        reranker_available = True
-
-        logger.info(
-            "Reranker model loaded — yes_id=%d, no_id=%d, params=%dM",
-            reranker_yes_token_id, reranker_no_token_id,
-            sum(p.numel() for p in reranker_model.parameters()) // 1_000_000,
-        )
+        if is_causal:
+            reranker_type = "causal"
+            logger.info("Loading reranker tokenizer (CausalLM) from %s", RERANKER_MODEL_PATH)
+            reranker_tokenizer = AutoTokenizer.from_pretrained(
+                RERANKER_MODEL_PATH, padding_side="left",
+            )
+            logger.info("Loading reranker model (CausalLM) from %s", RERANKER_MODEL_PATH)
+            reranker_model = AutoModelForCausalLM.from_pretrained(
+                RERANKER_MODEL_PATH, dtype=torch.float16,
+            )
+            reranker_model.to(device)
+            reranker_model.eval()
+            reranker_yes_token_id = reranker_tokenizer.convert_tokens_to_ids("yes")
+            reranker_no_token_id = reranker_tokenizer.convert_tokens_to_ids("no")
+            reranker_available = True
+            logger.info(
+                "Reranker (causal) loaded — yes_id=%d, no_id=%d, params=%dM",
+                reranker_yes_token_id, reranker_no_token_id,
+                sum(p.numel() for p in reranker_model.parameters()) // 1_000_000,
+            )
+        elif is_seq_class:
+            reranker_type = "seq_class"
+            logger.info(
+                "Loading reranker tokenizer (SequenceClassification) from %s",
+                RERANKER_MODEL_PATH,
+            )
+            reranker_tokenizer = AutoTokenizer.from_pretrained(RERANKER_MODEL_PATH)
+            logger.info(
+                "Loading reranker model (SequenceClassification) from %s",
+                RERANKER_MODEL_PATH,
+            )
+            reranker_model = AutoModelForSequenceClassification.from_pretrained(
+                RERANKER_MODEL_PATH, dtype=torch.float16,
+            )
+            reranker_model.to(device)
+            reranker_model.eval()
+            reranker_available = True
+            num_labels = getattr(reranker_model.config, "num_labels", "?")
+            logger.info(
+                "Reranker (seq_class) loaded — num_labels=%s, params=%dM",
+                num_labels,
+                sum(p.numel() for p in reranker_model.parameters()) // 1_000_000,
+            )
+        else:
+            logger.warning(
+                "Unknown reranker arch %r — /rerank endpoint disabled. "
+                "Expected *ForCausalLM or *ForSequenceClassification.",
+                arch_str,
+            )
     else:
         logger.info(
             "Reranker model not found at %s — /rerank endpoint disabled",
@@ -323,12 +430,22 @@ async def rerank(request: RerankRequest):
         raise HTTPException(status_code=400, detail="documents must be a non-empty list")
 
     try:
-        pairs = [
-            _format_rerank_pair(request.query, doc, request.instruction)
-            for doc in request.documents
-        ]
-
-        scores = _score_pairs(pairs)
+        if reranker_type == "causal":
+            pairs = [
+                _format_rerank_pair(request.query, doc, request.instruction)
+                for doc in request.documents
+            ]
+            scores = _score_pairs_causal(pairs)
+        elif reranker_type == "seq_class":
+            # CrossEncoder-style models take plain (query, doc) pairs — no
+            # instruction prefix is added. The `instruction` field is ignored
+            # for this arch.
+            scores = _score_pairs_seq_class(request.query, request.documents)
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Unknown reranker_type: {reranker_type!r}",
+            )
 
         results = [
             RerankResult(index=i, score=s)
@@ -367,4 +484,5 @@ async def health():
         "max_length": MAX_LENGTH,
         "reranker_available": reranker_available,
         "reranker_model_path": RERANKER_MODEL_PATH if reranker_available else None,
+        "reranker_type": reranker_type,
     }

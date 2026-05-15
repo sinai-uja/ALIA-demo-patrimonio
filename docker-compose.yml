@@ -44,7 +44,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend/models/${EMBEDDING_MODEL_DIR:-MrBERT}:/app/model:ro
-      - ./backend/models/Qwen3-Reranker-0.6B:/app/reranker_model:ro
+      - ./backend/models/${RERANKER_MODEL_DIR:-Qwen3-Reranker-0.6B}:/app/reranker_model:ro
     environment:
       MODEL_PATH: /app/model
       RERANKER_MODEL_PATH: /app/reranker_model
