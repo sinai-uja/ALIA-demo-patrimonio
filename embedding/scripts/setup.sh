@@ -38,8 +38,8 @@ PORT=8001
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 EMBEDDING_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 MONOREPO_ROOT="$(cd "${EMBEDDING_DIR}/.." && pwd)"
-EMBEDDING_MODEL_DIR="${MONOREPO_ROOT}/backend/models/Qwen3-Embedding-0.6B"
-RERANKER_MODEL_DIR="${MONOREPO_ROOT}/backend/models/Qwen3-Reranker-0.6B"
+EMBEDDING_MODEL_DIR="${MONOREPO_ROOT}/backend/models/ALIA-MrBERT-es-cultural-embeddings"
+RERANKER_MODEL_DIR="${MONOREPO_ROOT}/backend/models/ALIA-MrBERT-es-cultural-reranker"
 
 # Flags
 UPLOAD_MODELS=false
@@ -257,7 +257,7 @@ DEPLOY_ARGS=(
   --cpu-boost
   --execution-environment=gen2
   --no-allow-unauthenticated
-  --set-env-vars="DEVICE=cuda,POOLING_STRATEGY=last_token,MAX_LENGTH=32768,RERANKER_MAX_LENGTH=8192,RERANKER_BATCH_SIZE=4"
+  --set-env-vars="DEVICE=cuda,POOLING_STRATEGY=mean,MAX_LENGTH=8192,RERANKER_MAX_LENGTH=8192,RERANKER_BATCH_SIZE=8"
   --quiet
 )
 
@@ -278,7 +278,7 @@ else
     --add-volume="name=models,type=cloud-storage,bucket=${BUCKET_NAME}"
     --add-volume-mount="volume=models,mount-path=/gcs-models"
     --command="sh"
-    --args="-c,ln -s /gcs-models/Qwen3-Embedding-0.6B /app/model && ln -s /gcs-models/Qwen3-Reranker-0.6B /app/reranker_model && uvicorn main:app --host 0.0.0.0 --port ${PORT}"
+    --args="-c,ln -s /gcs-models/ALIA-MrBERT-es-cultural-embeddings /app/model && ln -s /gcs-models/ALIA-MrBERT-es-cultural-reranker /app/reranker_model && uvicorn main:app --host 0.0.0.0 --port ${PORT}"
   )
   info "Deploy mode: GCS FUSE (models mounted from gs://${BUCKET_NAME})"
 fi
