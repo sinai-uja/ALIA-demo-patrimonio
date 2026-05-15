@@ -37,8 +37,8 @@ steps:
       - '-c'
       - |
         mkdir -p models
-        gsutil -m cp -r gs://${_GCS_BUCKET}/Qwen3-Embedding-0.6B models/
-        gsutil -m cp -r gs://${_GCS_BUCKET}/Qwen3-Reranker-0.6B models/
+        gsutil -m cp -r gs://${_GCS_BUCKET}/ALIA-MrBERT-es-cultural-embeddings models/
+        gsutil -m cp -r gs://${_GCS_BUCKET}/ALIA-MrBERT-es-cultural-reranker models/
 
   # Step 3: Build baked image (base + models now in workspace/models/)
   - name: 'gcr.io/cloud-builders/docker'

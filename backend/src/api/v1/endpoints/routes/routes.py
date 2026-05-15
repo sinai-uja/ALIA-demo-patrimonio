@@ -128,6 +128,7 @@ async def generate_route(
         user_id=str(user.id),
         username=user.username,
         user_profile_type=user.profile_type.name if user.profile_type else None,
+        score_threshold=request.score_threshold,
     )
 
     result = await service.generate_route(dto)
@@ -159,6 +160,7 @@ async def generate_route_stream(
         user_id=str(user.id),
         username=user.username,
         user_profile_type=user.profile_type.name if user.profile_type else None,
+        score_threshold=request.score_threshold,
     )
 
     async def event_generator():

@@ -14,10 +14,31 @@ class DocumentRepository(ABC):
     ) -> None: ...
 
     @abstractmethod
+    async def save_chunks_batch(
+        self,
+        items: list[tuple[Document, Chunk, ChunkEmbedding]],
+    ) -> None:
+        """Persist a batch of chunks in a single transaction.
+
+        Avoids the per-row flush() roundtrip used by save_chunk_with_embedding
+        and is the recommended path for bulk ingestion.
+        """
+        ...
+
+    @abstractmethod
     async def get_chunks_by_document(self, document_id: str) -> list[Chunk]: ...
 
     @abstractmethod
     async def chunk_exists(self, document_id: str, chunk_index: int) -> bool: ...
+
+    @abstractmethod
+    async def existing_chunk_keys(self) -> set[tuple[str, int]]:
+        """Return the set of (document_id, chunk_index) pairs already stored.
+
+        Loaded once at the start of an ingestion run so the use case can
+        check existence in O(1) memory without a DB roundtrip per chunk.
+        """
+        ...
 
     @abstractmethod
     async def delete_all_chunks(self) -> int: ...

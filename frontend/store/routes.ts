@@ -25,6 +25,8 @@ interface RoutesState {
   suggestions: SuggestionResponse | null;
   filterValues: FilterValues | null;
   numStops: number;
+  /** Cosine distance hard cutoff applied before route construction. */
+  scoreThreshold: number;
   suggestionsLoading: boolean;
 
   // Generation
@@ -60,6 +62,7 @@ interface RoutesState {
   // Actions
   setQuery: (q: string) => void;
   setNumStops: (n: number) => void;
+  setScoreThreshold: (value: number) => void;
   syncFiltersWithQuery: (q: string) => void;
   fetchSuggestions: (q: string) => Promise<void>;
   loadFilterValues: (provinces?: string[]) => Promise<void>;
@@ -86,6 +89,23 @@ interface RoutesState {
 
 let _generateController: AbortController | null = null;
 
+const ROUTES_THRESHOLD_STORAGE_KEY = "routes:scoreThreshold";
+const DEFAULT_ROUTES_THRESHOLD = 0.5;
+
+function loadInitialRoutesThreshold(): number {
+  if (typeof window === "undefined") return DEFAULT_ROUTES_THRESHOLD;
+  try {
+    const raw = window.localStorage.getItem(ROUTES_THRESHOLD_STORAGE_KEY);
+    if (raw === null) return DEFAULT_ROUTES_THRESHOLD;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DEFAULT_ROUTES_THRESHOLD;
+    if (parsed < 0.1 || parsed > 1.0) return DEFAULT_ROUTES_THRESHOLD;
+    return parsed;
+  } catch {
+    return DEFAULT_ROUTES_THRESHOLD;
+  }
+}
+
 export const useRoutesStore = create<RoutesState>((set, get) => ({
   // Smart input
   query: "",
@@ -94,6 +114,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   suggestions: null,
   filterValues: null,
   numStops: 5,
+  scoreThreshold: loadInitialRoutesThreshold(),
   suggestionsLoading: false,
 
   // Generation
@@ -129,6 +150,18 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   setQuery: (q) => set({ query: q }),
 
   setNumStops: (n) => set({ numStops: n }),
+
+  setScoreThreshold: (value) => {
+    const clamped = Math.min(1.0, Math.max(0.1, Math.round(value * 100) / 100));
+    set({ scoreThreshold: clamped });
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(ROUTES_THRESHOLD_STORAGE_KEY, String(clamped));
+      } catch {
+        /* ignore storage quota / disabled storage */
+      }
+    }
+  },
 
   syncFiltersWithQuery: (q: string) => {
     const { activeFilters } = get();
@@ -245,7 +278,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   },
 
   generateRoute: async () => {
-    const { query, activeFilters, numStops, generating } = get();
+    const { query, activeFilters, numStops, scoreThreshold, generating } = get();
     if (!query.trim()) throw new Error("La consulta no puede estar vacia");
 
     // Skip if a generation is already in progress (prevents same-tick duplicates)
@@ -273,6 +306,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     const params = {
       query: query.trim(),
       num_stops: numStops,
+      score_threshold: scoreThreshold,
       ...filters,
     };
 

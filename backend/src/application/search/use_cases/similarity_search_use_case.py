@@ -115,26 +115,40 @@ class SimilaritySearchUseCase:
         reranker_used = False
 
         if self._similarity_only:
-            # Pure similarity: vector search only, no fusion or reranking
-            filtered_chunks = self._similarity_filter.filter(vector_chunks)
-            logger.info(
-                "Search results (similarity-only): search_id=%s vector=%d, filtered=%d,"
-                " threshold=%.3f",
-                search_id, len(vector_chunks), len(filtered_chunks),
-                self._similarity_filter._score_threshold,
-            )
+            # Pure similarity: vector search only, then optional rerank, then filter.
+            # Filter is applied AFTER reranking so the threshold cuts on the
+            # calibrated reranker score (relevance-based) instead of raw cosine
+            # distance, which is too unstable to use as a hard cutoff.
             reranker_ms = 0.0
-            if self._reranker_enabled and filtered_chunks:
-                # Neural reranking on similarity-only candidates
+            if self._reranker_enabled and vector_chunks:
                 t_rerank = time.perf_counter()
-                final_chunks = await self._reranking_service.rerank(
-                    query=search_query, chunks=filtered_chunks,
-                    top_k=len(filtered_chunks),
+                reranked_chunks = await self._reranking_service.rerank(
+                    query=search_query, chunks=vector_chunks,
+                    top_k=len(vector_chunks),
                 )
                 reranker_ms = (time.perf_counter() - t_rerank) * 1000
                 reranker_used = True
+                filtered_chunks = self._similarity_filter.filter(
+                    reranked_chunks, override_threshold=dto.score_threshold,
+                )
             else:
-                final_chunks = sorted(filtered_chunks, key=lambda c: c.score)
+                # No reranker: fall back to filtering on raw cosine distance.
+                filtered_chunks = self._similarity_filter.filter(
+                    vector_chunks, override_threshold=dto.score_threshold,
+                )
+            effective_threshold = (
+                dto.score_threshold
+                if dto.score_threshold is not None
+                else self._similarity_filter._score_threshold
+            )
+            final_chunks = sorted(filtered_chunks, key=lambda c: c.score)
+            logger.info(
+                "Search results (similarity-only): search_id=%s vector=%d,"
+                " reranked=%s, filtered=%d, threshold=%.3f",
+                search_id, len(vector_chunks),
+                "yes" if reranker_used else "no",
+                len(final_chunks), effective_threshold,
+            )
             for i, chunk in enumerate(final_chunks[:20], 1):
                 logger.info(
                     "Similarity #%d: search_id=%s score=%.4f | title: %s"
@@ -143,7 +157,10 @@ class SimilaritySearchUseCase:
                     chunk.heritage_type, chunk.province,
                 )
         else:
-            # Full hybrid pipeline: text search + RRF fusion + reranking
+            # Full hybrid pipeline: text search + RRF fusion + reranking, then filter.
+            # Filter is applied AFTER reranking so the threshold cuts on the
+            # calibrated reranker score instead of the fused RRF score, which
+            # has unpredictable distribution.
             t_tsearch = time.perf_counter()
             text_chunks = await self._text_search_port.search(
                 query=search_query,
@@ -159,27 +176,37 @@ class SimilaritySearchUseCase:
                 text_results=text_chunks,
                 top_k=retrieval_k,
             )
-            filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
-            logger.info(
-                "Search results: search_id=%s vector=%d, fts=%d, fused=%d, filtered=%d",
-                search_id, len(vector_chunks), len(text_chunks),
-                len(fused_chunks), len(filtered_chunks),
-            )
             t_rerank = time.perf_counter()
             if self._reranker_enabled:
-                final_chunks = await self._reranking_service.rerank(
+                reranked_chunks = await self._reranking_service.rerank(
                     query=search_query,
-                    chunks=filtered_chunks,
-                    top_k=len(filtered_chunks),
+                    chunks=fused_chunks,
+                    top_k=len(fused_chunks),
                 )
             else:
-                final_chunks = self._reranking_service.rerank(
+                reranked_chunks = self._reranking_service.rerank(
                     query=search_query,
-                    chunks=filtered_chunks,
-                    top_k=len(filtered_chunks),
+                    chunks=fused_chunks,
+                    top_k=len(fused_chunks),
                 )
             reranker_ms = (time.perf_counter() - t_rerank) * 1000
             reranker_used = True
+            final_chunks = self._relevance_filter_service.filter(
+                reranked_chunks, override_threshold=dto.score_threshold,
+            )
+            effective_threshold = (
+                dto.score_threshold
+                if dto.score_threshold is not None
+                else self._relevance_filter_service._score_threshold
+            )
+            filtered_chunks = final_chunks  # keep name for trace below
+            logger.info(
+                "Search results: search_id=%s vector=%d, fts=%d, fused=%d,"
+                " reranked=%d, filtered=%d, threshold=%.3f",
+                search_id, len(vector_chunks), len(text_chunks),
+                len(fused_chunks), len(reranked_chunks), len(final_chunks),
+                effective_threshold,
+            )
             for i, chunk in enumerate(final_chunks[:20], 1):
                 logger.info(
                     "Hybrid #%d: search_id=%s score=%.4f | title: %s"
@@ -311,23 +338,42 @@ class SimilaritySearchUseCase:
                     trace_steps.append({
                         "step": "fusion",
                         "input": {"vector": len(vector_chunks), "text": text_chunks_count},
-                        "output": {"fused": len(fused_chunks), "filtered": len(filtered_chunks)},
+                        "output": {"fused": len(fused_chunks)},
                     })
+                # Determine candidates fed into reranker for trace clarity
+                rerank_input_count = (
+                    len(vector_chunks) if self._similarity_only else len(fused_chunks)
+                )
+                rerank_output_count = (
+                    len(reranked_chunks)  # type: ignore[name-defined]
+                    if reranker_used else rerank_input_count
+                )
                 if reranker_used:
                     trace_steps.append({
                         "step": "reranker",
-                        "input": {"candidates": len(filtered_chunks)},
+                        "input": {"candidates": rerank_input_count},
                         "output": {
-                            "count": len(final_chunks),
-                            "top_score": round(final_chunks[0].score, 4) if final_chunks else None,
+                            "count": rerank_output_count,
                         },
-                        "results": [
-                            {"rank": i, "score": round(c.score, 4), "title": c.title[:60],
-                             "type": c.heritage_type, "document_id": c.document_id}
-                            for i, c in enumerate(final_chunks[:10], 1)
-                        ],
                         "elapsed_ms": round(reranker_ms, 1),
                     })
+                trace_steps.append({
+                    "step": "score_filter",
+                    "input": {
+                        "pre_filter": rerank_output_count,
+                        "threshold": effective_threshold,
+                        "override": dto.score_threshold,
+                    },
+                    "output": {
+                        "post_filter": len(final_chunks),
+                        "top_score": round(final_chunks[0].score, 4) if final_chunks else None,
+                    },
+                    "results": [
+                        {"rank": i, "score": round(c.score, 4), "title": c.title[:60],
+                         "type": c.heritage_type, "document_id": c.document_id}
+                        for i, c in enumerate(final_chunks[:10], 1)
+                    ],
+                })
                 trace_steps.append({
                     "step": "results",
                     "output": {
@@ -359,6 +405,12 @@ class SimilaritySearchUseCase:
                         "top_score": round(top_score, 4) if top_score is not None else None,
                         "chunks_retrieved": len(final_chunks),
                         "reranker_enabled": self._reranker_enabled,
+                        "score_threshold_effective": round(effective_threshold, 4),
+                        "score_threshold_override": (
+                            round(dto.score_threshold, 4)
+                            if dto.score_threshold is not None
+                            else None
+                        ),
                     },
                     feedback_value=None,
                     status="success",

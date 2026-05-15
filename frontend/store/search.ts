@@ -20,6 +20,8 @@ interface SearchState {
   pageSize: number;
   totalPages: number;
   activeFilters: ActiveFilter[];
+  /** Cosine distance cutoff sent to the backend. Lower = stricter. */
+  scoreThreshold: number;
   /** Full suggestion response (for dropdown). Cleared when dropdown closes. */
   suggestions: SuggestionResponse | null;
   /** Detected entities persisted for overlay highlights. Only cleared on new query. */
@@ -38,6 +40,7 @@ interface SearchState {
   detailLoading: boolean;
 
   setQuery: (q: string) => void;
+  setScoreThreshold: (value: number) => void;
   syncFiltersWithQuery: (q: string) => void;
   performSearch: (page?: number) => Promise<void>;
   goToPage: (page: number) => Promise<void>;
@@ -50,6 +53,23 @@ interface SearchState {
   clearSuggestions: () => void;
   openDetail: (documentId: string) => Promise<void>;
   closeDetail: () => void;
+}
+
+const SEARCH_THRESHOLD_STORAGE_KEY = "search:scoreThreshold";
+const DEFAULT_SEARCH_THRESHOLD = 0.5;
+
+function loadInitialThreshold(): number {
+  if (typeof window === "undefined") return DEFAULT_SEARCH_THRESHOLD;
+  try {
+    const raw = window.localStorage.getItem(SEARCH_THRESHOLD_STORAGE_KEY);
+    if (raw === null) return DEFAULT_SEARCH_THRESHOLD;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DEFAULT_SEARCH_THRESHOLD;
+    if (parsed < 0.1 || parsed > 1.0) return DEFAULT_SEARCH_THRESHOLD;
+    return parsed;
+  } catch {
+    return DEFAULT_SEARCH_THRESHOLD;
+  }
 }
 
 /** Extract numeric asset ID from document_id (e.g. "ficha-inmueble-20831" → "20831"). */
@@ -73,6 +93,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   pageSize: 10,
   totalPages: 0,
   activeFilters: [],
+  scoreThreshold: loadInitialThreshold(),
   suggestions: null,
   detectedEntities: [],
   filterValues: null,
@@ -90,6 +111,21 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
   setQuery: (q) => set({ query: q }),
 
+  setScoreThreshold: (value) => {
+    const clamped = Math.min(1.0, Math.max(0.1, Math.round(value * 100) / 100));
+    set({ scoreThreshold: clamped });
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(SEARCH_THRESHOLD_STORAGE_KEY, String(clamped));
+      } catch {
+        /* ignore storage quota / disabled storage */
+      }
+    }
+    if (get().query.trim() && get().hasSearched) {
+      get().performSearch();
+    }
+  },
+
   syncFiltersWithQuery: (q: string) => {
     const { activeFilters } = get();
     if (activeFilters.length === 0) return;
@@ -104,7 +140,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   },
 
   performSearch: async (page?: number) => {
-    const { query, activeFilters, pageSize } = get();
+    const { query, activeFilters, pageSize, scoreThreshold } = get();
     if (!query.trim()) return;
 
     const cleanQuery = buildCleanQuery(query);
@@ -134,6 +170,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         query: cleanQuery,
         page: targetPage,
         page_size: pageSize,
+        score_threshold: scoreThreshold,
         ...filters,
       }, controller.signal));
       if (controller.signal.aborted) return;

@@ -126,6 +126,8 @@ mejor que batch=1 actual, gracias a paralelismo GPU sin overhead de padding.
 
 `RERANKER_BATCH_SIZE=1` — sin padding, minimo computo por forward pass.
 
+> **Nota (2026-05-15)**: Con el reranker `SINAI/ALIA-MrBERT-es-cultural-reranker` (ModernBERT, `*ForSequenceClassification`, ~150M params) en lugar de Qwen3-Reranker-0.6B, el coste por forward pass es notablemente menor. El despliegue Cloud Run actual (`uja-embedding-00012-wv2`) usa `RERANKER_BATCH_SIZE=8` y `RERANKER_MAX_LENGTH=8192` sin OOM. Los numeros de este benchmark son para Qwen3-Reranker; el equivalente para SINAI esta pendiente de medir.
+
 ### Resumen final (con todas las optimizaciones)
 
 | Metrica | Baseline original | Final (opts + batch=1) | Mejora |

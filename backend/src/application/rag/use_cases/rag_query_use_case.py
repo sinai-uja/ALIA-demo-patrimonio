@@ -98,35 +98,44 @@ class RAGQueryUseCase:
         rerank_ms: float = 0.0
 
         if self._similarity_only:
-            # Pure similarity: vector search only, no fusion or reranking
-            filtered_chunks = self._similarity_filter.filter(vector_chunks)
+            # Pure similarity: vector search → optional rerank → filter.
+            # The score threshold is applied to the reranker output (when enabled)
+            # so the cutoff is anchored on calibrated relevance rather than raw
+            # cosine distance.
+            if not vector_chunks:
+                logger.info("Abstaining: vector search returned no chunks")
+                return _abstain_response()
+            if self._reranker_enabled:
+                t_rerank = time.perf_counter()
+                reranked_chunks = await self._reranking_service.rerank(
+                    query=search_query, chunks=vector_chunks,
+                    top_k=len(vector_chunks),
+                )
+                rerank_ms = (time.perf_counter() - t_rerank) * 1000
+                filtered_chunks = self._similarity_filter.filter(reranked_chunks)
+                final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
+            else:
+                filtered_chunks = self._similarity_filter.filter(vector_chunks)
+                final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
             logger.info(
                 "Search results (similarity-only): vector=%d, filtered=%d, threshold=%.3f",
                 len(vector_chunks), len(filtered_chunks),
                 self._similarity_filter._score_threshold,
             )
-            if not filtered_chunks:
-                logger.info("Abstaining: no chunks passed similarity threshold")
-                return _abstain_response()
-            if self._reranker_enabled:
-                # Neural reranking on similarity-only candidates
-                t_rerank = time.perf_counter()
-                final_chunks = await self._reranking_service.rerank(
-                    query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
+            if not final_chunks:
+                logger.info(
+                    "Abstaining: no chunks survived rerank+filter (similarity-only)",
                 )
-                rerank_ms = (time.perf_counter() - t_rerank) * 1000
-                if not final_chunks:
-                    logger.info("Abstaining: neural reranker returned no results")
-                    return _abstain_response()
-            else:
-                final_chunks = sorted(filtered_chunks, key=lambda c: c.score)[:dto.top_k]
+                return _abstain_response()
             for i, chunk in enumerate(final_chunks, 1):
                 logger.info(
                     "Similarity #%d: score=%.4f | title: %s | type: %s | province: %s",
                     i, chunk.score, chunk.title[:60], chunk.heritage_type, chunk.province,
                 )
         else:
-            # Full hybrid pipeline: text search + RRF fusion + reranking
+            # Full hybrid pipeline: text search → RRF fusion → rerank → filter.
+            # Threshold cuts on the reranker score (relevance-anchored) rather
+            # than the fused RRF score (unstable distribution).
             t_tsearch = time.perf_counter()
             text_chunks = await self._text_search_port.search(
                 query=search_query,
@@ -142,29 +151,32 @@ class RAGQueryUseCase:
                 text_results=text_chunks,
                 top_k=self._retrieval_k,
             )
-            filtered_chunks = self._relevance_filter_service.filter(fused_chunks)
-            logger.info(
-                "Search results: vector=%d, fts=%d, fused=%d, filtered=%d",
-                len(vector_chunks), len(text_chunks), len(fused_chunks), len(filtered_chunks),
-            )
-            if not filtered_chunks:
-                logger.info("Abstaining: no chunks passed relevance threshold")
+            if not fused_chunks:
+                logger.info("Abstaining: fusion produced no chunks")
                 return _abstain_response()
 
+            t_rerank = time.perf_counter()
             if self._reranker_enabled:
-                t_rerank = time.perf_counter()
-                final_chunks = await self._reranking_service.rerank(
-                    query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
+                reranked_chunks = await self._reranking_service.rerank(
+                    query=search_query, chunks=fused_chunks,
+                    top_k=len(fused_chunks),
                 )
-                rerank_ms = (time.perf_counter() - t_rerank) * 1000
             else:
-                t_rerank = time.perf_counter()
-                final_chunks = self._reranking_service.rerank(
-                    query=search_query, chunks=filtered_chunks, top_k=dto.top_k,
+                reranked_chunks = self._reranking_service.rerank(
+                    query=search_query, chunks=fused_chunks,
+                    top_k=len(fused_chunks),
                 )
-                rerank_ms = (time.perf_counter() - t_rerank) * 1000
+            rerank_ms = (time.perf_counter() - t_rerank) * 1000
+
+            filtered_chunks = self._relevance_filter_service.filter(reranked_chunks)
+            final_chunks = filtered_chunks[: dto.top_k]
+            logger.info(
+                "Search results: vector=%d, fts=%d, fused=%d, reranked=%d, filtered=%d",
+                len(vector_chunks), len(text_chunks), len(fused_chunks),
+                len(reranked_chunks), len(filtered_chunks),
+            )
             if not final_chunks:
-                logger.info("Abstaining: all chunks discarded by lexical filter")
+                logger.info("Abstaining: no chunks survived rerank+filter (hybrid)")
                 return _abstain_response()
 
         # 7. Assemble context from retrieved chunks

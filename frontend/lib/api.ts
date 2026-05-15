@@ -184,6 +184,7 @@ export type GenerateRouteParams = {
   heritage_type_filter?: string[] | null;
   province_filter?: string[] | null;
   municipality_filter?: string[] | null;
+  score_threshold?: number;
 };
 
 export const routes = {
@@ -534,6 +535,7 @@ export const search = {
     heritage_type_filter?: string[] | null;
     province_filter?: string[] | null;
     municipality_filter?: string[] | null;
+    score_threshold?: number | null;
   }, signal?: AbortSignal) =>
     apiFetch<SimilaritySearchResponse>("/search/similarity", {
       method: "POST",

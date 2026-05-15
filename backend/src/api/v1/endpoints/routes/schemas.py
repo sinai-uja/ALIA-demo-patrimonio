@@ -13,6 +13,7 @@ class GenerateRouteRequest(BaseModel):
     heritage_type_filter: list[str] | None = None
     province_filter: list[str] | None = None
     municipality_filter: list[str] | None = None
+    score_threshold: float = Field(default=0.50, ge=0.0, le=2.0)
 
 
 class RouteStopSchema(BaseModel):

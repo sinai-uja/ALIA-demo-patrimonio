@@ -131,6 +131,7 @@ def build_routes_application_service(
     remove_stop_use_case = RemoveStopUseCase(
         route_repository=route_repository,
         unit_of_work=uow,
+        llm_port=llm_adapter,
         trace_repository=trace_repository,
     )
     add_stop_use_case = AddStopUseCase(

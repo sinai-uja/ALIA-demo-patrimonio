@@ -321,7 +321,30 @@ El reranker neuronal reemplaza al heuristico en la misma posicion del pipeline:
 - Adaptador: HttpRerankerAdapter (`infrastructure/rag/adapters/reranker_adapter.py`)
 - Servicio: NeuralRerankingService (`domain/rag/services/neural_reranking_service.py`)
 - Composicion: wiring condicional en `rag_composition.py` y `search_composition.py`
-- Docker: mismo contenedor que embedding, modelo montado en `/app/reranker_model`
+- Docker: mismo contenedor que embedding, modelo montado en `/app/reranker_model` (path parametrizado via `RERANKER_MODEL_DIR`, default `Qwen3-Reranker-0.6B`)
+
+#### Auto-deteccion de arquitectura (2026-05-15)
+
+Desde el commit `2e488a4`, `embedding/main.py` detecta la arquitectura del reranker leyendo `architectures` de `config.json` al arrancar y elige la ruta de scoring adecuada. Esto permite servir tanto el `Qwen3-Reranker-0.6B` original como el nuevo `SINAI/ALIA-MrBERT-es-cultural-reranker` (entregado por UJA/SINAI el 2026-05-11) desde el mismo servicio sin cambios de codigo.
+
+| Familia (config.json) | Variable interna | Pre-procesado de input | Funcion de score |
+|---|---|---|---|
+| `*ForCausalLM` (Qwen3-Reranker) | `reranker_type="causal"` | `<Instruct>: ...\n<Query>: ...\n<Document>: ...` + chat template + tokens de pensamiento | `softmax([logit_yes, logit_no])[0]` |
+| `*ForSequenceClassification` (SINAI cultural, ModernBERT, num_labels=1) | `reranker_type="seq_class"` | Pair plain text `(query, doc)` → `[CLS] query [SEP] doc [SEP]` — `RERANKER_INSTRUCTION` se ignora | `sigmoid(logit)` (o `softmax(logits)[:, 1]` si `num_labels==2`) |
+
+El campo `reranker_type` se publica en `GET /health` para verificacion. Funcion `_score_pairs_causal` y `_score_pairs_seq_class` en `embedding/main.py`.
+
+#### Reranker SINAI cultural
+
+| Propiedad | Valor |
+|---|---|
+| Base | MrBERT-es (ModernBERT, ~150M params) |
+| Loss de entrenamiento | `BinaryCrossEntropyLoss` (CrossEncoder de `sentence-transformers`) |
+| Head | `num_labels=1` |
+| Activacion | sigmoid |
+| Max seq | 8,192 tokens |
+| Licencia | Apache-2.0 |
+| Cloud Run | Activo en `uja-embedding-00012-wv2` con `RERANKER_BATCH_SIZE=8` |
 
 ## Como anadir una nueva version
 

@@ -8,6 +8,11 @@ import time
 from src.application.documents.dto.ingest_dto import IngestDocumentsCommand
 from src.composition.documents_composition import build_documents_application_service
 from src.config import settings
+
+# Register related ORM models so SQLAlchemy can resolve the FK from
+# document_chunks_v* to heritage_assets at mapper configuration time.
+import src.infrastructure.heritage.models  # noqa: F401
+
 from src.infrastructure.shared.persistence.engine import AsyncSessionLocal
 from src.infrastructure.documents.repositories.document_repository import (
     SqlAlchemyDocumentRepository,

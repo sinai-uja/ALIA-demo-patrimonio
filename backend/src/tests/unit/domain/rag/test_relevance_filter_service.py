@@ -65,3 +65,55 @@ class TestHasSufficientEvidence:
         chunks = [_make_chunk("c1", 0.5)]
 
         assert service.has_sufficient_evidence(chunks) is False
+
+
+class TestFilterWithOverrideThreshold:
+    def test_override_is_stricter_than_default(self):
+        service = RelevanceFilterService(score_threshold=0.5)
+        chunks = [
+            _make_chunk("c1", 0.20),
+            _make_chunk("c2", 0.35),
+            _make_chunk("c3", 0.45),
+        ]
+
+        result = service.filter(chunks, override_threshold=0.30)
+
+        assert [c.chunk_id for c in result] == ["c1"]
+
+    def test_override_is_more_permissive_than_default(self):
+        service = RelevanceFilterService(score_threshold=0.3)
+        chunks = [
+            _make_chunk("c1", 0.20),
+            _make_chunk("c2", 0.50),
+            _make_chunk("c3", 0.90),
+        ]
+
+        result = service.filter(chunks, override_threshold=0.60)
+
+        assert [c.chunk_id for c in result] == ["c1", "c2"]
+
+    def test_override_none_uses_constructor_default(self):
+        service = RelevanceFilterService(score_threshold=0.30)
+        chunks = [_make_chunk("c1", 0.25), _make_chunk("c2", 0.40)]
+
+        result = service.filter(chunks, override_threshold=None)
+
+        assert [c.chunk_id for c in result] == ["c1"]
+
+    def test_override_zero_filters_everything_above_zero(self):
+        service = RelevanceFilterService(score_threshold=0.50)
+        chunks = [_make_chunk("c1", 0.0), _make_chunk("c2", 0.01)]
+
+        result = service.filter(chunks, override_threshold=0.0)
+
+        assert [c.chunk_id for c in result] == ["c1"]
+
+    def test_has_sufficient_evidence_honors_override(self):
+        service = RelevanceFilterService(score_threshold=0.5)
+        chunks = [_make_chunk("c1", 0.4)]
+
+        assert service.has_sufficient_evidence(chunks) is True
+        assert (
+            service.has_sufficient_evidence(chunks, override_threshold=0.30)
+            is False
+        )

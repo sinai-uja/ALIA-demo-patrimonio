@@ -70,7 +70,9 @@ def embedding_port():
 def document_repository():
     repo = AsyncMock()
     repo.chunk_exists.return_value = False
+    repo.existing_chunk_keys.return_value = set()
     repo.save_chunk_with_embedding.return_value = None
+    repo.save_chunks_batch.return_value = None
     return repo
 
 
@@ -119,8 +121,8 @@ async def test_happy_path_returns_ingest_result(use_case):
 
 @pytest.mark.asyncio
 async def test_existing_chunks_skipped(use_case, document_repository):
-    # First chunk exists, second does not
-    document_repository.chunk_exists.side_effect = [True, False]
+    # First chunk already in DB, second does not — uses in-memory pre-load set
+    document_repository.existing_chunk_keys.return_value = {("doc-1", 0)}
     result = await use_case.execute(_cmd())
     assert result.total_chunks == 1
     assert result.skipped_chunks == 1
@@ -128,7 +130,7 @@ async def test_existing_chunks_skipped(use_case, document_repository):
 
 @pytest.mark.asyncio
 async def test_all_chunks_skipped(use_case, document_repository):
-    document_repository.chunk_exists.return_value = True
+    document_repository.existing_chunk_keys.return_value = {("doc-1", 0), ("doc-1", 1)}
     result = await use_case.execute(_cmd())
     assert result.total_chunks == 0
     assert result.skipped_chunks == 2
@@ -159,7 +161,12 @@ async def test_enrichment_called_per_chunk(use_case, enrichment_service):
 @pytest.mark.asyncio
 async def test_save_chunk_called_per_new_chunk(use_case, document_repository):
     await use_case.execute(_cmd())
-    assert document_repository.save_chunk_with_embedding.await_count == 2
+    # All chunks of a flush go in one bulk insert; the 2 chunks of this test
+    # fit in a single batch and produce a single save_chunks_batch call with
+    # 2 items.
+    assert document_repository.save_chunks_batch.await_count == 1
+    items = document_repository.save_chunks_batch.await_args[0][0]
+    assert len(items) == 2
 
 
 @pytest.mark.asyncio

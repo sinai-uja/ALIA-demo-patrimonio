@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import replace
 
 from src.application.shared.exceptions import (
@@ -69,12 +70,27 @@ class HttpRerankerAdapter(RerankerPort):
         logger.info("Rerank response: %d results", len(results))
 
         # Map scores back to chunks, converting from relevance (higher=better)
-        # to distance-like scale (lower=better) for pipeline compatibility
+        # to distance-like scale (lower=better) for pipeline compatibility.
+        # Defensive: a reranker model may return None or NaN for pathological
+        # inputs (empty docs, numerical instability). Treat those as fully
+        # irrelevant so the chunk sinks to the bottom instead of crashing.
         reranked = []
+        invalid_count = 0
         for result in results:
             idx = result["index"]
-            relevance = result["score"]
+            relevance = result.get("score")
+            if relevance is None or (
+                isinstance(relevance, float) and math.isnan(relevance)
+            ):
+                invalid_count += 1
+                relevance = 0.0
             distance_score = 1.0 - relevance  # 0 = most relevant
             reranked.append(replace(chunks[idx], score=distance_score))
+
+        if invalid_count:
+            logger.warning(
+                "Reranker returned %d invalid scores (None/NaN); treated as irrelevant",
+                invalid_count,
+            )
 
         return reranked

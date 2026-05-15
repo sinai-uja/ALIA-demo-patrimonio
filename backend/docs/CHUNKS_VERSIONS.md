@@ -142,6 +142,8 @@ Reiniciar el backend tras el cambio. No hace falta migracion ni re-ingesta para 
 - **Tabla**: `document_chunks_v4`
 - **Estrategia**: Misma que v2/v3 (parrafos, sin cortar a mitad de parrafo)
 - **Encoder soportado**: MrBERT (768 dims) o **Qwen/Qwen3-Embedding-0.6B** (1024 dims), seleccionable por variable de entorno
+
+> **Caveat (2026-05-15)**: la tabla `document_chunks_v4` actualmente contiene vectores Qwen3 de **1024 dimensiones**, lo que la hace incompatible con el nuevo encoder `SINAI/ALIA-MrBERT-es-cultural-embeddings` (768 dims) servido en Cloud Run desde el commit `e0af784`. Para usar SINAI end-to-end es necesaria una nueva version (v5) + reingesta. TODO pinneado tambien en `.env.prod` (gitignored).
 - **Contenido almacenado en `chunk.content`**: El texto enriquecido (plantilla + texto crudo) se almacena directamente en la columna `content` del chunk, no solo como input al encoder. Esto permite que el context assembly reutilice la metadata sin duplicar cabeceras.
 - **Contenido del embedding**: Plantillas en lenguaje natural por tipo patrimonial, seguidas del fragmento de texto:
 

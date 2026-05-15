@@ -111,6 +111,14 @@ class GenerateRouteUseCase:
             len(chunks), extracted_query,
         )
 
+        # 3.5 Hard score-threshold filter (per-request override)
+        pre_filter_count = len(chunks)
+        chunks = [c for c in chunks if c.get("score", 1.0) <= dto.score_threshold]
+        logger.info(
+            "Route generation: filtered %d -> %d chunks by score_threshold=%.2f",
+            pre_filter_count, len(chunks), dto.score_threshold,
+        )
+
         # 4. SELECT STOPS FIRST (before narrative generation)
         t_select = time.perf_counter()
         selected_chunks = self._route_builder_service.select_diverse_stops(
@@ -247,6 +255,17 @@ class GenerateRouteUseCase:
                 trace_steps.extend(
                     s for s in (rag_pipeline_steps or []) if s.get("step") != "llm_generate"
                 )
+                trace_steps.append({
+                    "step": "score_filter",
+                    "input": {
+                        "pre_filter": pre_filter_count,
+                        "threshold": dto.score_threshold,
+                    },
+                    "output": {
+                        "post_filter": len(chunks),
+                        "threshold": dto.score_threshold,
+                    },
+                })
                 trace_steps.extend([
                     {
                         "step": "stop_selection",

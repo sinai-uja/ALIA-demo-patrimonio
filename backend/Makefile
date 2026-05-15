@@ -1,4 +1,4 @@
-.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 download-reranker download-salamandra download-alia-gptq download-alia-gguf analyze-feedback analyze-queries manage-users db-export db-export-docker db-import db-import-docker help
+.PHONY: dev dev-only infra infra-llm infra-down migrate migrate-new lint test ingest reingest load-assets fetch-assets download-qwen3 download-reranker download-sinai-embedding download-sinai-reranker download-salamandra download-alia-gptq download-alia-gguf analyze-feedback analyze-queries manage-users db-export db-export-docker db-import db-import-docker help
 
 COMPOSE = docker compose -f ../docker-compose.yml -f ../docker-compose.override.yml
 ENV_FILE = config/.env
@@ -19,8 +19,10 @@ help:
 	@echo "  reingest     Delete all chunks and re-ingest from scratch"
 	@echo "  load-assets  Load IAPH API data from ZIP into heritage_assets"
 	@echo "  fetch-assets Fetch IAPH API data live (requires IAPH_API_TOKEN)"
-	@echo "  download-qwen3       Download Qwen3-Embedding-0.6B model"
-	@echo "  download-reranker    Download Qwen3-Reranker-0.6B model"
+	@echo "  download-qwen3              Download Qwen3-Embedding-0.6B model"
+	@echo "  download-reranker           Download Qwen3-Reranker-0.6B model"
+	@echo "  download-sinai-embedding    Download SINAI/ALIA-MrBERT-es-cultural-embeddings"
+	@echo "  download-sinai-reranker     Download SINAI/ALIA-MrBERT-es-cultural-reranker"
 	@echo "  download-salamandra  Download salamandra-7b-instruct (~14GB, local dev)"
 	@echo "  download-alia-gptq   Download ALIA-40b-GPTQ-INT4 (~27GB, Cloud Run vLLM)"
 	@echo "  download-alia-gguf   Download ALIA-40b-instruct-2601 Q4_K_M GGUF (~24.7GB, Cloud Run llama.cpp)"
@@ -76,6 +78,12 @@ download-qwen3:
 
 download-reranker:
 	bash scripts/download_reranker.sh
+
+download-sinai-embedding:
+	bash scripts/download_sinai_embedding.sh
+
+download-sinai-reranker:
+	bash scripts/download_sinai_reranker.sh
 
 download-salamandra:
 	bash scripts/download_salamandra.sh
