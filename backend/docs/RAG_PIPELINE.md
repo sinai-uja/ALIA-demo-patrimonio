@@ -8,7 +8,7 @@ Flujo completo desde la pregunta del usuario hasta la respuesta generada.
 flowchart TD
     Q["Pregunta del usuario"] --> R1
     R1["1. Query Reformulation\n(solo en chat con historial)"] --> E
-    E["2. Embedding\n(MrBERT / Qwen3, configurable)"] --> VS & TS
+    E["2. Embedding\n(MrBERT / Qwen3 / SINAI cultural, configurable)"] --> VS & TS
     VS["3a. Vector Search\npgvector coseno, k=20"] --> HF
     TS["3b. Text Search\ntsvector espanol, k=20"] --> HF
     HF["4. Hybrid Fusion\nRRF (k=60, text_weight=1.5)"] --> RF
@@ -39,12 +39,18 @@ Solo se activa en conversaciones con historial. Concatena la última pregunta de
 
 Encoder configurable via variables de entorno (`EMBEDDING_MODEL_DIR`, `POOLING_STRATEGY`, `MAX_LENGTH`, `EMBEDDING_DIM`):
 
-| | MrBERT (default) | Qwen3-Embedding-0.6B |
-|---|---|---|
-| Modelo | `BSC-LT/MrBERT` (308M params) | `Qwen/Qwen3-Embedding-0.6B` (600M params) |
-| Dimensión | 768 | 1024 |
-| Pooling | mean pooling | last-token pooling (left-padding) |
-| Contexto | 8,192 tokens | 32,768 tokens |
+| | MrBERT | Qwen3-Embedding-0.6B | SINAI ALIA-MrBERT cultural |
+|---|---|---|---|
+| Modelo | `BSC-LT/MrBERT` (308M params) | `Qwen/Qwen3-Embedding-0.6B` (600M params) | `SINAI/ALIA-MrBERT-es-cultural-embeddings` (~150M params, MrBERT-es fine-tuned por UJA/SINAI sobre patrimonio cultural espanol) |
+| Dimensión | 768 | 1024 | 768 |
+| Pooling | mean pooling | last-token pooling (left-padding) | mean pooling |
+| Contexto | 8,192 tokens | 32,768 tokens | 8,192 tokens |
+| Instruccion de query | no | si (`EMBEDDING_QUERY_INSTRUCTION`) | no (prompt vacio en `config_sentence_transformers.json`) |
+| Tokenizer | uncased | uncased | **cased** (`do_lower_case: false`) |
+
+> **Modelo activo en Cloud Run (2026-05-11)**: `SINAI/ALIA-MrBERT-es-cultural-embeddings` en la revision `uja-embedding-00012-wv2`. Variables de despliegue: `POOLING_STRATEGY=mean`, `MAX_LENGTH=8192`, `RERANKER_BATCH_SIZE=8`.
+>
+> **Caveat conocido**: `RAGQueryUseCase.execute()` aplica `dto.query.lower()` antes de embedir (`application/rag/use_cases/rag_query_use_case.py:68`). Es transparente para Qwen3 (uncased) pero **subóptimo** para SINAI, que es cased. Pendiente de corregir en el backend; mientras tanto la tabla v4 sigue con vectores Qwen3 de 1024 dims y es incompatible con SINAI hasta que se realice la migracion a v5 + reingesta.
 
 ### 3a. Vector Search (búsqueda semántica)
 
