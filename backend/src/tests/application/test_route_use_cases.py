@@ -391,6 +391,55 @@ class TestGenerateRouteUseCase:
         build_kwargs = self.route_builder_service.build.call_args.kwargs
         assert build_kwargs["title"] == "Descubriendo Granada"
 
+    async def test_score_threshold_filters_chunks_above_cutoff(self):
+        """Chunks whose score exceeds dto.score_threshold must be dropped
+        BEFORE select_diverse_stops sees them."""
+        # Three chunks: only the first two should survive a 0.45 threshold.
+        chunks = [
+            _make_chunk(title="A", score=0.20),
+            _make_chunk(title="B", score=0.40),
+            _make_chunk(title="C", score=0.80),
+        ]
+        route = _make_virtual_route()
+        self._setup_defaults(chunks=chunks, route=route)
+        # Track what select_diverse_stops actually receives.
+        self.route_builder_service.select_diverse_stops.return_value = chunks[:2]
+
+        dto = GenerateRouteDTO(
+            query="alhambra",
+            num_stops=2,
+            score_threshold=0.45,
+        )
+
+        await self.use_case.execute(dto)
+
+        call_kwargs = self.route_builder_service.select_diverse_stops.call_args.kwargs
+        passed_chunks = call_kwargs["chunks"]
+        # Only chunks with score <= 0.45 should be forwarded.
+        assert len(passed_chunks) == 2
+        assert {c["title"] for c in passed_chunks} == {"A", "B"}
+
+    async def test_score_threshold_default_is_zero_point_five(self):
+        """The DTO default of 0.50 must be applied when no override is given."""
+        chunks = [
+            _make_chunk(title="A", score=0.30),
+            _make_chunk(title="B", score=0.50),
+            _make_chunk(title="C", score=0.60),
+        ]
+        route = _make_virtual_route()
+        self._setup_defaults(chunks=chunks, route=route)
+        self.route_builder_service.select_diverse_stops.return_value = chunks[:2]
+
+        dto = GenerateRouteDTO(query="alhambra", num_stops=2)
+
+        await self.use_case.execute(dto)
+
+        call_kwargs = self.route_builder_service.select_diverse_stops.call_args.kwargs
+        passed_chunks = call_kwargs["chunks"]
+        # Chunks A (0.30) and B (0.50) pass the 0.50 cutoff; C (0.60) is dropped.
+        assert len(passed_chunks) == 2
+        assert {c["title"] for c in passed_chunks} == {"A", "B"}
+
     async def test_fallback_title_when_empty_narrative(self):
         route = _make_virtual_route()
         self._setup_defaults(route=route)

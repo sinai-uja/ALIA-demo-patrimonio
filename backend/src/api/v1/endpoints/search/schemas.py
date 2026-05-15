@@ -23,6 +23,10 @@ class SimilaritySearchRequest(BaseModel):
         default=None,
         description="Filter by municipality/ies — multiple values act as OR",
     )
+    score_threshold: float | None = Field(
+        default=None, ge=0.0, le=2.0,
+        description="Cosine distance cutoff (lower = stricter). Null = use server default.",
+    )
 
 
 class ChunkHitSchema(BaseModel):

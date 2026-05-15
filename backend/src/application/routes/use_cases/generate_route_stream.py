@@ -146,6 +146,17 @@ class GenerateRouteStreamUseCase:
 
             rag_ms = (time.perf_counter() - t_rag) * 1000
 
+            # Hard score-threshold filter (per-request override)
+            pre_filter_count = len(chunks)
+            chunks = [
+                c for c in chunks if c.get("score", 1.0) <= dto.score_threshold
+            ]
+            logger.info(
+                "Route stream generation: filtered %d -> %d chunks by"
+                " score_threshold=%.2f",
+                pre_filter_count, len(chunks), dto.score_threshold,
+            )
+
             yield {
                 "event": "step",
                 "data": {
@@ -459,6 +470,17 @@ class GenerateRouteStreamUseCase:
                     trace_steps.extend(
                         s for s in (_rag_steps or []) if s.get("step") != "llm_generate"
                     )
+                    trace_steps.append({
+                        "step": "score_filter",
+                        "input": {
+                            "pre_filter": pre_filter_count,
+                            "threshold": dto.score_threshold,
+                        },
+                        "output": {
+                            "post_filter": len(chunks),
+                            "threshold": dto.score_threshold,
+                        },
+                    })
                     trace_steps.extend([
                         {
                             "step": "stop_selection",

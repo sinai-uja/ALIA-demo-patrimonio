@@ -15,6 +15,7 @@ class GenerateRouteDTO:
     user_id: str | None = None
     username: str | None = None
     user_profile_type: str | None = None
+    score_threshold: float = 0.50
 
 
 @dataclass(frozen=True)

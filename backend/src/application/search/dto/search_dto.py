@@ -14,6 +14,7 @@ class SimilaritySearchDTO:
     user_id: str | None = None
     username: str | None = None
     user_profile_type: str | None = None
+    score_threshold: float | None = None
 
 
 @dataclass(frozen=True)
