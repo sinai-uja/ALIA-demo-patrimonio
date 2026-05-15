@@ -54,8 +54,9 @@ export function RouteSmartInput({
     (value: string) => {
       setQuery(value);
       syncFiltersWithQuery(value);
+      if (clarification.active) clarification.dismiss();
     },
-    [setQuery, syncFiltersWithQuery],
+    [setQuery, syncFiltersWithQuery, clarification],
   );
 
   const handleSubmit = useCallback(() => {
