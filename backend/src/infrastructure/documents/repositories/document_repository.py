@@ -48,6 +48,42 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
             )
             raise
 
+    async def save_chunks_batch(
+        self,
+        items: list[tuple[Document, Chunk, ChunkEmbedding]],
+    ) -> None:
+        """Bulk-add a batch of chunks. No per-row flush — relies on the
+        outer UnitOfWork commit to send all rows in a single transaction.
+        """
+        if not items:
+            return
+        models = [
+            DocumentChunkModel(
+                id=chunk.id,
+                document_id=chunk.document_id,
+                heritage_type=document.heritage_type.value,
+                title=document.title,
+                province=document.province,
+                municipality=document.municipality,
+                url=document.url,
+                chunk_index=chunk.chunk_index,
+                content=chunk.content,
+                token_count=chunk.token_count,
+                embedding=embedding.embedding,
+                metadata_=self._sanitize_metadata(document.metadata),
+            )
+            for (document, chunk, embedding) in items
+        ]
+        self._session.add_all(models)
+        try:
+            await self._session.flush()
+        except Exception:
+            logger.error(
+                "Failed to bulk-save chunk batch of size %d", len(models),
+                exc_info=True,
+            )
+            raise
+
     @staticmethod
     def _sanitize_metadata(data: dict) -> dict:
         """Sanitize pandas/numpy values for JSONB storage."""
@@ -86,6 +122,18 @@ class SqlAlchemyDocumentRepository(DocumentRepositoryPort):
             )
             for row in rows
         ]
+
+    async def existing_chunk_keys(self) -> set[tuple[str, int]]:
+        """Pre-load all (document_id, chunk_index) pairs in a single query."""
+        stmt = select(
+            DocumentChunkModel.document_id, DocumentChunkModel.chunk_index,
+        )
+        try:
+            result = await self._session.execute(stmt)
+        except Exception:
+            logger.error("Failed to pre-load existing chunk keys", exc_info=True)
+            raise
+        return {(row.document_id, row.chunk_index) for row in result}
 
     async def chunk_exists(self, document_id: str, chunk_index: int) -> bool:
         stmt = select(DocumentChunkModel.id).where(

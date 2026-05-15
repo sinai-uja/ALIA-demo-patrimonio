@@ -15,7 +15,7 @@ from src.domain.shared.ports.unit_of_work import UnitOfWork
 
 logger = logging.getLogger("iaph.documents.ingest")
 
-EMBEDDING_BATCH_SIZE = 2
+EMBEDDING_BATCH_SIZE = 32
 
 
 class IngestDocumentsUseCase:
@@ -50,56 +50,76 @@ class IngestDocumentsUseCase:
         total_chunks = 0
         skipped_chunks = 0
 
+        # Pre-load every (document_id, chunk_index) pair already stored.
+        # O(N) at start, O(1) per chunk afterwards — avoids 1 DB roundtrip
+        # per chunk while remaining idempotent. ~50 bytes/row × 130K rows
+        # = ~7 MB RAM, negligible.
+        existing_keys = await self._repository.existing_chunk_keys()
+        if existing_keys:
+            logger.info(
+                "Loaded %d existing chunk keys for idempotency check",
+                len(existing_keys),
+            )
+
+        # Cross-document buffer: keeps (document, enriched_chunk) pairs that
+        # still need an embedding. Flushed in batches of EMBEDDING_BATCH_SIZE
+        # to amortise embedding-service latency across many documents.
+        buffer: list[tuple] = []
+
+        async def flush() -> int:
+            """Embed every chunk in the buffer in a single request and persist."""
+            if not buffer:
+                return 0
+            enriched_texts = [pair[1].content for pair in buffer]
+            embeddings = await self._embedding_port.embed(enriched_texts)
+            items = [
+                (
+                    doc,
+                    enriched_chunk,
+                    ChunkEmbedding(
+                        chunk_id=enriched_chunk.id,
+                        embedding=embedding_vector,
+                    ),
+                )
+                for (doc, enriched_chunk), embedding_vector in zip(buffer, embeddings)
+            ]
+            async with self._uow:
+                await self._repository.save_chunks_batch(items)
+            persisted = len(items)
+            buffer.clear()
+            return persisted
+
         for document in self._loader.load_documents(command.source_path, heritage_type):
             total_documents += 1
             chunks = self._chunker.chunk_document(document)
 
-            # Filter out already-existing chunks (idempotent ingestion)
-            new_chunks = []
+            # Filter out already-existing chunks (idempotent ingestion) and
+            # enrich the survivors before buffering them. Uses the in-memory
+            # set pre-loaded above instead of a DB roundtrip per chunk.
             for chunk in chunks:
-                exists = await self._repository.chunk_exists(
-                    chunk.document_id, chunk.chunk_index
-                )
-                if exists:
+                key = (chunk.document_id, chunk.chunk_index)
+                if key in existing_keys:
                     skipped_chunks += 1
-                else:
-                    new_chunks.append(chunk)
+                    continue
+                existing_keys.add(key)  # avoid duplicates within the same run
+                enriched_chunk = replace(
+                    chunk,
+                    content=self._enrichment_service.enrich(document, chunk).text,
+                )
+                buffer.append((document, enriched_chunk))
 
-            async with self._uow:
-                # Embed and persist in batches. The enriched text is what
-                # gets embedded AND what gets persisted as chunk.content so
-                # that retrieval returns the same text that was vectorized.
-                for batch_start in range(0, len(new_chunks), EMBEDDING_BATCH_SIZE):
-                    batch = new_chunks[batch_start : batch_start + EMBEDDING_BATCH_SIZE]
+                if len(buffer) >= EMBEDDING_BATCH_SIZE:
+                    total_chunks += await flush()
 
-                    enriched_batch = [
-                        replace(
-                            chunk,
-                            content=self._enrichment_service.enrich(document, chunk).text,
-                        )
-                        for chunk in batch
-                    ]
-                    enriched_texts = [c.content for c in enriched_batch]
-
-                    embeddings = await self._embedding_port.embed(enriched_texts)
-
-                    for enriched_chunk, embedding_vector in zip(enriched_batch, embeddings):
-                        embedding = ChunkEmbedding(
-                            chunk_id=enriched_chunk.id,
-                            embedding=embedding_vector,
-                        )
-                        await self._repository.save_chunk_with_embedding(
-                            document, enriched_chunk, embedding
-                        )
-
-                total_chunks += len(new_chunks)
-
-            if total_documents % 50 == 0:
+            if total_documents % 200 == 0:
                 logger.info(
                     "Ingestion progress: %d documents processed, %d chunks created",
                     total_documents,
                     total_chunks,
                 )
+
+        # Flush any leftovers at the end.
+        total_chunks += await flush()
 
         logger.info(
             "Ingestion complete: %d documents, %d new chunks, %d skipped",
