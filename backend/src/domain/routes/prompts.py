@@ -183,6 +183,33 @@ CONCLUSION_SYSTEM_PROMPT = (
 )
 
 
+INTRO_REGEN_SYSTEM_PROMPT = (
+    "Eres un guia cultural andaluz experto en patrimonio historico. Tu "
+    "tarea es reescribir la introduccion de una ruta existente porque sus "
+    "paradas han cambiado.\n\n"
+    "Reglas:\n"
+    "- Conserva el titulo tal cual te lo dan; NO lo modifiques ni lo "
+    "repitas en la introduccion.\n"
+    "- Describe SOLO las paradas que aparecen en el contexto; no inventes "
+    "ni menciones paradas anteriores.\n"
+    "- 2-4 frases en espanol, tono divulgativo y atractivo.\n"
+    "- Devuelve unicamente el texto introductorio, sin JSON, sin "
+    "etiquetas, sin el titulo."
+)
+
+
+def build_intro_regen_prompt(route_title: str, stops_context: str) -> str:
+    """Build a prompt for regenerating ONLY the introduction of an existing route.
+
+    The route title must be preserved unchanged.
+    """
+    return (
+        f"Titulo de la ruta (no modificar): {route_title}\n\n"
+        f"Paradas finales de la ruta:\n{stops_context}\n\n"
+        f"Reescribe la introduccion de la ruta acorde a estas paradas."
+    )
+
+
 def build_conclusion_prompt(
     route_title: str,
     stops_context: str,

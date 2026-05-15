@@ -121,3 +121,23 @@ class RouteBuilderService:
             introduction=introduction,
             conclusion=conclusion,
         )
+
+    def rebuild_narrative(
+        self,
+        introduction: str,
+        segments_by_order: dict[int, str],
+        conclusion: str,
+    ) -> str:
+        """Compose the monolithic narrative from intro, per-stop segments
+        (1-indexed, in order), and conclusion.
+        """
+        parts: list[str] = []
+        if introduction:
+            parts.append(introduction)
+        for order in sorted(segments_by_order.keys()):
+            seg = segments_by_order[order]
+            if seg:
+                parts.append(seg)
+        if conclusion:
+            parts.append(conclusion)
+        return "\n\n".join(parts)

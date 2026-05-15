@@ -12,6 +12,11 @@ from src.application.routes.use_cases.generate_route import GenerateRouteUseCase
 from src.application.routes.use_cases.remove_stop import RemoveStopUseCase
 from src.application.routes.use_cases.route_filter_values import RouteFilterValuesUseCase
 from src.application.routes.use_cases.route_suggestions import RouteSuggestionsUseCase
+from src.domain.routes.prompts import (
+    CONCLUSION_SYSTEM_PROMPT,
+    INTRO_REGEN_SYSTEM_PROMPT,
+    SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT,
+)
 from src.domain.routes.services.query_extraction_service import QueryExtractionService
 from src.domain.routes.services.route_builder_service import RouteBuilderService
 from src.domain.routes.value_objects.asset_preview import AssetPreview
@@ -21,6 +26,31 @@ from src.domain.routes.value_objects.route_stop import RouteStop
 from src.domain.routes.value_objects.virtual_route import VirtualRoute
 from src.domain.shared.entities.execution_trace import ExecutionTrace
 from src.domain.shared.ports.trace_repository import TraceRepository
+
+
+def _llm_router(
+    *,
+    narrative: str = "Texto narrativo de la nueva parada.",
+    intro: str = "Introduccion regenerada acorde a las paradas.",
+    conclusion: str = "Conclusion regenerada acorde a las paradas.",
+):
+    """Return an async callable that picks a response based on the system prompt.
+
+    Useful for tests that mock ``LLMPort.generate_structured`` when the use
+    case fires multiple LLM calls in parallel with different prompts.
+    """
+
+    async def _call(*, system_prompt: str, user_prompt: str, **_kwargs) -> str:
+        if system_prompt == INTRO_REGEN_SYSTEM_PROMPT:
+            return intro
+        if system_prompt == CONCLUSION_SYSTEM_PROMPT:
+            return conclusion
+        if system_prompt == SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT:
+            return narrative
+        # Fallback for any other prompt (e.g. query extraction)
+        return narrative
+
+    return _call
 
 # ---------------------------------------------------------------------------
 # RouteSuggestionsUseCase
@@ -585,9 +615,14 @@ class TestAddStopUseCase:
             ),
         }
 
-        # LLM returns a raw narrative with markdown that should be stripped.
-        self.llm_port.generate_structured.return_value = (
-            "**Narrativa para la nueva parada:** Texto generado por el LLM."
+        # LLM router: pick a different stubbed response per system prompt.
+        # The per-stop narrative call returns markdown that must be stripped.
+        self.llm_port.generate_structured.side_effect = _llm_router(
+            narrative=(
+                "**Narrativa para la nueva parada:** Texto generado por el LLM."
+            ),
+            intro="Introduccion regenerada acorde a las paradas.",
+            conclusion="Conclusion regenerada acorde a las paradas.",
         )
 
         # update_route returns the updated route — for simplicity, return a
@@ -652,13 +687,22 @@ class TestAddStopUseCase:
         assert trace.summary["position"] == 2
         assert trace.username == "alice"
         assert trace.user_profile_type == "researcher"
-        # Steps: request, lookup, narrative, update -> at least 3
-        assert len(trace.steps) >= 3
+        # Steps: request, lookup, narrative, regen, update -> at least 4
+        assert len(trace.steps) >= 4
         narrative_steps = [
             s for s in trace.steps if s.get("step") == "narrative_generation"
         ]
         assert len(narrative_steps) == 1
         assert narrative_steps[0]["output"]["raw_response"]
+        regen_steps = [
+            s for s in trace.steps if s.get("step") == "narrative_regeneration"
+        ]
+        assert len(regen_steps) == 1
+        regen_output = regen_steps[0]["output"]
+        assert regen_output["introduction"]
+        assert regen_output["conclusion"]
+        assert regen_output["intro_fallback_used"] is False
+        assert regen_output["conclusion_fallback_used"] is False
 
     async def test_succeeds_when_trace_save_raises(self):
         """A failure in the trace repository must NOT bubble up."""
@@ -707,6 +751,105 @@ class TestAddStopUseCase:
 
         assert result.id == str(route.id)
 
+    async def test_add_stop_regenerates_intro_and_conclusion(self):
+        """update_route must receive the regenerated intro/conclusion, not the
+        originals."""
+        route = self._setup_defaults()
+
+        await self.use_case.execute(
+            route_id=str(route.id),
+            document_id="new-asset-id",
+            position=2,
+            user_id=str(uuid4()),
+        )
+
+        self.route_repository.update_route.assert_awaited_once()
+        call_kwargs = self.route_repository.update_route.call_args.kwargs
+        assert call_kwargs["introduction"] == (
+            "Introduccion regenerada acorde a las paradas."
+        )
+        assert call_kwargs["conclusion"] == (
+            "Conclusion regenerada acorde a las paradas."
+        )
+        # Sanity: they differ from the originals on the route entity.
+        assert call_kwargs["introduction"] != route.introduction
+        assert call_kwargs["conclusion"] != route.conclusion
+
+    async def test_add_stop_keeps_old_intro_when_llm_returns_empty(self):
+        """LLM mock returns empty for intro -> update_route receives the original
+        intro, but conclusion still gets regenerated."""
+        route = self._setup_defaults()
+        # Override the side_effect: intro empty, conclusion populated.
+        self.llm_port.generate_structured.side_effect = _llm_router(
+            narrative=(
+                "**Narrativa para la nueva parada:** Texto generado por el LLM."
+            ),
+            intro="",
+            conclusion="Conclusion regenerada acorde a las paradas.",
+        )
+
+        await self.use_case.execute(
+            route_id=str(route.id),
+            document_id="new-asset-id",
+            position=2,
+            user_id=str(uuid4()),
+        )
+
+        call_kwargs = self.route_repository.update_route.call_args.kwargs
+        # Fallback: original intro is preserved.
+        assert call_kwargs["introduction"] == route.introduction
+        # Conclusion was regenerated successfully.
+        assert call_kwargs["conclusion"] == (
+            "Conclusion regenerada acorde a las paradas."
+        )
+
+        # And the trace records the fallback flag.
+        trace = self.trace_repo.saved[0]
+        regen_steps = [
+            s for s in trace.steps if s.get("step") == "narrative_regeneration"
+        ]
+        assert regen_steps[0]["output"]["intro_fallback_used"] is True
+        assert regen_steps[0]["output"]["conclusion_fallback_used"] is False
+
+    async def test_add_stop_rebuilds_narrative_with_new_intro_conclusion(self):
+        """RouteBuilderService.rebuild_narrative must be called with the
+        regenerated intro/conclusion plus the segments dict."""
+        # Inject a MagicMock RouteBuilderService so we can assert on its call.
+        rb_service = MagicMock(spec=RouteBuilderService)
+        rb_service.rebuild_narrative.return_value = "RECOMPUESTO"
+        self.use_case = AddStopUseCase(
+            route_repository=self.route_repository,
+            heritage_asset_lookup_port=self.heritage_asset_lookup_port,
+            llm_port=self.llm_port,
+            unit_of_work=self.unit_of_work,
+            trace_repository=self.trace_repo,
+            route_builder_service=rb_service,
+        )
+        route = self._setup_defaults()
+
+        await self.use_case.execute(
+            route_id=str(route.id),
+            document_id="new-asset-id",
+            position=2,
+            user_id=str(uuid4()),
+        )
+
+        rb_service.rebuild_narrative.assert_called_once()
+        rb_kwargs = rb_service.rebuild_narrative.call_args.kwargs
+        assert rb_kwargs["introduction"] == (
+            "Introduccion regenerada acorde a las paradas."
+        )
+        assert rb_kwargs["conclusion"] == (
+            "Conclusion regenerada acorde a las paradas."
+        )
+        segments = rb_kwargs["segments_by_order"]
+        # 2 original stops + 1 new -> 3 entries keyed 1..3
+        assert set(segments.keys()) == {1, 2, 3}
+
+        # And the recomposed narrative was forwarded to update_route.
+        update_kwargs = self.route_repository.update_route.call_args.kwargs
+        assert update_kwargs["narrative"] == "RECOMPUESTO"
+
 
 # ---------------------------------------------------------------------------
 # RemoveStopUseCase
@@ -716,6 +859,7 @@ class TestAddStopUseCase:
 class TestRemoveStopUseCase:
     def setup_method(self):
         self.route_repository = AsyncMock()
+        self.llm_port = AsyncMock()
         self.unit_of_work = AsyncMock()
         self.unit_of_work.__aenter__ = AsyncMock(return_value=self.unit_of_work)
         self.unit_of_work.__aexit__ = AsyncMock(return_value=False)
@@ -724,12 +868,18 @@ class TestRemoveStopUseCase:
         self.use_case = RemoveStopUseCase(
             route_repository=self.route_repository,
             unit_of_work=self.unit_of_work,
+            llm_port=self.llm_port,
             trace_repository=self.trace_repo,
         )
 
     def _setup_defaults(self, num_stops: int = 3) -> VirtualRoute:
         route = _make_route_with_stops(num_stops=num_stops)
         self.route_repository.get_route.return_value = route
+        # LLM router for intro/conclusion regeneration.
+        self.llm_port.generate_structured.side_effect = _llm_router(
+            intro="Introduccion regenerada tras eliminar parada.",
+            conclusion="Conclusion regenerada tras eliminar parada.",
+        )
 
         def _update_route_side_effect(route_uuid, user_uuid, **kwargs):
             new_stops_dicts = kwargs["stops"]
@@ -797,11 +947,23 @@ class TestRemoveStopUseCase:
         # Stop with order=2 from _make_route_with_stops has title "Parada 2".
         assert removal_steps[0]["output"]["removed_stop_title"] == "Parada 2"
 
+        # narrative_regeneration step must also be present.
+        regen_steps = [
+            s for s in trace.steps if s.get("step") == "narrative_regeneration"
+        ]
+        assert len(regen_steps) == 1
+        regen_output = regen_steps[0]["output"]
+        assert regen_output["introduction"]
+        assert regen_output["conclusion"]
+        assert regen_output["intro_fallback_used"] is False
+        assert regen_output["conclusion_fallback_used"] is False
+
     async def test_succeeds_when_trace_save_raises(self):
         failing_repo = FakeTraceRepository(save_should_raise=RuntimeError("db down"))
         self.use_case = RemoveStopUseCase(
             route_repository=self.route_repository,
             unit_of_work=self.unit_of_work,
+            llm_port=self.llm_port,
             trace_repository=failing_repo,
         )
         route = self._setup_defaults(num_stops=3)
@@ -821,6 +983,7 @@ class TestRemoveStopUseCase:
         self.use_case = RemoveStopUseCase(
             route_repository=self.route_repository,
             unit_of_work=self.unit_of_work,
+            llm_port=self.llm_port,
             trace_repository=None,
         )
         route = self._setup_defaults(num_stops=3)
@@ -832,3 +995,57 @@ class TestRemoveStopUseCase:
         )
 
         assert result.id == str(route.id)
+
+    async def test_remove_stop_regenerates_intro_and_conclusion(self):
+        """update_route must receive the regenerated intro/conclusion, not the
+        originals."""
+        route = self._setup_defaults(num_stops=3)
+
+        await self.use_case.execute(
+            route_id=str(route.id),
+            stop_order=2,
+            user_id=str(uuid4()),
+        )
+
+        self.route_repository.update_route.assert_awaited_once()
+        call_kwargs = self.route_repository.update_route.call_args.kwargs
+        assert call_kwargs["introduction"] == (
+            "Introduccion regenerada tras eliminar parada."
+        )
+        assert call_kwargs["conclusion"] == (
+            "Conclusion regenerada tras eliminar parada."
+        )
+        # Sanity: they differ from the originals on the route entity.
+        assert call_kwargs["introduction"] != route.introduction
+        assert call_kwargs["conclusion"] != route.conclusion
+
+    async def test_remove_stop_keeps_old_conclusion_when_llm_returns_empty(self):
+        """LLM mock returns empty for conclusion -> update_route receives the
+        original conclusion; intro still regenerated."""
+        route = self._setup_defaults(num_stops=3)
+        self.llm_port.generate_structured.side_effect = _llm_router(
+            intro="Introduccion regenerada tras eliminar parada.",
+            conclusion="",
+        )
+
+        await self.use_case.execute(
+            route_id=str(route.id),
+            stop_order=2,
+            user_id=str(uuid4()),
+        )
+
+        call_kwargs = self.route_repository.update_route.call_args.kwargs
+        # Intro was regenerated successfully.
+        assert call_kwargs["introduction"] == (
+            "Introduccion regenerada tras eliminar parada."
+        )
+        # Fallback: original conclusion is preserved.
+        assert call_kwargs["conclusion"] == route.conclusion
+
+        # And the trace records the fallback flag.
+        trace = self.trace_repo.saved[0]
+        regen_steps = [
+            s for s in trace.steps if s.get("step") == "narrative_regeneration"
+        ]
+        assert regen_steps[0]["output"]["intro_fallback_used"] is False
+        assert regen_steps[0]["output"]["conclusion_fallback_used"] is True
