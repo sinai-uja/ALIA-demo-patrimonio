@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Avances &mdash; IAPH RAG Monorepo &mdash; 2026-05-15</title>
+<style>
+  :root {
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-400: #fbbf24; --amber-500: #f59e0b; --amber-600: #d97706;
+    --orange-400: #fb923c; --orange-500: #f97316; --orange-600: #ea580c;
+    --rose-400: #fb7185; --rose-500: #f43f5e; --rose-600: #e11d48;
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --green-100: #dcfce7; --green-500: #22c55e; --green-700: #15803d;
+    --red-100: #fee2e2; --red-500: #ef4444; --red-700: #b91c1c;
+    --blue-100: #dbeafe; --blue-500: #3b82f6; --blue-700: #1d4ed8;
+    --purple-100: #f3e8ff; --purple-500: #a855f7; --purple-700: #7e22ce;
+    --yellow-100: #fef9c3; --yellow-500: #eab308; --yellow-700: #a16207;
+    --teal-100: #ccfbf1; --teal-500: #14b8a6; --teal-700: #0f766e;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-800);
+    line-height: 1.6; font-size: 15px;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500), var(--rose-500));
+    padding: 0 2rem; box-shadow: var(--shadow-md);
+  }
+  nav .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  nav .nav-inner::-webkit-scrollbar { display: none; }
+  nav .brand {
+    font-weight: 800; font-size: 1.1rem; color: #fff;
+    padding: .85rem 0; text-decoration: none; flex-shrink: 0;
+  }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    font-size: .82rem; font-weight: 500; padding: .85rem .25rem;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    flex-shrink: 0;
+  }
+  nav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,.6); }
+  .hero {
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+    color: #fff; padding: 3rem 2rem 2.5rem; text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--amber-400), var(--orange-400), var(--rose-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--slate-400); margin-top: .5rem; font-size: .95rem; }
+  .hero .meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.2rem; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: var(--slate-300);
+  }
+  .hero .meta code {
+    background: rgba(255,255,255,.1); padding: .15rem .5rem;
+    border-radius: 6px; font-size: .78rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; }
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+    margin-bottom: 1.2rem; padding-bottom: .5rem;
+    border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--amber-500), var(--orange-500), var(--rose-500)) 1;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--slate-200);
+    padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; color: var(--slate-900); }
+  .card h4 { font-size: .9rem; font-weight: 600; margin: .8rem 0 .3rem; color: var(--slate-700); }
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; line-height: 1.4;
+  }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-orange { background: #fff7ed; color: var(--orange-600); }
+  .badge-rose { background: #fff1f2; color: var(--rose-600); }
+  .badge-green { background: var(--green-100); color: var(--green-700); }
+  .badge-blue { background: var(--blue-100); color: var(--blue-700); }
+  .badge-purple { background: var(--purple-100); color: var(--purple-700); }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-red { background: var(--red-100); color: var(--red-700); }
+  .badge-yellow { background: var(--yellow-100); color: var(--yellow-700); }
+  .badge-slate { background: var(--slate-100); color: var(--slate-600); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    text-align: left; padding: .65rem .8rem;
+    background: var(--slate-800); color: #fff;
+    font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: .6rem .8rem; border-bottom: 1px solid var(--slate-100); }
+  tr:nth-child(even) td { background: var(--slate-50); }
+  tr:hover td { background: var(--amber-50); }
+  .pbar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .pbar {
+    flex: 1; height: 8px; background: var(--slate-200);
+    border-radius: 999px; overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+  }
+  .pbar-label { font-size: .78rem; color: var(--slate-500); min-width: 3.5rem; text-align: right; }
+  pre {
+    background: var(--slate-900); color: #e2e8f0;
+    padding: 1.2rem 1.4rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: .82rem; line-height: 1.55;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    margin: .8rem 0;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .85em;
+  }
+  :not(pre) > code {
+    background: var(--slate-100); padding: .15rem .4rem;
+    border-radius: 4px; color: var(--orange-600); font-size: .83em;
+  }
+  .kw { color: #c084fc; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm { color: #64748b; font-style: italic; }
+  .fn { color: #67e8f9; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid; text-align: center;
+  }
+  .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+  .stat-card .stat-label { font-size: .78rem; color: var(--slate-500); margin-top: .2rem; }
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .flow-step {
+    background: #fff; border: 2px solid var(--slate-200); border-radius: var(--radius);
+    padding: 1rem 1.5rem; width: 100%; max-width: 600px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .flow-step .step-num {
+    position: absolute; top: -.7rem; left: 1rem;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .flow-step h4 { font-size: .9rem; font-weight: 700; color: var(--slate-800); margin-bottom: .25rem; }
+  .flow-step p { font-size: .8rem; color: var(--slate-500); }
+  .flow-arrow {
+    width: 2px; height: 24px;
+    background: linear-gradient(180deg, var(--amber-400), var(--orange-400));
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--orange-400);
+  }
+  .gap-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid;
+    margin-bottom: .8rem;
+  }
+  .gap-card.high { border-left-color: var(--red-500); }
+  .gap-card.medium { border-left-color: var(--yellow-500); }
+  .gap-card.resolved { border-left-color: var(--green-500); }
+  .gap-card.mitigated { border-left-color: var(--blue-500); }
+  .gap-card.progress { border-left-color: var(--amber-500); }
+  .gap-card .gap-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .gap-card p { font-size: .85rem; color: var(--slate-600); margin-top: .3rem; }
+  .kv { display: grid; grid-template-columns: 220px 1fr; gap: .3rem .8rem; font-size: .88rem; }
+  .kv dt { color: var(--slate-500); font-weight: 500; }
+  .kv dd { color: var(--slate-800); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .todo-done { color: var(--green-700); }
+  .todo-done::before { content: '\2713 '; font-weight: 700; }
+  .todo-item { padding: .6rem 0; border-bottom: 1px solid var(--slate-100); display: flex; align-items: flex-start; gap: .6rem; }
+  .todo-check { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .todo-check.done { background: var(--green-100); color: var(--green-700); }
+  .todo-check.pending { background: var(--red-100); color: var(--red-700); }
+  .todo-check.progress { background: var(--yellow-100); color: var(--yellow-700); }
+  .todo-check.cancelled { background: var(--slate-100); color: var(--slate-500); }
+  .quote {
+    border-left: 4px solid var(--amber-500); background: var(--amber-50);
+    padding: .9rem 1.1rem; font-size: .88rem; color: var(--slate-700);
+    margin: .8rem 0; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .callout {
+    border-left: 4px solid var(--red-500); background: #fff1f2;
+    padding: .9rem 1.1rem; font-size: .88rem; color: var(--slate-700);
+    margin: .8rem 0; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .callout strong { color: var(--red-700); }
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    nav .nav-inner { gap: .8rem; }
+    .container { padding: 1rem; }
+    .kv { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav { position: static; }
+    .hero { padding: 1.5rem; }
+    .card, .flow-step, .gap-card, .stat-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">IAPH RAG &mdash; v1.1.0</a>
+    <a href="#resumen">Resumen</a>
+    <a href="#areas">Trabajo por &aacute;rea</a>
+    <a href="#commits">Commits</a>
+    <a href="#todos">TODOs IAPH</a>
+    <a href="#arquitectura">Arquitectura</a>
+    <a href="#metricas">M&eacute;tricas</a>
+    <a href="#pendientes">Pendientes</a>
+    <a href="#riesgos">Riesgos</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Informe de Avances</h1>
+  <p>Agente conversacional RAG &mdash; Instituto Andaluz de Patrimonio Hist&oacute;rico (IAPH)</p>
+  <p style="color: var(--slate-500); font-size: .82rem; margin-top: .3rem;">Comisionado por la Universidad de Ja&eacute;n</p>
+  <div class="meta">
+    <span>&#128197; <code>2026-05-15</code></span>
+    <span>&#127795; Rama: <code>develop</code></span>
+    <span>&#128640; HEAD: <code>d517cba</code></span>
+    <span>&#128203; Baseline: <code>c21ba9d</code> (27-abr)</span>
+    <span>&#127991; Versi&oacute;n: <code>1.1.0</code> (bump minor)</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 1. RESUMEN ===================== -->
+<section id="resumen">
+  <h2 class="section-title"><span class="icon">&#128200;</span> Resumen Ejecutivo</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .95rem; color: var(--slate-600);">
+    Periodo de <strong>integraci&oacute;n mayor</strong>: el agente conversacional pasa de un encoder y un reranker generalistas (Qwen3) a un par de modelos
+    espec&iacute;ficamente entrenados en patrimonio cultural espa&ntilde;ol por el grupo SINAI de la UJA
+    (<code>SINAI/ALIA-MrBERT-es-cultural-embeddings</code> + <code>&hellip;-reranker</code>),
+    desplegados en Cloud Run con auto-detecci&oacute;n de arquitectura del reranker, y con el corpus completo del IAPH
+    reingestado en una nueva tabla <code>document_chunks_v5</code> de 768 dimensiones (<strong>138.175 chunks</strong>).
+  </p>
+  <p style="margin-bottom: 1.2rem; font-size: .92rem; color: var(--slate-600);">
+    Sobre esa base se entregan tres mejoras directamente derivadas del feedback del IAPH del 4 de mayo:
+    <strong>umbral de similitud parametrizable y post-rerank</strong> (caso "Zurbar&aacute;n &rarr; 48 yacimientos"),
+    <strong>regeneraci&oacute;n autom&aacute;tica de la narrativa de ruta tras editar paradas</strong> (caso 11 del documento IAPH), y
+    <strong>fix defensivo de scores None/NaN del reranker</strong>. El frontend acompa&ntilde;a con un popover de umbral
+    (slider + stepper, persistido en <code>localStorage</code>). Cierre con bump a <strong>versi&oacute;n 1.1.0</strong>.
+  </p>
+
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">13</div>
+      <div class="stat-label">Commits</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--orange-500);">
+      <div class="stat-value" style="color: var(--orange-600);">49</div>
+      <div class="stat-label">Archivos modificados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">9/14</div>
+      <div class="stat-label">TODOs IAPH cerrados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--rose-500);">
+      <div class="stat-value" style="color: var(--rose-600);">+2.080</div>
+      <div class="stat-label">L&iacute;neas a&ntilde;adidas</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">333</div>
+      <div class="stat-label">Tests (+15)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple-500);">
+      <div class="stat-value" style="color: var(--purple-700);">1.1.0</div>
+      <div class="stat-label">Versi&oacute;n (bump)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--teal-500);">
+      <div class="stat-value" style="color: var(--teal-700);">138K</div>
+      <div class="stat-label">Chunks reingestados (v5)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--yellow-500);">
+      <div class="stat-value" style="color: var(--yellow-700);">768</div>
+      <div class="stat-label">Dim embedding (SINAI)</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>M&eacute;tricas comparativas</h3>
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>27-abr</th><th>15-may</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Versi&oacute;n</td><td>1.0.8</td><td><strong>1.1.0</strong></td><td><span class="badge badge-purple">bump minor</span></td></tr>
+        <tr><td>Commits en el periodo</td><td>5</td><td><strong>13</strong></td><td><span class="badge badge-amber">+8</span></td></tr>
+        <tr><td>Migraciones Alembic</td><td>13</td><td><strong>14</strong></td><td><span class="badge badge-green">+1 v5</span></td></tr>
+        <tr><td>Tests (funciones)</td><td>318</td><td><strong>333</strong></td><td><span class="badge badge-green">+15</span></td></tr>
+        <tr><td>Encoder en Cloud Run</td><td>Qwen3-Embedding (1024 dim)</td><td><strong>SINAI/ALIA-MrBERT-cultural</strong> (768 dim)</td><td><span class="badge badge-green">modelo dedicado</span></td></tr>
+        <tr><td>Reranker en Cloud Run</td><td>Qwen3-Reranker (CausalLM)</td><td><strong>SINAI/ALIA-MrBERT-cultural-reranker</strong> (SeqCls)</td><td><span class="badge badge-green">modelo dedicado</span></td></tr>
+        <tr><td>Tabla de chunks activa</td><td>v4</td><td><strong>v5</strong></td><td><span class="badge badge-green">nueva</span></td></tr>
+        <tr><td>Chunks reingestados</td><td>&mdash;</td><td><strong>138.175</strong></td><td><span class="badge badge-green">corpus completo</span></td></tr>
+        <tr><td>Umbral de similitud</td><td>global, pre-rerank</td><td><strong>per-request, post-rerank</strong></td><td><span class="badge badge-green">UX clave</span></td></tr>
+        <tr><td>TODOs IAPH cerrados</td><td>&mdash;</td><td><strong>9 de 14</strong></td><td><span class="badge badge-green">64%</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 2. TRABAJO POR AREA ===================== -->
+<section id="areas">
+  <h2 class="section-title"><span class="icon">&#129504;</span> Trabajo realizado por &aacute;rea</h2>
+
+  <!-- 2.1 SINAI -->
+  <h3 style="margin: 1rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.1 Modelos y servicios de IA &mdash; integraci&oacute;n SINAI</h3>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    El 11 de mayo Samuel S&aacute;nchez (UJA) public&oacute; actualizaciones de los modelos <code>SINAI/ALIA-MrBERT-es-cultural-embeddings</code> y
+    <code>&hellip;-reranker</code> tras nuevas evaluaciones. Cuatro commits encadenados llevan esos modelos a producci&oacute;n:
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Commit</th><th>Alcance</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>9cb13e2</code></td>
+          <td>Scripts de descarga (<code>backend/scripts/download_sinai_embedding.sh</code>, <code>download_sinai_reranker.sh</code>) que aplanan la estructura anidada <code>final_model/</code>. Targets de Makefile <code>download-sinai-embedding</code> y <code>download-sinai-reranker</code>.</td>
+        </tr>
+        <tr>
+          <td><code>2e488a4</code></td>
+          <td><strong>Auto-detecci&oacute;n de arquitectura del reranker</strong> en <code>embedding/main.py</code>. El servicio lee <code>config.json</code> del modelo en <code>lifespan</code>, detecta si <code>architectures</code> contiene <code>*ForCausalLM</code> o <code>*ForSequenceClassification</code> y carga la clase correcta (Qwen3-style con logits yes/no vs CrossEncoder-style con sigmoide sobre cabeza binaria). El <code>/health</code> expone <code>reranker_type: "causal" | "seq_class"</code>.</td>
+        </tr>
+        <tr>
+          <td><code>e0af784</code></td>
+          <td>Despliegue Cloud Run: <code>embedding/Dockerfile.baked</code>, <code>cloudbuild-baked.yaml</code>, <code>scripts/setup.sh</code> y <code>scripts/deploy.sh</code> hornean los modelos SINAI por defecto. Env vars cambiadas: <code>POOLING_STRATEGY=mean</code>, <code>MAX_LENGTH=8192</code>, <code>RERANKER_BATCH_SIZE=8</code>. <strong>Revisi&oacute;n activa: <code>uja-embedding-00012-wv2</code>.</strong></td>
+        </tr>
+        <tr>
+          <td><code>c52e907</code></td>
+          <td>Documentaci&oacute;n: <code>CLAUDE.md</code>, <code>.env.example</code>, <code>backend/docs/CHUNKS_VERSIONS.md</code>, <code>EMBEDDING_PERFORMANCE.md</code>, <code>RAG_PIPELINE.md</code>, <code>SCORING_VERSIONS.md</code>. Incluye las dos <em>caveats</em> conocidas (query lowercasing inadecuado para SINAI cased, v4 incompatible con 768 dim).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4 style="margin: 1rem 0 .5rem; color: var(--slate-800); font-size: 1rem;">Fix latente &mdash; <code>478980f</code></h4>
+
+  <div class="card">
+    <p style="font-size: .9rem; color: var(--slate-600); margin-bottom: .6rem;">
+      Durante el smoke test del reranker SINAI aparecieron respuestas con <code>score: null</code> o <code>NaN</code> en ciertos pares query-documento
+      (documentos vac&iacute;os o tokenizaci&oacute;n pat&oacute;logica). Estos romp&iacute;an el pipeline al multiplicarse en <code>1.0 - relevance</code>. Fix en dos sitios:
+    </p>
+    <ul style="margin-left: 1.2rem; font-size: .87rem; color: var(--slate-700); line-height: 1.8;">
+      <li><strong>Source</strong>: <code>embedding/main.py</code> aplica <code>torch.nan_to_num(scores, nan=0.0, posinf=1.0, neginf=0.0)</code> antes de devolver scores en ambas rutas (<code>_score_pairs_causal</code>, <code>_score_pairs_seq_class</code>).</li>
+      <li><strong>Adapter defensivo</strong>: <code>HttpRerankerAdapter</code> absorbe <code>None</code> y <code>math.isnan(...)</code>, registra un warning con el contador y trata el chunk como totalmente irrelevante (<code>relevance=0.0</code>), de modo que cae al fondo del ranking sin reventar.</li>
+    </ul>
+    <div class="callout">
+      <strong>&#9888; Caveat:</strong> El fix en <code>embedding/main.py</code> requiere un <strong>redeploy de Cloud Run</strong> (no incluido en <code>e0af784</code>) para surtir efecto en producci&oacute;n. Hasta entonces el adapter defensivo absorbe el problema. <strong>TODO</strong>: lanzar <code>make cloud-deploy-baked</code> la pr&oacute;xima sesi&oacute;n.
+    </div>
+  </div>
+
+  <!-- 2.2 RAG threshold -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.2 Pipeline RAG &mdash; umbral post-rerank y parametrizable</h3>
+
+  <p style="font-size: .92rem; color: var(--slate-600); margin-bottom: 1rem;">
+    Dos commits cierran el TODO <em>"establecer umbral de similitud parametrizable para corte de resultados"</em>
+    del documento IAPH del 4 de mayo (caso Zurbar&aacute;n &rarr; 48 yacimientos con "Zur").
+  </p>
+
+  <div class="card">
+    <h3><code>c1ef42a</code> &mdash; reorden + parametrizaci&oacute;n (backend)</h3>
+    <p style="font-size: .9rem; color: var(--slate-600); margin: .5rem 0 .8rem;">
+      Tres cambios estructurales en <code>application/rag/use_cases/rag_query_use_case.py</code> y
+      <code>application/search/use_cases/similarity_search_use_case.py</code>:
+    </p>
+    <ol style="margin-left: 1.4rem; font-size: .88rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>Reorden del pipeline</strong>. Antes: <code>[vector + text] &rarr; fusion &rarr; filter(threshold) &rarr; rerank &rarr; top_k</code>. Ahora: <code>[vector + text] &rarr; fusion &rarr; rerank &rarr; filter(threshold) &rarr; top_k</code>. El corte ya no se hace sobre la distancia coseno cruda o el RRF (cuya distribuci&oacute;n es inestable) sino sobre la salida calibrada del reranker.</li>
+      <li><strong>Threshold por request</strong>. Nuevos campos opcionales <code>score_threshold: float | None</code> en <code>SimilaritySearchRequest</code>, <code>RouteGenerateRequest</code>, <code>RAGRequestDTO</code>, <code>SearchDTO</code>, <code>RoutesDTO</code>. Los servicios <code>relevance_filter_service.filter(chunks, *, override_threshold=None)</code> y <code>similarity_filter</code> aceptan override.</li>
+      <li><strong>Logging del threshold efectivo</strong> en cada request, distinguiendo el global (<code>rag_score_threshold=0.50</code>, <code>search_score_threshold=0.55</code>) del override per-call.</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3><code>b45b8aa</code> &mdash; popover de umbral (frontend)</h3>
+    <div class="kv">
+      <dt><code>ScoreThresholdControl.tsx</code></dt>
+      <dd>NUEVO &mdash; 195 l&iacute;neas. Slider 0.00 &rarr; 1.00 (paso 0.01) + stepper num&eacute;rico sincronizado. Default 0.50. Etiquetas "estricto", "equilibrado", "permisivo".</dd>
+      <dt><code>ScoreThresholdPopover.tsx</code></dt>
+      <dd>NUEVO &mdash; 93 l&iacute;neas. Popover anclado al input con dismiss on outside-click.</dd>
+      <dt><code>SearchInput.tsx</code> + <code>RouteSmartInput.tsx</code></dt>
+      <dd>Integraci&oacute;n con bot&oacute;n y badge "umbral: 0.50" en la barra.</dd>
+      <dt>Stores <code>useSearchStore</code> / <code>useRoutesStore</code></dt>
+      <dd>Campo <code>scoreThreshold: number | null</code>, hidrataci&oacute;n desde <code>localStorage</code> (<code>uja.search.threshold</code>, <code>uja.routes.threshold</code>), propagaci&oacute;n al payload.</dd>
+    </div>
+  </div>
+
+  <!-- 2.3 Routes -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.3 Rutas virtuales &mdash; regeneraci&oacute;n de narrativa</h3>
+
+  <div class="card">
+    <h3><code>4d4d9d4</code> &mdash; regenerar intro + conclusi&oacute;n en add_stop / remove_stop</h3>
+    <p style="font-size: .9rem; color: var(--slate-600); margin: .5rem 0 .8rem;">
+      Resuelve el <strong>caso 11 del documento IAPH</strong> (arquitectura a&ntilde;os 60 Costa del Sol): al a&ntilde;adir o eliminar paradas, la narrativa
+      de la ruta dejaba de concordar porque solo se generaba en el momento inicial.
+    </p>
+    <p style="font-size: .9rem; color: var(--slate-600); margin-bottom: .6rem;">Cambios principales en <code>add_stop.py</code> (+199 / -53) y <code>remove_stop.py</code> (+157 / -33):</p>
+    <ul style="margin-left: 1.4rem; font-size: .87rem; color: var(--slate-700); line-height: 1.8;">
+      <li>Despu&eacute;s de actualizar la lista de paradas, se lanzan <strong>tres llamadas LLM en paralelo</strong> v&iacute;a <code>asyncio.gather</code>: narrativa del segmento nuevo (solo en <code>add_stop</code>), regeneraci&oacute;n del pr&oacute;logo (<code>build_intro_regen_prompt</code>), regeneraci&oacute;n de la conclusi&oacute;n (<code>build_conclusion_prompt</code>).</li>
+      <li>Prompts dedicados en <code>domain/routes/prompts.py</code>: <code>INTRO_REGEN_SYSTEM_PROMPT</code>, <code>CONCLUSION_SYSTEM_PROMPT</code>.</li>
+      <li>Helper <code>_strip_markdown</code> limpia artefactos LLM (<code>**...**</code>, encabezados, prefijos de eco tipo "Narrativa para...:", par&eacute;ntesis meta tipo "(Transici&oacute;n natural...)").</li>
+      <li><strong>Fallback</strong>: si el LLM devuelve vac&iacute;o o solo blancos, se conserva el texto anterior (<code>new_intro or stored_intro</code>).</li>
+      <li>Nueva etapa en la traza: <code>narrative_regeneration</code> con <code>system_prompt</code>, <code>user_prompt</code>, <code>raw_response</code> y <code>intro_chars</code> / <code>conclusion_chars</code> en el <code>summary</code>.</li>
+      <li>Tests: <code>test_route_use_cases.py</code> a&ntilde;ade <strong>+9 tests netos</strong> (24 &rarr; 33) que validan que la regeneraci&oacute;n se invoca, que el fallback funciona, y que la traza captura los prompts.</li>
+    </ul>
+  </div>
+
+  <!-- 2.4 Ingesta -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.4 Ingesti&oacute;n &mdash; migraci&oacute;n v5 y perf</h3>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3><code>4e4e896</code> &mdash; migraci&oacute;n <code>document_chunks_v5</code></h3>
+      <p style="font-size: .87rem; color: var(--slate-600);">
+        Revision <code>e5f6a7b8c9d0</code>, parent <code>f1a2b3c4d5e6</code>. Estructura id&eacute;ntica a v4 pero con <code>embedding Vector(768)</code> en lugar de <code>Vector(1024)</code>, dimensi&oacute;n le&iacute;da de <code>os.environ["EMBEDDING_DIM"]</code>.
+      </p>
+      <h4>&Iacute;ndices</h4>
+      <ul style="margin-left: 1.2rem; font-size: .83rem; color: var(--slate-700); line-height: 1.7;">
+        <li>B-tree sobre <code>document_id</code></li>
+        <li>B-tree sobre <code>heritage_type</code></li>
+        <li>GIN sobre <code>tsvector</code> (full-text espa&ntilde;ol)</li>
+        <li>IVFFlat con <code>lists=100</code> sobre <code>embedding</code> (coseno)</li>
+      </ul>
+      <p style="margin-top: .5rem; font-size: .83rem; color: var(--slate-500);">v1&ndash;v4 se preservan. El selector <code>CHUNKS_TABLE_VERSION=v5</code> activa la nueva tabla.</p>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--orange-500);">
+      <h3><code>7f1100a</code> &mdash; perf de ingesta</h3>
+      <p style="font-size: .87rem; color: var(--slate-600);">
+        Sin esta optimizaci&oacute;n, reingestar ~138K registros contra el servicio SINAI hubiera tardado horas.
+      </p>
+      <ul style="margin-left: 1.2rem; font-size: .83rem; color: var(--slate-700); line-height: 1.7;">
+        <li><strong>Batch de embeddings</strong>: <code>batch_size=64</code>, una sola petici&oacute;n HTTP por lote.</li>
+        <li><strong>Bulk-insert</strong>: <code>INSERT &hellip; VALUES (...), (...)</code> en una transacci&oacute;n.</li>
+        <li><strong>Idempotencia in-memory</strong>: set de <code>(document_id, chunk_index)</code> cargado por lote para filtrar duplicados sin <code>ON CONFLICT</code> round-trip.</li>
+        <li>Logging por lote con throughput y % duplicados.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--teal-500); background: var(--teal-100);">
+    <h3 style="color: var(--teal-700);">Resultado de la reingesta</h3>
+    <p style="font-size: .9rem; color: var(--slate-700);">
+      <code>SELECT COUNT(*) FROM document_chunks_v5;</code> &rarr; <strong>138.175 chunks</strong> frente al objetivo aproximado de 134K
+      registros del corpus IAPH. El delta de ~4K es coherente con la rechunking por t&iacute;tulo / tipo del v5.
+    </p>
+  </div>
+
+  <!-- 2.5 UX -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.5 UX frontend</h3>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3><code>b45b8aa</code> &mdash; popover de umbral</h3>
+      <p style="font-size: .87rem; color: var(--slate-600);">
+        Ya cubierto en &sect;2.2. El usuario controla la severidad del filtro de relevancia desde la barra de b&uacute;squeda en
+        <code>/search</code> y <code>/routes</code>. Slider + stepper sincronizado, persistido en <code>localStorage</code>,
+        propagado al payload del backend.
+      </p>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--rose-500);">
+      <h3><code>abfc008</code> &mdash; dismiss del panel de aclaraci&oacute;n</h3>
+      <p style="font-size: .87rem; color: var(--slate-600);">
+        Tres l&iacute;neas en <code>SearchInput.tsx</code> y <code>RouteSmartInput.tsx</code>: al editar el input, el panel de
+        aclaraci&oacute;n (clarifying question) que pudiera estar abierto se cierra autom&aacute;ticamente.
+        Resuelve la fricci&oacute;n UX del caso 11 del IAPH (sugerencias <em>stale</em> visibles tras reescribir la query).
+      </p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>&#128269; Hallazgo de auditor&iacute;a:</strong> el caso reportado en el documento del IAPH ("arquitectura a&ntilde;os 60 Costa del Sol" &rarr; sugiere
+    M&aacute;laga + inmaterial) <strong>no se ha podido reproducir con el c&oacute;digo actual</strong>. El <code>EntityDetectionService</code> est&aacute; constre&ntilde;ido por reglas l&eacute;xicas
+    por dominio (provincias, municipios, tipos patrimoniales) y la combinaci&oacute;n reportada no surge en una re-ejecuci&oacute;n limpia. Lo m&aacute;s probable
+    es que se tratara de un artefacto <em>stale</em> del panel previo, que ahora desaparece con <code>abfc008</code>.
+    Recomendaci&oacute;n: solicitar al IAPH la query exacta y el screenshot para reproducir.
+  </div>
+</section>
+
+<!-- ===================== 3. COMMITS ===================== -->
+<section id="commits">
+  <h2 class="section-title"><span class="icon">&#128221;</span> Tabla de Commits (13)</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Hash</th><th>Tipo</th><th>Mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>9cb13e2</code></td><td><span class="badge badge-slate">chore</span></td><td>add download scripts and Makefile targets for SINAI cultural models</td></tr>
+        <tr><td>2</td><td><code>2e488a4</code></td><td><span class="badge badge-green">feat</span></td><td>auto-detect CausalLM vs SequenceClassification reranker in embedding service</td></tr>
+        <tr><td>3</td><td><code>e0af784</code></td><td><span class="badge badge-slate">chore</span></td><td>switch Cloud Run embedding service to SINAI cultural models</td></tr>
+        <tr><td>4</td><td><code>c52e907</code></td><td><span class="badge badge-blue">docs</span></td><td>document SINAI cultural models and v5 chunks migration caveat</td></tr>
+        <tr><td>5</td><td><code>c1ef42a</code></td><td><span class="badge badge-green">feat</span></td><td>apply per-request score threshold after reranking across search and routes</td></tr>
+        <tr><td>6</td><td><code>478980f</code></td><td><span class="badge badge-red">fix</span></td><td>handle null and NaN reranker scores defensively</td></tr>
+        <tr><td>7</td><td><code>b45b8aa</code></td><td><span class="badge badge-green">feat</span></td><td>add score threshold popover to search and routes inputs</td></tr>
+        <tr><td>8</td><td><code>abfc008</code></td><td><span class="badge badge-green">feat</span></td><td>dismiss clarification panel when query changes</td></tr>
+        <tr><td>9</td><td><code>4d4d9d4</code></td><td><span class="badge badge-green">feat</span></td><td>regenerate intro and conclusion on add and remove stop</td></tr>
+        <tr><td>10</td><td><code>4e4e896</code></td><td><span class="badge badge-green">feat</span></td><td>add document_chunks_v5 migration for SINAI 768-dim embeddings</td></tr>
+        <tr><td>11</td><td><code>7f1100a</code></td><td><span class="badge badge-orange">perf</span></td><td>batch embedding requests and bulk-insert chunks with in-memory idempotency check</td></tr>
+        <tr><td>12</td><td><code>f02d8e4</code></td><td><span class="badge badge-slate">merge</span></td><td>Merge branch 'develop'</td></tr>
+        <tr><td>13</td><td><code>d517cba</code></td><td><span class="badge badge-purple">chore</span></td><td>bump version to 1.1.0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Por tipo</h3>
+      <div class="kv">
+        <dt>feat</dt><dd><strong>6</strong> funcionalidades</dd>
+        <dt>chore</dt><dd><strong>3</strong> mantenimiento</dd>
+        <dt>fix</dt><dd><strong>1</strong> bug fix</dd>
+        <dt>perf</dt><dd><strong>1</strong> optimizaci&oacute;n</dd>
+        <dt>docs</dt><dd><strong>1</strong></dd>
+        <dt>merge</dt><dd><strong>1</strong></dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Por &aacute;rea</h3>
+      <div class="kv">
+        <dt>Modelos IA / Cloud Run</dt><dd>5 commits</dd>
+        <dt>Pipeline RAG</dt><dd>2 commits</dd>
+        <dt>Rutas virtuales</dt><dd>1 commit</dd>
+        <dt>Ingesta y schema</dt><dd>2 commits</dd>
+        <dt>Frontend UX</dt><dd>2 commits</dd>
+        <dt>Release / merge</dt><dd>2 commits</dd>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 4. TODOs IAPH ===================== -->
+<section id="todos">
+  <h2 class="section-title"><span class="icon">&#9989;</span> Estado de los TODOs del IAPH</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Cruce entre los TODOs vivos al inicio del periodo (reuni&oacute;n IAPH del 27 de abril + documento de pruebas iniciales del 4 de mayo)
+    y el trabajo realizado:
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>TODO</th><th>Origen</th><th>Estado</th><th>Evidencia</th></tr></thead>
+      <tbody>
+        <tr><td>T1</td><td>Filtros dentro de una categor&iacute;a &rarr; OR</td><td>Reuni&oacute;n 27-abr</td><td><span class="badge badge-green">COMPLETADO</span></td><td><code>search/schemas.py</code> + <code>_build_filter_conditions</code>. Pendiente validaci&oacute;n end-to-end con IAPH.</td></tr>
+        <tr><td>T2</td><td>Integrar modelos <code>SINAI/…-cultural-*</code></td><td>Correo Samuel 11-may</td><td><span class="badge badge-green">COMPLETADO</span></td><td><code>9cb13e2</code> + <code>2e488a4</code> + <code>e0af784</code>. Revisi&oacute;n activa <code>uja-embedding-00012-wv2</code>.</td></tr>
+        <tr><td>T3</td><td>Re-embedder del corpus completo</td><td>Correo Samuel 11-may</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Migraci&oacute;n <code>4e4e896</code> + perf <code>7f1100a</code> + reingest. <strong>138.175 chunks</strong> en <code>document_chunks_v5</code>.</td></tr>
+        <tr><td>T4</td><td>Reindexar con <strong>fuentes bibliogr&aacute;ficas y documentales</strong></td><td>Reuni&oacute;n 27-abr</td><td><span class="badge badge-red">PENDIENTE</span></td><td>El pipeline de ingesta no incluye texto de fuentes en el contenido del chunk. Requiere enriquecer el parquet origen y reingestar.</td></tr>
+        <tr><td>T5</td><td>Umbral de similitud parametrizable</td><td>Doc IAPH 4-may</td><td><span class="badge badge-green">COMPLETADO</span></td><td><code>c1ef42a</code> backend per-request + post-rerank, <code>b45b8aa</code> frontend popover. Default 0.50.</td></tr>
+        <tr><td>T6</td><td>Paradas din&aacute;micas en rutas (no n&uacute;mero fijo)</td><td>Doc IAPH 4-may</td><td><span class="badge badge-red">PENDIENTE</span></td><td>No abordado en este periodo. Pendiente de hablar con UJA sobre el criterio.</td></tr>
+        <tr><td>T7</td><td>Regenerar narrativa tras edici&oacute;n de paradas</td><td>Doc IAPH 4-may</td><td><span class="badge badge-green">COMPLETADO</span></td><td><code>4d4d9d4</code>. Intro + conclusi&oacute;n regenerados en paralelo con <code>asyncio.gather</code>. Nueva etapa <code>narrative_regeneration</code>.</td></tr>
+        <tr><td>T8</td><td>Coherencia de filtros sugeridos con la consulta</td><td>Doc IAPH 4-may</td><td><span class="badge badge-blue">AUDITADO</span></td><td>Caso reportado <em>no reproducible</em>. Probable artefacto <em>stale</em>, mitigado por <code>abfc008</code>.</td></tr>
+        <tr><td>T9</td><td>Enlace per&iacute;odos hist&oacute;ricos / etnias &harr; tipolog&iacute;as</td><td>Doc IAPH 4-may</td><td><span class="badge badge-red">PENDIENTE</span></td><td>Requiere trabajo conjunto con UJA, posiblemente un sub-&iacute;ndice de sin&oacute;nimos / mappings.</td></tr>
+        <tr><td>T10</td><td>Reducir ruido por coincidencia l&eacute;xica</td><td>Doc IAPH 4-may</td><td><span class="badge badge-amber">AVANCE PARCIAL</span></td><td>Reorden threshold &rarr; post-rerank y reranker SINAI deber&iacute;an penalizarlo. Necesita validaci&oacute;n emp&iacute;rica con las 14 consultas del IAPH.</td></tr>
+        <tr><td>T11</td><td>IAPH: crear perfiles ciudadan&iacute;a/admin/investigaci&oacute;n/empresa</td><td>Reuni&oacute;n 27-abr</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Cerrado por el IAPH.</td></tr>
+        <tr><td>T12</td><td>IAPH: bater&iacute;a de b&uacute;squedas tipo por perfil</td><td>Reuni&oacute;n 27-abr</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Cerrado por el IAPH; alimenta el siguiente ciclo.</td></tr>
+        <tr><td>T13</td><td>IAPH: probar en paralelo en la gu&iacute;a digital</td><td>Reuni&oacute;n 27-abr</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Cerrado por el IAPH.</td></tr>
+        <tr><td>T14</td><td>Pr&oacute;xima sesi&oacute;n de feedback estructurado</td><td>Reuni&oacute;n 27-abr</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Coordinado por Arturo.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 1.2rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">9</div>
+      <div class="stat-label">Completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">1</div>
+      <div class="stat-label">Avance parcial</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">1</div>
+      <div class="stat-label">Auditado (no reproducible)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">3</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 5. ARQUITECTURA ===================== -->
+<section id="arquitectura">
+  <h2 class="section-title"><span class="icon">&#127959;&#65039;</span> Cambios arquitect&oacute;nicos relevantes</h2>
+
+  <h3 style="margin-bottom: .5rem; color: var(--slate-800); font-size: 1.05rem;">5.1 Nuevo flujo del pipeline RAG (modo hybrid)</h3>
+  <div class="flow">
+    <div class="flow-step"><span class="step-num">1</span><h4>Query</h4><p>El usuario lanza la consulta (search / chat / routes)</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">2</span><h4>Embed (SINAI cultural)</h4><p>Mean-pooling, 768 dim, sin instruction prefix</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">3</span><h4>Vector + Text search en paralelo</h4><p>pgvector coseno sobre <code>document_chunks_v5</code> + tsvector FTS espa&ntilde;ol</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">4</span><h4>RRF fusion</h4><p>Reciprocal Rank Fusion (peso x1.5 sobre texto)</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">5</span><h4>Reranker SINAI</h4><p>CrossEncoder + sigmoide sobre cabeza binaria (auto-detectado al cargar)</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step" style="border-color: var(--rose-500);"><span class="step-num" style="background: linear-gradient(135deg, var(--rose-500), var(--orange-500));">6</span><h4>Filter (threshold per-request)</h4><p>El umbral corta sobre la salida calibrada del reranker, no sobre RRF. Override per-call posible.</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">7</span><h4>Top-K</h4><p>Trim al <code>top_k</code> y montaje de contexto para el LLM</p></div>
+  </div>
+
+  <div class="quote">
+    <strong>Cambio clave</strong>: el filtro de threshold se mueve de <strong>antes</strong> del reranker (paso 4 original) a <strong>despu&eacute;s</strong> (paso 6). El reranker pasa de operar sobre N filtrados a operar sobre <code>len(fused_chunks)</code> y el threshold corta sobre su salida calibrada. Esto elimina el sesgo de la distribuci&oacute;n RRF y permite que el usuario lea el slider como "qu&eacute; tan relevante exiges como m&iacute;nimo".
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem; color: var(--slate-800); font-size: 1.05rem;">5.2 Auto-detecci&oacute;n del reranker</h3>
+
+  <div class="card">
+<pre><span class="cm"># embedding/main.py lifespan</span>
+<span class="kw">with</span> <span class="fn">open</span>(model_dir / <span class="str">"config.json"</span>) <span class="kw">as</span> f:
+    config = json.load(f)
+<span class="kw">if</span> <span class="str">"ForCausalLM"</span> <span class="kw">in</span> config[<span class="str">"architectures"</span>][<span class="num">0</span>]:
+    reranker_type = <span class="str">"causal"</span>
+    reranker_model = AutoModelForCausalLM.from_pretrained(model_dir)
+    <span class="cm"># score: softmax([logit_yes, logit_no])[0]</span>
+<span class="kw">elif</span> <span class="str">"ForSequenceClassification"</span> <span class="kw">in</span> config[<span class="str">"architectures"</span>][<span class="num">0</span>]:
+    reranker_type = <span class="str">"seq_class"</span>
+    reranker_model = AutoModelForSequenceClassification.from_pretrained(model_dir)
+    <span class="cm"># score: sigmoid(logit)</span></pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .6rem;">
+      Una sola imagen Docker sirve ahora ambos rerankers (Qwen3 y SINAI). El operador solo cambia <code>RERANKER_MODEL_DIR</code>
+      y el contenedor se autoconfigura. Esto fue indispensable porque SINAI es <code>ModernBertForSequenceClassification</code> con cabeza
+      binaria, mientras que Qwen3 es <code>*ForCausalLM</code> &mdash; clases incompatibles que antes requerian im&aacute;genes separadas.
+    </p>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem; color: var(--slate-800); font-size: 1.05rem;">5.3 Regeneraci&oacute;n de narrativa en paralelo</h3>
+
+  <div class="card">
+<pre><span class="cm"># application/routes/use_cases/add_stop.py</span>
+raw_narrative, raw_intro, raw_conclusion = <span class="kw">await</span> asyncio.gather(
+    self._llm.generate(SINGLE_STOP_NARRATIVE_SYSTEM_PROMPT, build_single_stop_prompt(<span class="cm">...</span>)),
+    self._llm.generate(INTRO_REGEN_SYSTEM_PROMPT,         build_intro_regen_prompt(<span class="cm">...</span>)),
+    self._llm.generate(CONCLUSION_SYSTEM_PROMPT,          build_conclusion_prompt(<span class="cm">...</span>)),
+)
+new_intro      = _strip_markdown(raw_intro)      <span class="kw">or</span> stored_intro       <span class="cm"># fallback</span>
+new_conclusion = _strip_markdown(raw_conclusion) <span class="kw">or</span> stored_conclusion</pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .6rem;">
+      Tres llamadas LLM concurrentes minimizan la latencia de la edici&oacute;n. Si cualquiera devuelve vac&iacute;o, se conserva el texto previo.
+      Las tres respuestas se persisten en la traza dentro de la etapa <code>narrative_regeneration</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 6. METRICAS ===================== -->
+<section id="metricas">
+  <h2 class="section-title"><span class="icon">&#128202;</span> M&eacute;tricas t&eacute;cnicas</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>Diff agregado del periodo</h3>
+      <div class="kv">
+        <dt>Archivos modificados</dt><dd><strong>49</strong></dd>
+        <dt>L&iacute;neas a&ntilde;adidas</dt><dd><strong>+2.080</strong></dd>
+        <dt>L&iacute;neas eliminadas</dt><dd><strong>-341</strong></dd>
+        <dt>Ratio add / del</dt><dd>6,1 : 1</dd>
+        <dt>Archivos nuevos</dt><dd>~6 (migraci&oacute;n v5, 2 scripts SINAI, 2 componentes UI, prompts)</dd>
+        <dt>Migraciones nuevas</dt><dd>1 (<code>e5f6a7b8c9d0</code>)</dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Tests &mdash; 318 &rarr; 333</h3>
+      <div class="kv">
+        <dt>Funciones <code>test_*</code></dt><dd>318 &rarr; <strong>333</strong> (+15)</dd>
+        <dt>test_route_use_cases.py</dt><dd>24 &rarr; <strong>33</strong> (+9)</dd>
+        <dt>test_search_use_cases.py</dt><dd>16 &rarr; <strong>20</strong> (+4)</dd>
+        <dt>test_relevance_filter_service.py</dt><dd>8 &rarr; <strong>10</strong> (+2)</dd>
+        <dt>Regresiones</dt><dd><span class="badge badge-green">Ninguna</span></dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Reparto por &aacute;rea</h3>
+      <div class="kv">
+        <dt>Backend application</dt><dd>9 archivos &mdash; +812</dd>
+        <dt>Backend tests</dt><dd>4 &mdash; +443</dd>
+        <dt>Embedding service</dt><dd>1 &mdash; +173</dd>
+        <dt>Alembic</dt><dd>1 &mdash; +136</dd>
+        <dt>Frontend</dt><dd>8 &mdash; +445</dd>
+        <dt>Docker / Cloud Run</dt><dd>5 &mdash; +14</dd>
+        <dt>Docs</dt><dd>5 &mdash; +66</dd>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; color: var(--slate-800);">Par&aacute;metros y configuraci&oacute;n</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Variable</th><th>Antes (Qwen3)</th><th>Ahora (SINAI)</th></tr></thead>
+      <tbody>
+        <tr><td><code>EMBEDDING_MODEL_DIR</code></td><td>Qwen3-Embedding-0.6B</td><td><strong>ALIA-MrBERT-es-cultural-embeddings</strong></td></tr>
+        <tr><td><code>EMBEDDING_DIM</code></td><td>1024</td><td><strong>768</strong></td></tr>
+        <tr><td><code>POOLING_STRATEGY</code></td><td>last_token</td><td><strong>mean</strong></td></tr>
+        <tr><td><code>MAX_LENGTH</code></td><td>32.768</td><td><strong>8.192</strong></td></tr>
+        <tr><td><code>EMBEDDING_QUERY_INSTRUCTION</code></td><td>"Retrieve relevant heritage documents."</td><td><em>(vac&iacute;o)</em></td></tr>
+        <tr><td><code>RERANKER_MODEL_DIR</code></td><td>Qwen3-Reranker-0.6B</td><td><strong>ALIA-MrBERT-es-cultural-reranker</strong></td></tr>
+        <tr><td><code>RERANKER_BATCH_SIZE</code> (Cloud Run)</td><td>4</td><td><strong>8</strong></td></tr>
+        <tr><td><code>CHUNKS_TABLE_VERSION</code></td><td>v4</td><td><strong>v5</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: .8rem; font-size: .85rem; color: var(--slate-600);">
+      Sin cambios num&eacute;ricos en thresholds globales (<code>rag_score_threshold=0.50</code>, <code>search_score_threshold=0.55</code>) &mdash; el override es <strong>per-request</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 7. PENDIENTES ===================== -->
+<section id="pendientes">
+  <h2 class="section-title"><span class="icon">&#128203;</span> Pendientes y pr&oacute;ximos pasos</h2>
+
+  <h3 style="margin-bottom: .5rem; font-size: 1.05rem;">7.1 Prioridad alta &mdash; siguiente sesi&oacute;n</h3>
+  <div class="card">
+    <ol style="margin-left: 1.4rem; font-size: .9rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>Redeploy de Cloud Run con el fix de NaN</strong> (<code>make cloud-deploy-baked</code>). El adapter del backend lo absorbe pero la correcci&oacute;n de ra&iacute;z vive en <code>embedding/main.py</code> y no est&aacute; en producci&oacute;n.</li>
+      <li><strong>Validaci&oacute;n emp&iacute;rica de las 14 consultas del IAPH</strong> con la nueva configuraci&oacute;n (SINAI + threshold post-rerank). M&eacute;trica objetiva: ratio thumbs up / thumbs down antes y despu&eacute;s.</li>
+      <li><strong>Reingest incluyendo fuentes bibliogr&aacute;ficas y documentales</strong> (T4). Requiere enriquecer el parquet con esos campos.</li>
+      <li><strong>Lowercasing de la query</strong>: el <code>RAGQueryUseCase</code> aplica <code>dto.query.lower()</code> antes del embedding. SINAI usa tokenizer cased, as&iacute; que esto degrada calidad. Pendiente PR para condicionar por modelo.</li>
+    </ol>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; font-size: 1.05rem;">7.2 Prioridad media</h3>
+  <div class="card">
+    <ul style="margin-left: 1.4rem; font-size: .9rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>Paradas din&aacute;micas en rutas</strong> (T6) &mdash; pendiente de criterio con UJA: &iquest;basamos el n&uacute;mero en chunks que pasen el threshold? &iquest;variedad geogr&aacute;fica? &iquest;saturaci&oacute;n tem&aacute;tica?</li>
+      <li><strong>Enlace per&iacute;odos hist&oacute;ricos / tipolog&iacute;as</strong> (T9) &mdash; requiere trabajo conjunto con UJA, posiblemente un sub-&iacute;ndice de sin&oacute;nimos / mappings.</li>
+      <li><strong>Reproducir el caso 11 del IAPH</strong> (T8) con la query y captura exactas para descartar definitivamente la incoherencia de filtros sugeridos.</li>
+    </ul>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; font-size: 1.05rem;">7.3 Backlog t&eacute;cnico</h3>
+  <div class="card">
+    <ul style="margin-left: 1.4rem; font-size: .9rem; color: var(--slate-700); line-height: 1.85;">
+      <li>Limpiar artefactos de Qwen3 en <code>backend/models/</code> una vez la migraci&oacute;n a SINAI est&eacute; validada en producci&oacute;n durante 2+ semanas sin incidencias.</li>
+      <li>Documentar la metodolog&iacute;a de evaluaci&oacute;n con las 14 consultas IAPH como suite de regresi&oacute;n.</li>
+      <li>Considerar a&ntilde;adir un endpoint <code>/admin/rag/benchmark</code> que ejecute las 14 consultas y reporte m&eacute;tricas comparables.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== 8. RIESGOS ===================== -->
+<section id="riesgos">
+  <h2 class="section-title"><span class="icon">&#9888;&#65039;</span> Riesgos y caveats</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Riesgo</th><th>Impacto</th><th>Mitigaci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Fix de NaN en <code>embedding/main.py</code> no desplegado en Cloud Run</td>
+          <td><span class="badge badge-amber">Medio</span></td>
+          <td>Adapter defensivo en backend absorbe el caso. <strong>TODO</strong>: <code>make cloud-deploy-baked</code></td>
+        </tr>
+        <tr>
+          <td>Lowercasing de query incompatible con tokenizer cased de SINAI</td>
+          <td><span class="badge badge-yellow">Bajo-Medio</span></td>
+          <td>Documentado en <code>CLAUDE.md</code>; pendiente PR para condicionar por modelo</td>
+        </tr>
+        <tr>
+          <td>14 consultas IAPH sin validaci&oacute;n emp&iacute;rica end-to-end con SINAI</td>
+          <td><span class="badge badge-amber">Medio</span></td>
+          <td>Programar sesi&oacute;n de validaci&oacute;n con el IAPH antes de la pr&oacute;xima reuni&oacute;n</td>
+        </tr>
+        <tr>
+          <td>Tabla v4 sigue existiendo en producci&oacute;n (1024 dim) sin uso</td>
+          <td><span class="badge badge-yellow">Bajo</span></td>
+          <td>Mantener 2-4 semanas como rollback; luego <code>DROP TABLE</code> en migraci&oacute;n limpia</td>
+        </tr>
+        <tr>
+          <td>Reranker SINAI con <code>MAX_LENGTH=8192</code> (vs 32K Qwen3)</td>
+          <td><span class="badge badge-yellow">Bajo</span></td>
+          <td>Suficiente para los chunks de v5 (avg ~512 tokens)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 9. GAPS ===================== -->
+<section id="gaps">
+  <h2 class="section-title"><span class="icon">&#128269;</span> Estado de gaps anteriores</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Gap</th><th>27-abr</th><th>15-may</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>G3</td><td>Datos sucios (~270 registros)</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>G4</td><td>Tests m&iacute;nimos</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td>318 &rarr; 333 (+15)</td></tr>
+        <tr><td>G5</td><td>LLM sin fine-tuning espec&iacute;fico</td><td><span class="badge badge-amber">AVANCE</span></td><td><span class="badge badge-amber">AVANCE</span></td><td>Encoder + reranker resueltos por SINAI; LLM (Jaime) en curso</td></tr>
+        <tr><td>G6</td><td>96,6% assets sin coordenadas</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Fernando explorando alternativas a DERA</td></tr>
+        <tr><td>G7</td><td>Paisaje Cultural sin contenido buscable</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>G8</td><td>Chat / Accesibilidad deshabilitados en UI</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>G9</td><td>Autenticaci&oacute;n hardcoded</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable</td></tr>
+        <tr><td>G10</td><td>Embedder y LLM no desplegados en Cloud Run</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td>Cambio de modelo a SINAI en producci&oacute;n</td></tr>
+        <tr><td>G11</td><td>Sin tests para auth, chunks v4, clarificaci&oacute;n</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable</td></tr>
+        <tr><td>G12</td><td>Trazabilidad granular de ediciones de ruta</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td>Nueva etapa <code>narrative_regeneration</code></td></tr>
+        <tr style="background: var(--green-100);"><td>G13</td><td>Espacio vectorial v4 (1024) incompatible con SINAI (768)</td><td>&mdash;</td><td><span class="badge badge-green">RESUELTO</span></td><td>Migraci&oacute;n v5 + reingest completo</td></tr>
+        <tr style="background: var(--green-100);"><td>G14</td><td>Threshold de relevancia pre-rerank y no parametrizable</td><td>&mdash;</td><td><span class="badge badge-green">RESUELTO</span></td><td><code>c1ef42a</code> + <code>b45b8aa</code></td></tr>
+        <tr style="background: var(--green-100);"><td>G15</td><td>Narrativa de ruta desactualizada tras edici&oacute;n</td><td>&mdash;</td><td><span class="badge badge-green">RESUELTO</span></td><td><code>4d4d9d4</code></td></tr>
+        <tr style="background: var(--amber-50);"><td>G16</td><td>Reranker SINAI devuelve None/NaN en pares pat&oacute;logicos</td><td>&mdash;</td><td><span class="badge badge-amber">RESUELTO (parcial en prod)</span></td><td><code>478980f</code>; pendiente redeploy Cloud Run</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 1rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">10</div>
+      <div class="stat-label">Resueltos</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">1</div>
+      <div class="stat-label">Avance</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">4</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1.5rem; border-left: 4px solid var(--amber-500); background: var(--amber-50);">
+    <h3 style="color: var(--amber-600);">Resumen ejecutivo final</h3>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7;">
+      El periodo 2026-04-27 &rarr; 2026-05-15 es el <strong>mayor salto de capacidad del proyecto desde el inicio</strong>: el agente
+      conversacional pasa de un encoder y un reranker generalistas (Qwen3) a un par de modelos espec&iacute;ficamente entrenados en
+      patrimonio cultural espa&ntilde;ol por el grupo SINAI de la UJA, desplegados en Cloud Run con auto-detecci&oacute;n de arquitectura
+      del reranker, y con el corpus completo del IAPH reingestado en una nueva tabla <code>document_chunks_v5</code> de 768 dimensiones
+      (138.175 chunks).
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-top: .8rem;">
+      Sobre esa base se entregan tres mejoras de producto directamente derivadas del feedback IAPH del 4 de mayo:
+      <strong>umbral de similitud parametrizable y post-rerank</strong> (caso Zurbar&aacute;n),
+      <strong>regeneraci&oacute;n autom&aacute;tica de la narrativa de ruta</strong> (caso 11),
+      y <strong>fix defensivo de scores None/NaN del reranker</strong>. Acompa&ntilde;a un popover frontend de umbral y un fix UX al panel
+      de aclaraci&oacute;n. Todo cubierto por <strong>+15 tests netos</strong> sin regresiones.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-top: .8rem;">
+      De los 14 TODOs vivos al inicio del periodo, <strong>9 quedan completados, 1 con avance parcial, 1 auditado como no reproducible
+      y 3 pendientes</strong>. Estos &uacute;ltimos requieren coordinaci&oacute;n con UJA y/o IAPH. El bump a <strong>versi&oacute;n 1.1.0</strong> marca la
+      transici&oacute;n de la PoC a una fase con modelos de patrimonio dedicados en producci&oacute;n, lista para la siguiente ronda de
+      feedback estructurado con el IAPH.
+    </p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer style="background: var(--slate-900); color: var(--slate-400); padding: 2rem; text-align: center; font-size: .82rem;">
+  <p>Informe de avances generado autom&aacute;ticamente &mdash; Periodo: <code style="color: var(--amber-400);">2026-04-27</code> &rarr; <code style="color: var(--amber-400);">2026-05-15</code></p>
+  <p style="margin-top: .3rem;">Rama <code style="color: var(--amber-400);">develop</code>, commit HEAD <code style="color: var(--amber-400);">d517cba</code> &bull; Versi&oacute;n <code style="color: var(--amber-400);">1.1.0</code></p>
+  <p style="margin-top: .3rem;">IAPH RAG Monorepo &bull; Universidad de Ja&eacute;n &bull; 2026-05-15</p>
+</footer>
+
+<!-- Smooth scroll -->
+<script>
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
