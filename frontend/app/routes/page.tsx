@@ -12,6 +12,7 @@ import { RouteDetailPanel } from "@/components/routes/RouteDetailPanel";
 import { FilterChipsBase } from "@/components/shared/FilterChips";
 import { FilterSidebarBase } from "@/components/shared/FilterSidebar";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
+import { ScoreThresholdPopover } from "@/components/shared/ScoreThresholdPopover";
 import { minDelay } from "@/lib/minDelay";
 
 function NumStopsSelector() {
@@ -19,7 +20,10 @@ function NumStopsSelector() {
   const setNumStops = useRoutesStore((s) => s.setNumStops);
 
   return (
-    <div className="flex items-center gap-1 border-l border-stone-200 pl-3 ml-1 shrink-0">
+    <div
+      className="flex items-center gap-1 border-l border-stone-200 pl-3 ml-1 shrink-0"
+      title="Número de paradas"
+    >
       <svg className="w-4 h-4 text-stone-400 shrink-0 mr-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
@@ -28,6 +32,7 @@ function NumStopsSelector() {
         type="button"
         onClick={() => setNumStops(Math.max(2, numStops - 1))}
         disabled={numStops <= 2}
+        aria-label="Disminuir número de paradas"
         className="w-6 h-6 rounded-md text-stone-400 flex items-center justify-center hover:text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -41,14 +46,31 @@ function NumStopsSelector() {
         type="button"
         onClick={() => setNumStops(Math.min(15, numStops + 1))}
         disabled={numStops >= 15}
+        aria-label="Aumentar número de paradas"
         className="w-6 h-6 rounded-md text-stone-400 flex items-center justify-center hover:text-stone-600 hover:bg-stone-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
       >
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
       </button>
-      <div className="w-px h-5 bg-stone-200 ml-1 shrink-0" />
     </div>
+  );
+}
+
+function RouteSearchRow() {
+  const scoreThreshold = useRoutesStore((s) => s.scoreThreshold);
+  const setScoreThreshold = useRoutesStore((s) => s.setScoreThreshold);
+
+  return (
+    <RouteSmartInput
+      numStopsSelector={<NumStopsSelector />}
+      rightAside={
+        <ScoreThresholdPopover
+          value={scoreThreshold}
+          onChange={setScoreThreshold}
+        />
+      }
+    />
   );
 }
 
@@ -174,7 +196,7 @@ export default function RoutesPage() {
                   Describe una ruta para explorar el patrimonio histórico andaluz
                 </p>
               </div>
-              <RouteSmartInput numStopsSelector={<NumStopsSelector />} />
+              <RouteSearchRow />
               <RoutesFilterChips />
             </div>
           </div>
@@ -202,7 +224,7 @@ export default function RoutesPage() {
               </div>
             </div>
 
-            <RouteSmartInput numStopsSelector={<NumStopsSelector />} />
+            <RouteSearchRow />
             <RoutesFilterChips />
 
             {/* Generation streaming preview */}

@@ -8,6 +8,7 @@ import { SearchResults } from "@/components/search/SearchResults";
 import { FilterSidebar } from "@/components/search/FilterSidebar";
 import { AssetDetailPanel } from "@/components/search/AssetDetailPanel";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
+import { ScoreThresholdPopover } from "@/components/shared/ScoreThresholdPopover";
 import { minDelay } from "@/lib/minDelay";
 
 export default function SearchPage() {
@@ -15,8 +16,21 @@ export default function SearchPage() {
   const hasDetail = useSearchStore((s) => s.selectedAssetId !== null);
   const activeFilters = useSearchStore((s) => s.activeFilters);
   const hasSearched = useSearchStore((s) => s.hasSearched);
+  const scoreThreshold = useSearchStore((s) => s.scoreThreshold);
+  const setScoreThreshold = useSearchStore((s) => s.setScoreThreshold);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ready, setReady] = useState(false);
+
+  const searchRow = (
+    <SearchInput
+      rightAside={
+        <ScoreThresholdPopover
+          value={scoreThreshold}
+          onChange={setScoreThreshold}
+        />
+      }
+    />
+  );
 
   useEffect(() => {
     minDelay(loadFilterValues()).finally(() => setReady(true));
@@ -77,7 +91,7 @@ export default function SearchPage() {
                   Escribe una consulta para buscar en el patrimonio histórico andaluz
                 </p>
               </div>
-              <SearchInput />
+              {searchRow}
               <FilterChips />
             </div>
           </div>
@@ -93,7 +107,7 @@ export default function SearchPage() {
                 </p>
               </div>
             </div>
-            <SearchInput />
+            {searchRow}
             <FilterChips />
             <SearchResults />
           </div>

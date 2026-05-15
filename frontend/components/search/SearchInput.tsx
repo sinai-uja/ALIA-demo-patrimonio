@@ -11,7 +11,7 @@ import {
 import { ClarificationPanel } from "@/components/shared/ClarificationPanel";
 import { useClarification } from "@/hooks/useClarification";
 
-export function SearchInput() {
+export function SearchInput({ rightAside }: { rightAside?: React.ReactNode } = {}) {
   const query = useSearchStore((s) => s.query);
   const setQuery = useSearchStore((s) => s.setQuery);
   const syncFiltersWithQuery = useSearchStore((s) => s.syncFiltersWithQuery);
@@ -71,20 +71,31 @@ export function SearchInput() {
     [addFilter],
   );
 
+  const smartInput = (
+    <SmartInput
+      query={query}
+      onQueryChange={handleQueryChange}
+      onSubmit={handleSubmit}
+      detectedEntities={detectedEntities}
+      activeFilters={activeFilters}
+      loading={loading}
+      onEntitySelect={handleEntitySelect}
+      onFetchSuggestions={fetchSuggestions}
+      onClearSuggestions={clearSuggestions}
+      placeholder="Buscar en el patrimonio historico andaluz..."
+    />
+  );
+
   return (
     <div>
-      <SmartInput
-        query={query}
-        onQueryChange={handleQueryChange}
-        onSubmit={handleSubmit}
-        detectedEntities={detectedEntities}
-        activeFilters={activeFilters}
-        loading={loading}
-        onEntitySelect={handleEntitySelect}
-        onFetchSuggestions={fetchSuggestions}
-        onClearSuggestions={clearSuggestions}
-        placeholder="Buscar en el patrimonio historico andaluz..."
-      />
+      {rightAside ? (
+        <div className="flex items-stretch gap-2">
+          <div className="flex-1 min-w-0">{smartInput}</div>
+          {rightAside}
+        </div>
+      ) : (
+        smartInput
+      )}
       {clarification.active && (
         <ClarificationPanel
           groups={clarification.groups}

@@ -20,7 +20,13 @@ const RouteIcon = (
   </svg>
 );
 
-export function RouteSmartInput({ numStopsSelector }: { numStopsSelector?: React.ReactNode }) {
+export function RouteSmartInput({
+  numStopsSelector,
+  rightAside,
+}: {
+  numStopsSelector?: React.ReactNode;
+  rightAside?: React.ReactNode;
+}) {
   const query = useRoutesStore((s) => s.query);
   const setQuery = useRoutesStore((s) => s.setQuery);
   const syncFiltersWithQuery = useRoutesStore((s) => s.syncFiltersWithQuery);
@@ -86,22 +92,33 @@ export function RouteSmartInput({ numStopsSelector }: { numStopsSelector?: React
     [addFilter],
   );
 
+  const smartInput = (
+    <SmartInput
+      query={query}
+      onQueryChange={handleQueryChange}
+      onSubmit={handleSubmit}
+      detectedEntities={detectedEntities}
+      activeFilters={activeFilters}
+      loading={generating}
+      onEntitySelect={handleEntitySelect}
+      onFetchSuggestions={fetchSuggestions}
+      onClearSuggestions={clearSuggestions}
+      placeholder="Describe la ruta que quieres explorar..."
+      icon={RouteIcon}
+      rightContent={numStopsSelector}
+    />
+  );
+
   return (
     <div>
-      <SmartInput
-        query={query}
-        onQueryChange={handleQueryChange}
-        onSubmit={handleSubmit}
-        detectedEntities={detectedEntities}
-        activeFilters={activeFilters}
-        loading={generating}
-        onEntitySelect={handleEntitySelect}
-        onFetchSuggestions={fetchSuggestions}
-        onClearSuggestions={clearSuggestions}
-        placeholder="Describe la ruta que quieres explorar..."
-        icon={RouteIcon}
-        rightContent={numStopsSelector}
-      />
+      {rightAside ? (
+        <div className="flex items-stretch gap-2">
+          <div className="flex-1 min-w-0">{smartInput}</div>
+          {rightAside}
+        </div>
+      ) : (
+        smartInput
+      )}
       {clarification.active && (
         <ClarificationPanel
           groups={clarification.groups}
