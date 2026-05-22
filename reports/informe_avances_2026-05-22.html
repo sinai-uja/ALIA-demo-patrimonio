@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe de Avances &mdash; IAPH RAG Monorepo &mdash; 2026-05-22</title>
+<style>
+  :root {
+    --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+    --amber-400: #fbbf24; --amber-500: #f59e0b; --amber-600: #d97706;
+    --orange-400: #fb923c; --orange-500: #f97316; --orange-600: #ea580c;
+    --rose-400: #fb7185; --rose-500: #f43f5e; --rose-600: #e11d48;
+    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+    --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+    --slate-900: #0f172a;
+    --green-100: #dcfce7; --green-500: #22c55e; --green-700: #15803d;
+    --red-100: #fee2e2; --red-500: #ef4444; --red-700: #b91c1c;
+    --blue-100: #dbeafe; --blue-500: #3b82f6; --blue-700: #1d4ed8;
+    --purple-100: #f3e8ff; --purple-500: #a855f7; --purple-700: #7e22ce;
+    --yellow-100: #fef9c3; --yellow-500: #eab308; --yellow-700: #a16207;
+    --teal-100: #ccfbf1; --teal-500: #14b8a6; --teal-700: #0f766e;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,.1), 0 2px 4px rgba(0,0,0,.06);
+    --shadow-lg: 0 10px 15px rgba(0,0,0,.1), 0 4px 6px rgba(0,0,0,.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--slate-50); color: var(--slate-800);
+    line-height: 1.6; font-size: 15px;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500), var(--rose-500));
+    padding: 0 2rem; box-shadow: var(--shadow-md);
+  }
+  nav .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 1.5rem;
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  nav .nav-inner::-webkit-scrollbar { display: none; }
+  nav .brand {
+    font-weight: 800; font-size: 1.1rem; color: #fff;
+    padding: .85rem 0; text-decoration: none; flex-shrink: 0;
+  }
+  nav a {
+    color: rgba(255,255,255,.85); text-decoration: none;
+    font-size: .82rem; font-weight: 500; padding: .85rem .25rem;
+    border-bottom: 2px solid transparent; transition: all .2s;
+    flex-shrink: 0;
+  }
+  nav a:hover { color: #fff; border-bottom-color: rgba(255,255,255,.6); }
+  .hero {
+    background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+    color: #fff; padding: 3rem 2rem 2.5rem; text-align: center;
+  }
+  .hero h1 {
+    font-size: 2.2rem; font-weight: 800;
+    background: linear-gradient(90deg, var(--amber-400), var(--orange-400), var(--rose-400));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p { color: var(--slate-400); margin-top: .5rem; font-size: .95rem; }
+  .hero .meta {
+    display: flex; justify-content: center; gap: 2rem;
+    margin-top: 1.2rem; flex-wrap: wrap;
+  }
+  .hero .meta span {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; color: var(--slate-300);
+  }
+  .hero .meta code {
+    background: rgba(255,255,255,.1); padding: .15rem .5rem;
+    border-radius: 6px; font-size: .78rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; }
+  .section-title {
+    font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+    margin-bottom: 1.2rem; padding-bottom: .5rem;
+    border-bottom: 3px solid; border-image: linear-gradient(90deg, var(--amber-500), var(--orange-500), var(--rose-500)) 1;
+    display: flex; align-items: center; gap: .6rem;
+  }
+  .section-title .icon { font-size: 1.3rem; }
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); border: 1px solid var(--slate-200);
+    padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: .6rem; color: var(--slate-900); }
+  .card h4 { font-size: .9rem; font-weight: 600; margin: .8rem 0 .3rem; color: var(--slate-700); }
+  .badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .2rem .65rem; border-radius: 999px;
+    font-size: .72rem; font-weight: 600; line-height: 1.4;
+  }
+  .badge-amber { background: var(--amber-100); color: var(--amber-600); }
+  .badge-orange { background: #fff7ed; color: var(--orange-600); }
+  .badge-rose { background: #fff1f2; color: var(--rose-600); }
+  .badge-green { background: var(--green-100); color: var(--green-700); }
+  .badge-blue { background: var(--blue-100); color: var(--blue-700); }
+  .badge-purple { background: var(--purple-100); color: var(--purple-700); }
+  .badge-teal { background: var(--teal-100); color: var(--teal-700); }
+  .badge-red { background: var(--red-100); color: var(--red-700); }
+  .badge-yellow { background: var(--yellow-100); color: var(--yellow-700); }
+  .badge-slate { background: var(--slate-100); color: var(--slate-600); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th {
+    text-align: left; padding: .65rem .8rem;
+    background: var(--slate-800); color: #fff;
+    font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td { padding: .6rem .8rem; border-bottom: 1px solid var(--slate-100); }
+  tr:nth-child(even) td { background: var(--slate-50); }
+  tr:hover td { background: var(--amber-50); }
+  .pbar-wrap { display: flex; align-items: center; gap: .5rem; }
+  .pbar {
+    flex: 1; height: 8px; background: var(--slate-200);
+    border-radius: 999px; overflow: hidden;
+  }
+  .pbar-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-500), var(--orange-500));
+  }
+  .pbar-label { font-size: .78rem; color: var(--slate-500); min-width: 3.5rem; text-align: right; }
+  pre {
+    background: var(--slate-900); color: #e2e8f0;
+    padding: 1.2rem 1.4rem; border-radius: var(--radius);
+    overflow-x: auto; font-size: .82rem; line-height: 1.55;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    margin: .8rem 0;
+  }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .85em;
+  }
+  :not(pre) > code {
+    background: var(--slate-100); padding: .15rem .4rem;
+    border-radius: 4px; color: var(--orange-600); font-size: .83em;
+  }
+  .kw { color: #c084fc; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm { color: #64748b; font-style: italic; }
+  .fn { color: #67e8f9; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid; text-align: center;
+  }
+  .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+  .stat-card .stat-label { font-size: .78rem; color: var(--slate-500); margin-top: .2rem; }
+  .flow { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .flow-step {
+    background: #fff; border: 2px solid var(--slate-200); border-radius: var(--radius);
+    padding: 1rem 1.5rem; width: 100%; max-width: 600px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .flow-step .step-num {
+    position: absolute; top: -.7rem; left: 1rem;
+    background: linear-gradient(135deg, var(--amber-500), var(--orange-500));
+    color: #fff; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .flow-step h4 { font-size: .9rem; font-weight: 700; color: var(--slate-800); margin-bottom: .25rem; }
+  .flow-step p { font-size: .8rem; color: var(--slate-500); }
+  .flow-arrow {
+    width: 2px; height: 24px;
+    background: linear-gradient(180deg, var(--amber-400), var(--orange-400));
+    position: relative;
+  }
+  .flow-arrow::after {
+    content: ''; position: absolute; bottom: -4px; left: -4px;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--orange-400);
+  }
+  .gap-card {
+    background: #fff; border-radius: var(--radius); padding: 1.2rem;
+    box-shadow: var(--shadow); border-left: 4px solid;
+    margin-bottom: .8rem;
+  }
+  .gap-card.high { border-left-color: var(--red-500); }
+  .gap-card.medium { border-left-color: var(--yellow-500); }
+  .gap-card.resolved { border-left-color: var(--green-500); }
+  .gap-card.mitigated { border-left-color: var(--blue-500); }
+  .gap-card.progress { border-left-color: var(--amber-500); }
+  .gap-card .gap-title { font-weight: 700; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .gap-card p { font-size: .85rem; color: var(--slate-600); margin-top: .3rem; }
+  .kv { display: grid; grid-template-columns: 220px 1fr; gap: .3rem .8rem; font-size: .88rem; }
+  .kv dt { color: var(--slate-500); font-weight: 500; }
+  .kv dd { color: var(--slate-800); }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .todo-done { color: var(--green-700); }
+  .todo-done::before { content: '\2713 '; font-weight: 700; }
+  .todo-item { padding: .6rem 0; border-bottom: 1px solid var(--slate-100); display: flex; align-items: flex-start; gap: .6rem; }
+  .todo-check { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .todo-check.done { background: var(--green-100); color: var(--green-700); }
+  .todo-check.pending { background: var(--red-100); color: var(--red-700); }
+  .todo-check.progress { background: var(--yellow-100); color: var(--yellow-700); }
+  .todo-check.cancelled { background: var(--slate-100); color: var(--slate-500); }
+  .quote {
+    border-left: 4px solid var(--amber-500); background: var(--amber-50);
+    padding: .9rem 1.1rem; font-size: .88rem; color: var(--slate-700);
+    margin: .8rem 0; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .callout {
+    border-left: 4px solid var(--red-500); background: #fff1f2;
+    padding: .9rem 1.1rem; font-size: .88rem; color: var(--slate-700);
+    margin: .8rem 0; border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .callout strong { color: var(--red-700); }
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid { grid-template-columns: 1fr; }
+    .split { grid-template-columns: 1fr; }
+    nav .nav-inner { gap: .8rem; }
+    .container { padding: 1rem; }
+    .kv { grid-template-columns: 1fr; }
+  }
+  @media print {
+    nav { position: static; }
+    .hero { padding: 1.5rem; }
+    .card, .flow-step, .gap-card, .stat-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="brand">IAPH RAG &mdash; v1.1.1</a>
+    <a href="#resumen">Resumen</a>
+    <a href="#areas">Trabajo por &aacute;rea</a>
+    <a href="#commits">Commits</a>
+    <a href="#plan">Plan 15-may</a>
+    <a href="#todos">TODOs IAPH</a>
+    <a href="#arquitectura">Arquitectura</a>
+    <a href="#metricas">M&eacute;tricas</a>
+    <a href="#pendientes">Pendientes</a>
+    <a href="#riesgos">Riesgos</a>
+    <a href="#gaps">Gaps</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Informe de Avances</h1>
+  <p>Agente conversacional RAG &mdash; Instituto Andaluz de Patrimonio Hist&oacute;rico (IAPH)</p>
+  <p style="color: var(--slate-500); font-size: .82rem; margin-top: .3rem;">Comisionado por la Universidad de Ja&eacute;n</p>
+  <div class="meta">
+    <span>&#128197; <code>2026-05-22</code></span>
+    <span>&#127795; Rama: <code>develop</code></span>
+    <span>&#128640; HEAD: <code>6661210</code></span>
+    <span>&#128203; Baseline: <code>d517cba</code> (15-may)</span>
+    <span>&#127991; Versi&oacute;n: <code>1.1.1</code> (bump de patch)</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ===================== 1. RESUMEN ===================== -->
+<section id="resumen">
+  <h2 class="section-title"><span class="icon">&#128200;</span> Resumen Ejecutivo</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .95rem; color: var(--slate-600);">
+    Semana monotem&aacute;tica centrada en <strong>cerrar el compromiso pendiente de la reuni&oacute;n IAPH del 15 de mayo</strong>: regenerar la base
+    documental y reindexar el corpus incorporando, en la <strong>cabecera de metadatos de cada chunk antes de vectorizar</strong>, los campos
+    enriquecidos que Samuel y la UJA definieron (autor, &eacute;poca, tipolog&iacute;a, provincia, municipio, fuentes bibliogr&aacute;ficas y documentales).
+    Cuatro commits concentrados el 2026-05-22 entregan migraci&oacute;n <code>document_chunks_v6</code>, <code>JsonlDocumentLoader</code>,
+    plantillas v6 en lenguaje natural con OMISI&Oacute;N estricta y un use case de ingesta concurrente.
+  </p>
+  <p style="margin-bottom: 1.2rem; font-size: .92rem; color: var(--slate-600);">
+    El <strong>caso Zurbar&aacute;n</strong> y el TODO hist&oacute;rico <strong>T4</strong> (fuentes bibliogr&aacute;ficas y documentales en la cabecera) quedan resueltos por construcci&oacute;n:
+    el nombre del autor y las referencias <code>bibliografia.titulo_smv</code> / <code>documental.uni_docs_smv</code> entran al embedder dentro de frases naturales
+    antes de vectorizar. Para los ~16K registros de mueble que llegan sin cuerpo en el nuevo JSONL, un fallback sintetiza un mini-cuerpo a partir de los metadatos
+    para evitar que el chunker los descarte.
+  </p>
+
+  <div class="callout">
+    <strong>&#9888; Desviaci&oacute;n frente al plan:</strong> el objetivo era una versi&oacute;n operativa el <strong>lunes/martes 18-19 de mayo</strong>.
+    Se ha materializado el <strong>viernes 22 de mayo (3-4 d&iacute;as tarde)</strong>. Causa principal: la entrega de los campos definitivos por parte de Samuel/UJA
+    y la disponibilidad del nuevo dataset JSONL llegaron a mitad de semana, no a principio.
+    El corpus reindexado v6 queda disponible para el hackathon del IAPH a partir del <strong>lunes 25 de mayo</strong>.
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">4</div>
+      <div class="stat-label">Commits</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--orange-500);">
+      <div class="stat-value" style="color: var(--orange-600);">9</div>
+      <div class="stat-label">Archivos modificados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">10/14</div>
+      <div class="stat-label">TODOs IAPH cerrados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--rose-500);">
+      <div class="stat-value" style="color: var(--rose-600);">+2.346</div>
+      <div class="stat-label">L&iacute;neas a&ntilde;adidas</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">333</div>
+      <div class="stat-label">Tests (sin cambios)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--purple-500);">
+      <div class="stat-value" style="color: var(--purple-700);">1.1.1</div>
+      <div class="stat-label">Versi&oacute;n</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--teal-500);">
+      <div class="stat-value" style="color: var(--teal-700);">v6</div>
+      <div class="stat-label">Tabla de chunks (HNSW)</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--yellow-500);">
+      <div class="stat-value" style="color: var(--yellow-700);">4&times;</div>
+      <div class="stat-label">Concurrencia ingesta</div>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <h3>M&eacute;tricas comparativas</h3>
+    <table>
+      <thead><tr><th>M&eacute;trica</th><th>15-may</th><th>22-may</th><th>Delta</th></tr></thead>
+      <tbody>
+        <tr><td>Versi&oacute;n</td><td>1.1.0</td><td><strong>1.1.1</strong></td><td><span class="badge badge-amber">bump de patch</span></td></tr>
+        <tr><td>Commits en el periodo</td><td>13</td><td><strong>4</strong></td><td><span class="badge badge-slate">trabajo concentrado un d&iacute;a</span></td></tr>
+        <tr><td>Migraciones Alembic</td><td>14</td><td><strong>15</strong></td><td><span class="badge badge-green">+1 v6</span></td></tr>
+        <tr><td>Tests (funciones)</td><td>333</td><td><strong>333</strong></td><td><span class="badge badge-amber">0 (riesgo)</span></td></tr>
+        <tr><td>Tabla de chunks activa</td><td>v5 (768 dim, IVFFlat)</td><td><strong>v6</strong> (768 dim, <strong>HNSW</strong>)</td><td><span class="badge badge-green">nueva tabla</span></td></tr>
+        <tr><td>Tipo de cabecera de chunk</td><td>header pipe-separated o v4</td><td><strong>plantilla natural v6</strong></td><td><span class="badge badge-green">+riqueza sem&aacute;ntica</span></td></tr>
+        <tr><td>Loader de documentos</td><td><code>ParquetDocumentLoader</code> (4 parquet)</td><td><strong><code>JsonlDocumentLoader</code></strong> (4 JSONL)</td><td><span class="badge badge-green">nuevo formato</span></td></tr>
+        <tr><td>Concurrencia de ingesta</td><td>secuencial (batch 64)</td><td><strong>paralela</strong> (4 batches en vuelo, batch 16)</td><td><span class="badge badge-green">objetivo ~3 h cumplido</span></td></tr>
+        <tr><td>Puerto FastAPI dev</td><td>18080</td><td><strong>18082</strong></td><td><span class="badge badge-slate">libera 18080</span></td></tr>
+        <tr><td>TODOs IAPH cerrados acumulados</td><td>9 de 14</td><td><strong>10 de 14</strong></td><td><span class="badge badge-green">+1 (T4)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 2. TRABAJO POR AREA ===================== -->
+<section id="areas">
+  <h2 class="section-title"><span class="icon">&#129504;</span> Trabajo realizado por &aacute;rea</h2>
+
+  <!-- 2.1 Esquema v6 -->
+  <h3 style="margin: 1rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.1 Esquema de chunks &mdash; migraci&oacute;n <code>document_chunks_v6</code></h3>
+
+  <div class="card">
+    <h3><code>92707d6</code> &mdash; <code>feat: add document_chunks_v6 migration for SINAI enriched embeddings</code></h3>
+    <p style="font-size: .9rem; color: var(--slate-600); margin: .5rem 0 .8rem;">
+      Archivo nuevo: <code>backend/alembic/versions/f7a8b9c0d1e2_create_document_chunks_v6_for_sinai_enriched.py</code> (revision <code>f7a8b9c0d1e2</code>, parent <code>e5f6a7b8c9d0</code>, +136 l&iacute;neas).
+    </p>
+    <p style="font-size: .9rem; color: var(--slate-600); margin-bottom: .6rem;">
+      La nueva tabla <code>document_chunks_v6</code> es estructuralmente parecida a v5 pero introduce <strong>tres cambios t&eacute;cnicos no triviales</strong>:
+    </p>
+    <ol style="margin-left: 1.4rem; font-size: .88rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>&Iacute;ndice vectorial HNSW</strong> (vs IVFFlat en v5). Mejor recall a alto QPS sin necesidad de calibrar <code>lists</code>/<code>probes</code>. Indicado para un corpus consolidado de 134K+ chunks que no se rota con frecuencia.</li>
+      <li><strong>Trigger PostgreSQL que mantiene <code>search_vector</code> autom&aacute;ticamente</strong> (vs construcci&oacute;n manual en v5). Cualquier <code>UPDATE</code> posterior refresca el &iacute;ndice de texto sin riesgo de divergencia tsvector &harr; content.</li>
+      <li><strong>&Iacute;ndice GIN sobre <code>metadata</code> JSONB</strong> para filtrar chunks por claves del payload original del JSONL (p.ej. tipolog&iacute;a, &eacute;poca) sin materializar columnas dedicadas.</li>
+    </ol>
+    <h4>SQL clave</h4>
+<pre><span class="kw">CREATE INDEX</span> ix_document_chunks_v6_embedding_hnsw
+  <span class="kw">ON</span> document_chunks_v6 <span class="kw">USING</span> hnsw (embedding vector_cosine_ops);
+
+<span class="kw">CREATE OR REPLACE FUNCTION</span> update_search_vector_v6() <span class="kw">RETURNS</span> trigger <span class="kw">AS</span> $$
+<span class="kw">BEGIN</span>
+  <span class="kw">NEW</span>.search_vector :=
+    setweight(to_tsvector(<span class="str">'spanish'</span>, coalesce(<span class="kw">NEW</span>.title, <span class="str">''</span>)), <span class="str">'A'</span>) ||
+    setweight(to_tsvector(<span class="str">'spanish'</span>, coalesce(<span class="kw">NEW</span>.content, <span class="str">''</span>)), <span class="str">'B'</span>);
+  <span class="kw">RETURN NEW</span>;
+<span class="kw">END</span>;
+$$ <span class="kw">LANGUAGE</span> plpgsql;
+
+<span class="kw">CREATE TRIGGER</span> trg_update_search_vector_v6
+  <span class="kw">BEFORE INSERT OR UPDATE ON</span> document_chunks_v6
+  <span class="kw">FOR EACH ROW EXECUTE FUNCTION</span> update_search_vector_v6();
+
+<span class="kw">CREATE INDEX</span> ix_document_chunks_v6_metadata
+  <span class="kw">ON</span> document_chunks_v6 <span class="kw">USING</span> GIN (metadata);</pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .6rem;">
+      <code>EMBEDDING_DIM</code> se lee de variable de entorno (default 768), por lo que la migraci&oacute;n no hardcodea SINAI. Compatibilidad: v1&ndash;v5 se preservan, el selector <code>CHUNKS_TABLE_VERSION=v6</code> activa la nueva tabla.
+    </p>
+  </div>
+
+  <!-- 2.2 JSONL loader + plantillas v6 -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.2 Ingesta &mdash; JSONL loader y plantillas v6</h3>
+
+  <div class="card">
+    <h3><code>af0576d</code> &mdash; <code>feat: ingest new IAPH JSONL dataset with v6 natural-language templates</code></h3>
+    <p style="font-size: .9rem; color: var(--slate-600); margin: .5rem 0 .8rem;">Diff: 3 archivos, +688 / -4. Tres piezas:</p>
+
+    <h4>a) <code>JsonlDocumentLoader</code> (nuevo, +268 l&iacute;neas)</h4>
+    <p style="font-size: .88rem; color: var(--slate-700); margin-bottom: .5rem;">
+      Archivo: <code>backend/src/infrastructure/documents/adapters/jsonl_loader.py</code>.
+      Implementa el port <code>DocumentLoader</code> para el nuevo formato JSONL del IAPH (<code>data/iaph_nuevo/*.jsonl</code>, ~134K registros: <code>paisaje.jsonl</code>, <code>inmaterial.jsonl</code>, <code>inmueble.jsonl</code>, <code>mueble.jsonl</code>).
+    </p>
+    <ul style="margin-left: 1.4rem; font-size: .87rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>Streaming l&iacute;nea a l&iacute;nea</strong>: <code>mueble.jsonl</code> (~107K registros) no entra en memoria, el loader es un generador.</li>
+      <li><strong>Preserva el payload completo</strong>: el record JSON se guarda verbatim en <code>Document.metadata</code> para que las plantillas v6 puedan resolver claves anidadas con punto (<code>identifica.municipio_s</code>, <code>tipologia.materiales.den_tipologia_smv</code>) sin p&eacute;rdida.</li>
+      <li><strong>URL determinista</strong>: si la fuente no trae <code>url</code>, se sintetiza desde <code>api_id</code> (p.ej. <code>https://guiadigital.iaph.es/mueble/{api_id}</code>).</li>
+      <li><strong><code>document_id</code> can&oacute;nico</strong>: se conserva el patr&oacute;n <code>ficha-&lt;tipo&gt;-&lt;api_id&gt;</code> para mantener idempotencia con v1&ndash;v5 y la FK contra <code>heritage_assets</code>.</li>
+      <li><strong>Fallback de cuerpo sintetizado</strong>: ~16K registros de <code>mueble.jsonl</code> llegan con <code>text</code> vac&iacute;o pero metadatos ricos (autor, escuela, tipolog&iacute;a, iconograf&iacute;a). <code>_synthesize_text_fallback</code> construye un mini-cuerpo a partir de esos campos para evitar que el chunker los descarte.</li>
+    </ul>
+
+    <h4>b) Plantillas v6 en <code>DocumentEnrichmentService</code> (+398 l&iacute;neas netas)</h4>
+    <p style="font-size: .88rem; color: var(--slate-700); margin-bottom: .5rem;">
+      Archivo: <code>backend/src/domain/documents/services/document_enrichment_service.py</code>. Nuevo modo <code>"v6"</code>, activo cuando <code>CHUNKS_TABLE_VERSION=v6</code>. Las plantillas siguen literalmente la spec de Samuel/UJA (<code>data/iaph_nuevo/README.md</code>) y aplican una <strong>regla estricta de OMISI&Oacute;N</strong>:
+    </p>
+    <div class="quote">
+      Si un campo es <code>None</code>, vac&iacute;o, blanco, <code>"nan"</code>, o un array compuesto solo de blancos, <strong>la frase entera que lo iba a renderizar se descarta</strong>. Nunca se emite "Su tipolog&iacute;a es ." con un placeholder vac&iacute;o.
+    </div>
+
+    <p style="font-size: .88rem; color: var(--slate-700); margin-top: .8rem;">Helpers internos:</p>
+    <ul style="margin-left: 1.4rem; font-size: .87rem; color: var(--slate-700); line-height: 1.85;">
+      <li><code>_v6_value(doc, key)</code>: lookup de clave con punto sobre <code>metadata</code>, devuelve string limpio o <code>None</code>.</li>
+      <li><code>_v6_sentence(doc, template, *keys)</code>: renderiza una frase con uno o m&aacute;s campos; si cualquiera es <code>None</code>, devuelve <code>None</code> y la frase se descarta.</li>
+      <li><code>_v6_raw(doc, key)</code>: devuelve un campo pre-renderizado (<code>proteccion</code>, <code>ambito_desarrollo</code>, <code>fuentes</code>) tal cual.</li>
+    </ul>
+
+    <div class="card" style="margin-top: .8rem; overflow-x: auto;">
+      <table>
+        <thead><tr><th>Tipo</th><th>Frases tipo (resumen)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>inmueble</strong></td><td><code>Este bien inmueble se denomina '{...}'. Es de naturaleza {...}. Est&aacute; ubicado en {municipio}, provincia de {provincia}. Su tipolog&iacute;a es {...}. Se le puede asociar a la actividad {...}. Se sit&uacute;a en el periodo hist&oacute;rico {...}.</code> + <code>proteccion</code> raw + <code>Se puede consultar sus fuentes en {bibliografia.titulo_smv}. Sus fuentes tambi&eacute;n se pueden consultar en {documental.uni_docs_smv}.</code></td></tr>
+          <tr><td><strong>inmaterial</strong></td><td>&Aacute;mbito + ubicaci&oacute;n (municipio + comarca + provincia) + tipolog&iacute;a + actividad marco + fechas + periodicidad + <code>actividadrelacionada.descripcion_smv</code> + <code>ambito_desarrollo</code> + fuentes biblio/docu</td></tr>
+          <tr><td><strong>mueble</strong></td><td>Denominaci&oacute;n + caracterizaci&oacute;n + cronolog&iacute;a + medidas + ubicaci&oacute;n + materiales/t&eacute;cnicas/tipolog&iacute;as/periodo/escuela/estilo/iconograf&iacute;a + <strong><code>Su autor&iacute;a se atribuye a {agente.nombre_age_smv}.</code></strong> + colectivo + <code>proteccion</code> + <code>fuentes</code> raw</td></tr>
+          <tr><td><strong>paisaje</strong></td><td><code>El '{titulo}' se localiza en la provincia de {provincia}, dentro del &aacute;rea {area}, en el &aacute;mbito {ambito}, pertenece a la demarcaci&oacute;n paisaj&iacute;stica {demarcacion}.</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="quote">
+      <strong>Caso Zurbar&aacute;n:</strong> la frase <code>Su autor&iacute;a se atribuye a {agente.nombre_age_smv}.</code> aparece en el template de mueble, garantizando que el nombre del autor entra al embedder dentro de una frase natural en lugar de quedar enterrado en un campo estructurado opaco al encoder.
+    </div>
+
+    <h4>c) Composici&oacute;n &mdash; selector de loader seg&uacute;n versi&oacute;n</h4>
+<pre><span class="kw">def</span> <span class="fn">_select_loader</span>(chunks_version: <span class="kw">str</span>) -&gt; DocumentLoader:
+    <span class="kw">if</span> chunks_version == <span class="str">"v6"</span>:
+        <span class="kw">return</span> JsonlDocumentLoader()
+    <span class="kw">return</span> ParquetDocumentLoader()
+
+_loader = _select_loader(settings.chunks_table_version)</pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .5rem;">
+      El use case no sabe nada de parquet ni JSONL: ambos loaders implementan el mismo port. Cambio de formato fuente absorbido por la capa de infraestructura sin tocar dominio ni aplicaci&oacute;n.
+      <code>build_documents_application_service</code> acepta adem&aacute;s un par&aacute;metro nuevo <code>batch_context</code> (opcional) que conecta con la siguiente optimizaci&oacute;n.
+    </p>
+  </div>
+
+  <!-- 2.3 Concurrencia ingesta -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.3 Rendimiento &mdash; ingesta concurrente con sesi&oacute;n por lote</h3>
+
+  <div class="card">
+    <h3><code>cf095b3</code> &mdash; <code>perf: run embedding batches concurrently with per-batch DB sessions</code></h3>
+    <p style="font-size: .9rem; color: var(--slate-600); margin: .5rem 0 .8rem;">Diff: 2 archivos, +158 / -33. Cinco cambios estructurales:</p>
+
+    <ol style="margin-left: 1.4rem; font-size: .88rem; color: var(--slate-700); line-height: 1.85;">
+      <li>
+        <strong>Concurrencia con sem&aacute;foro</strong>. Antes la funci&oacute;n <code>flush()</code> se llamaba bloqueante por cada batch lleno. Ahora hasta 4 batches simult&aacute;neos contra el servicio de embeddings de Cloud Run.
+<pre style="margin-top:.4rem;"><span class="kw">EMBEDDING_BATCH_SIZE</span> = <span class="num">16</span>
+<span class="kw">EMBEDDING_CONCURRENCY</span> = <span class="num">4</span>  <span class="cm"># batches en vuelo</span>
+
+semaphore = asyncio.Semaphore(EMBEDDING_CONCURRENCY)
+in_flight: <span class="kw">set</span>[asyncio.Task] = <span class="kw">set</span>()
+
+<span class="kw">def</span> <span class="fn">schedule_flush</span>():
+    batch = <span class="kw">list</span>(buffer); buffer.clear()
+    task = asyncio.create_task(_process_batch(batch))
+    tracker = asyncio.create_task(_track(task))
+    in_flight.add(tracker)</pre>
+      </li>
+      <li>
+        <strong>Sesi&oacute;n de DB fresca por lote</strong> (el cambio cr&iacute;tico). Cada batch concurrente abre su propio par <code>(repository, unit_of_work)</code> mediante un <code>batch_context</code> inyectado desde el script. Sin esto, asyncpg no permite transacciones interleaved sobre una sola sesi&oacute;n y la concurrencia &gt; 1 reventar&iacute;a con "another operation in progress".
+<pre style="margin-top:.4rem;"><span class="kw">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">_batch_context</span>():
+    <span class="kw">async with</span> AsyncSessionLocal() <span class="kw">as</span> session:
+        repo = SqlAlchemyDocumentRepository(session=session)
+        uow = SqlAlchemyUnitOfWork(session=session)
+        <span class="kw">yield</span> repo, uow</pre>
+      </li>
+      <li><strong>Back-pressure con <code>drain_one_if_full</code></strong>: el productor mantiene como m&aacute;ximo <code>2 * EMBEDDING_CONCURRENCY</code> tareas vivas. As&iacute; la memoria y la cola Cloud Run quedan acotadas.</li>
+      <li><strong>Manejo robusto de errores</strong>: el primer fallo se captura en <code>first_error[]</code> y se re-lanza al final, evitando excepciones de tareas en background sin observar.</li>
+      <li><strong>Selecci&oacute;n de dataset seg&uacute;n versi&oacute;n</strong> en <code>scripts/ingest.py</code>: <code>DATASETS = _JSONL_DATASETS <span class="kw">if</span> settings.chunks_table_version == <span class="str">"v6"</span> <span class="kw">else</span> _PARQUET_DATASETS</code>.</li>
+    </ol>
+
+    <div class="card" style="margin-top: .8rem; background: var(--teal-100); border-left: 4px solid var(--teal-500);">
+      <h3 style="color: var(--teal-700);">Resultado operacional</h3>
+      <p style="font-size: .9rem; color: var(--slate-700);">
+        La reingesta completa contra el servicio SINAI en Cloud Run se lanz&oacute; en background el viernes 22 de mayo cumpliendo el objetivo de <strong>~3 h</strong> acordado en la reuni&oacute;n del 15 de mayo, dejando el corpus enriquecido v6 listo para el hackathon del IAPH del pr&oacute;ximo lunes 25.
+      </p>
+    </div>
+  </div>
+
+  <!-- 2.4 Puerto dev -->
+  <h3 style="margin: 1.5rem 0 .5rem; font-size: 1.15rem; color: var(--slate-900);">2.4 Desarrollo &mdash; puerto del FastAPI local</h3>
+
+  <div class="card">
+    <h3><code>6661210</code> &mdash; <code>chore: switch local FastAPI dev server to port 18082</code></h3>
+    <p style="font-size: .9rem; color: var(--slate-600); margin: .5rem 0 .6rem;">Diff: 1 archivo (<code>backend/Makefile</code>), +2 / -2. Targets <code>dev</code> y <code>dev-only</code>.</p>
+<pre><span class="cm">-  uv run fastapi dev src/main.py --port 18080</span>
+<span class="cm">+  uv run fastapi dev src/main.py --port 18082</span></pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .5rem;">
+      Motivo: el puerto <code>18080</code> lo ocupa el contenedor backend cuando se levanta v&iacute;a <code>docker-compose</code>. Pasar el dev server local a <code>18082</code> permite correr ambos en paralelo (comparar la build de Docker contra una rama de desarrollo con hot-reload).
+      Cambio quir&uacute;rgico sin impacto en frontend &mdash; el frontend sigue apuntando a <code>http://localhost:18080/api/v1</code> por defecto v&iacute;a <code>NEXT_PUBLIC_API_URL</code>.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 3. COMMITS ===================== -->
+<section id="commits">
+  <h2 class="section-title"><span class="icon">&#128221;</span> Tabla de Commits (4)</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Hash</th><th>Fecha</th><th>Tipo</th><th>Mensaje</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><code>92707d6</code></td><td>2026-05-22</td><td><span class="badge badge-green">feat</span></td><td>add document_chunks_v6 migration for SINAI enriched embeddings</td></tr>
+        <tr><td>2</td><td><code>af0576d</code></td><td>2026-05-22</td><td><span class="badge badge-green">feat</span></td><td>ingest new IAPH JSONL dataset with v6 natural-language templates</td></tr>
+        <tr><td>3</td><td><code>cf095b3</code></td><td>2026-05-22</td><td><span class="badge badge-orange">perf</span></td><td>run embedding batches concurrently with per-batch DB sessions</td></tr>
+        <tr><td>4</td><td><code>6661210</code></td><td>2026-05-22</td><td><span class="badge badge-slate">chore</span></td><td>switch local FastAPI dev server to port 18082</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: .8rem; font-size: .82rem; color: var(--slate-500);">
+      &#9432; Se excluye <code>f4d713f</code> (<code>docs: add weekly progress report 2026-05-15</code>, fechado el propio 15-may) ya que solo a&ntilde;ade los artefactos del informe anterior al &aacute;rbol.
+    </p>
+  </div>
+
+  <div class="card-grid" style="margin-top: 1rem;">
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Por tipo</h3>
+      <div class="kv">
+        <dt>feat</dt><dd><strong>2</strong> funcionalidades</dd>
+        <dt>perf</dt><dd><strong>1</strong> optimizaci&oacute;n</dd>
+        <dt>chore</dt><dd><strong>1</strong> mantenimiento</dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Por &aacute;rea</h3>
+      <div class="kv">
+        <dt>Esquema (Alembic)</dt><dd>1 commit</dd>
+        <dt>Ingesta (loader + plantillas)</dt><dd>1 commit</dd>
+        <dt>Performance (concurrencia)</dt><dd>1 commit</dd>
+        <dt>Desarrollo (Makefile)</dt><dd>1 commit</dd>
+      </div>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>Concentraci&oacute;n temporal</h3>
+      <p style="font-size: .88rem; color: var(--slate-600);">
+        Los 4 commits caen en un &uacute;nico d&iacute;a (22-may).
+        Los d&iacute;as previos (18-21 mayo) se invirtieron en recibir los campos definitivos de Samuel/UJA, validar el JSONL fuente y dise&ntilde;ar las plantillas, sin commits en el repo.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 4. PLAN 15-MAY ===================== -->
+<section id="plan">
+  <h2 class="section-title"><span class="icon">&#128203;</span> Cumplimiento del plan acordado en la reuni&oacute;n 2026-05-15</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    Cruce entre los compromisos asignados a cada parte en el seguimiento de la reuni&oacute;n del 15 de mayo y el estado al cierre de la semana:
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Compromiso</th><th>Responsable</th><th>Fecha objetivo</th><th>Estado</th><th>Evidencia</th></tr></thead>
+      <tbody>
+        <tr><td>C1</td><td>Definir campos enriquecidos en la cabecera (autor, &eacute;poca, tipolog&iacute;a, provincia, municipio, fuentes biblio/docu)</td><td>Samuel + UJA</td><td>Semana 18-may</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Spec entregada + dataset JSONL <code>data/iaph_nuevo/</code>. Plantillas v6 en <code>document_enrichment_service.py</code> siguen literalmente la spec.</td></tr>
+        <tr><td>C2</td><td>Regenerar la base documental y reindexar el corpus en background (~3 h)</td><td>Juan</td><td>Lun 18 / mar 19 may</td><td><span class="badge badge-amber">CUMPLIDO CON RETRASO</span></td><td><code>92707d6</code> + <code>af0576d</code> + <code>cf095b3</code>. Reingesta lanzada en background sobre <code>document_chunks_v6</code> el <strong>viernes 22-may</strong> (3-4 d&iacute;as tarde).</td></tr>
+        <tr><td>C3</td><td>Crear usuario com&uacute;n para acceso del IAPH al hackathon</td><td>Juan</td><td>Antes del hackathon</td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin commits en este periodo. A abordar antes del lunes 25.</td></tr>
+        <tr><td>C4</td><td>Compartir con Arturo los logs de b&uacute;squeda + feedback acumulados</td><td>Juan</td><td>Antes del hackathon</td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin commits en este periodo.</td></tr>
+        <tr><td>C5</td><td>Reentrenamiento contrastivo del encoder con nuevo feedback</td><td>Samuel / SINAI</td><td>Si plazos lo permiten</td><td><span class="badge badge-slate">NO INICIADO</span></td><td>Dependiente de cierre del hackathon y feedback recibido.</td></tr>
+        <tr><td>C6</td><td>Reuni&oacute;n de revisi&oacute;n de cierre de semana (UJA + IAPH)</td><td>Todos</td><td>Viernes 22-may</td><td><span class="badge badge-green">COMPLETADO</span></td><td>Reuni&oacute;n realizada (este informe alimenta esa revisi&oacute;n).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 1.2rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">2</div>
+      <div class="stat-label">Completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">1</div>
+      <div class="stat-label">Con retraso</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">2</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--slate-500);">
+      <div class="stat-value" style="color: var(--slate-500);">1</div>
+      <div class="stat-label">No iniciado</div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--amber-500); background: var(--amber-50);">
+    <h3 style="color: var(--amber-600);">Justificaci&oacute;n del retraso (C2)</h3>
+    <p style="font-size: .9rem; color: var(--slate-700); margin-bottom: .6rem;">
+      El compromiso C2 era el m&aacute;s visible: tener una versi&oacute;n operativa el <strong>lunes 18</strong> o <strong>martes 19</strong>. Se ha materializado el <strong>viernes 22 (3-4 d&iacute;as tarde)</strong>. Causa ra&iacute;z:
+    </p>
+    <ol style="margin-left: 1.4rem; font-size: .88rem; color: var(--slate-700); line-height: 1.8;">
+      <li>La spec definitiva de campos enriquecidos (C1) y el dataset JSONL nuevo llegaron a mitad de semana, no a inicio. Sin esos dos inputs, no hab&iacute;a nada que reindexar.</li>
+      <li>El nuevo formato JSONL no es compatible con <code>ParquetDocumentLoader</code>. Hubo que escribir un loader nuevo desde cero (268 l&iacute;neas), las cuatro plantillas v6 con su regla de omisi&oacute;n (~390 l&iacute;neas), y una migraci&oacute;n con HNSW y trigger.</li>
+      <li>Para que la reindexaci&oacute;n cupiera en ~3 h fue necesario reescribir el use case de ingesta para concurrencia con sesiones de DB por batch &mdash; sin eso, el throughput contra Cloud Run no habr&iacute;a permitido cumplir la ventana.</li>
+    </ol>
+    <p style="font-size: .9rem; color: var(--slate-700); margin-top: .8rem;">
+      El <strong>corpus reindexado v6 queda disponible para el hackathon del IAPH del lunes 25</strong> &mdash; el retraso no bloquea el hito siguiente.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 5. TODOs IAPH ===================== -->
+<section id="todos">
+  <h2 class="section-title"><span class="icon">&#9989;</span> Estado de los TODOs hist&oacute;ricos del IAPH</h2>
+
+  <p style="margin-bottom: 1rem; font-size: .92rem; color: var(--slate-600);">
+    El informe del 15-may dejaba 14 TODOs vivos. Este periodo afecta principalmente al <strong>T4</strong>, que pasa de PENDIENTE a COMPLETADO; y mueve <strong>T9</strong> y <strong>T10</strong> hacia AVANCE gracias a las plantillas v6:
+  </p>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>TODO</th><th>15-may</th><th>22-may</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>T1</td><td>Filtros dentro de una categor&iacute;a &rarr; OR</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T2</td><td>Integrar modelos SINAI cultural</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T3</td><td>Re-embedder del corpus completo</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">REFORZADO</span></td><td>Reingesta repetida ahora con plantillas v6 enriquecidas</td></tr>
+        <tr style="background: var(--green-100);"><td><strong>T4</strong></td><td><strong>Reindexar con fuentes bibliogr&aacute;ficas y documentales</strong></td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-green">&check; COMPLETADO</span></td><td>Plantilla v6 inmueble/inmaterial: <code>Se puede consultar sus fuentes en {bibliografia.titulo_smv}. Sus fuentes tambi&eacute;n se pueden consultar en {documental.uni_docs_smv}.</code> Mueble incluye adem&aacute;s el bloque <code>fuentes</code> raw.</td></tr>
+        <tr><td>T5</td><td>Umbral de similitud parametrizable</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T6</td><td>Paradas din&aacute;micas en rutas</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>T7</td><td>Regenerar narrativa tras edici&oacute;n de paradas</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T8</td><td>Coherencia de filtros sugeridos</td><td><span class="badge badge-blue">AUDITADO</span></td><td><span class="badge badge-blue">AUDITADO</span></td><td>Sin cambios</td></tr>
+        <tr style="background: var(--amber-50);"><td>T9</td><td>Enlace per&iacute;odos hist&oacute;ricos / tipolog&iacute;as</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-amber">AVANCE</span></td><td>Plantillas v6 emiten frases como <code>Se atribuye al periodo {...}.</code> con <code>tipologia.pHistorico.den_tipologia_smv</code>. Encoder cultural SINAI deber&iacute;a capturar mejor el mapping. Pendiente validaci&oacute;n emp&iacute;rica.</td></tr>
+        <tr style="background: var(--amber-50);"><td>T10</td><td>Reducir ruido por coincidencia l&eacute;xica</td><td><span class="badge badge-amber">AVANCE PARCIAL</span></td><td><span class="badge badge-amber">AVANCE</span></td><td>Plantillas v6 enriquecen la cabecera con autor/&eacute;poca/tipolog&iacute;a, separando Zurbar&aacute;n (autor) del caso "Cortijo La Muralla" (sustring) a nivel sem&aacute;ntico. Pendiente validaci&oacute;n.</td></tr>
+        <tr><td>T11</td><td>Perfiles ciudadan&iacute;a/admin/investigaci&oacute;n/empresa</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T12</td><td>Bater&iacute;a de b&uacute;squedas por perfil</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T13</td><td>Pruebas en paralelo en la gu&iacute;a digital</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Estable</td></tr>
+        <tr><td>T14</td><td>Pr&oacute;xima sesi&oacute;n de feedback estructurado</td><td><span class="badge badge-green">COMPLETADO</span></td><td><span class="badge badge-green">COMPLETADO</span></td><td>Reuni&oacute;n 15-may completada</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 1.2rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">10</div>
+      <div class="stat-label">Completados</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">2</div>
+      <div class="stat-label">Avance</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--blue-500);">
+      <div class="stat-value" style="color: var(--blue-700);">1</div>
+      <div class="stat-label">Auditado</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">1</div>
+      <div class="stat-label">Pendiente</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 6. ARQUITECTURA ===================== -->
+<section id="arquitectura">
+  <h2 class="section-title"><span class="icon">&#127959;&#65039;</span> Cambios arquitect&oacute;nicos relevantes</h2>
+
+  <h3 style="margin-bottom: .5rem; color: var(--slate-800); font-size: 1.05rem;">6.1 Pipeline de ingesta v6</h3>
+  <div class="flow">
+    <div class="flow-step"><span class="step-num">1</span><h4>JSONL nuevo IAPH</h4><p>4 ficheros JSONL en <code>data/iaph_nuevo/</code>, ~134K registros</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">2</span><h4>JsonlDocumentLoader (streaming)</h4><p>Generador l&iacute;nea a l&iacute;nea. Preserva el record completo en <code>Document.metadata</code></p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">3</span><h4>ChunkingService 512 / 64</h4><p>Si <code>text</code> est&aacute; vac&iacute;o, fallback de cuerpo sintetizado</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step" style="border-color: var(--amber-500);"><span class="step-num">4</span><h4>DocumentEnrichmentService v6</h4><p>Frases naturales con regla estricta de OMISI&Oacute;N</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">5</span><h4>Buffer batch 16 + sem&aacute;foro 4</h4><p>Hasta 4 batches en vuelo contra el embedding service</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">6</span><h4>Embedding service SINAI (Cloud Run)</h4><p>768-dim, mean pooling, sin instruction prefix</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step" style="border-color: var(--rose-500);"><span class="step-num" style="background: linear-gradient(135deg, var(--rose-500), var(--orange-500));">7</span><h4>Sesi&oacute;n DB fresca por batch</h4><p>Asyncpg no permite transacciones interleaved sobre una sola sesi&oacute;n</p></div>
+    <div class="flow-arrow"></div>
+    <div class="flow-step"><span class="step-num">8</span><h4>Bulk INSERT document_chunks_v6</h4><p>Trigger PG actualiza <code>search_vector</code> autom&aacute;ticamente</p></div>
+  </div>
+
+  <div class="card">
+    <h3>Diferencias clave vs v5</h3>
+    <ol style="margin-left: 1.4rem; font-size: .88rem; color: var(--slate-700); line-height: 1.85;">
+      <li>La cabecera no se construye con un header pipe-separated, sino con <strong>frases naturales</strong> que la encoder cultural SINAI puede interpretar mejor.</li>
+      <li>La OMISI&Oacute;N se aplica a nivel de <strong>frase</strong>, no de campo: si un dato falta, la frase entera desaparece. Evita ruido tipo "Su tipolog&iacute;a es ." que vimos en versiones anteriores.</li>
+      <li>La cola de batches pasa de <strong>secuencial</strong> a <strong>paralela acotada</strong> (4 en vuelo), con sesi&oacute;n de DB fresca por batch.</li>
+      <li>El <code>tsvector</code> se mantiene por trigger PG, no se construye en el use case.</li>
+    </ol>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem; color: var(--slate-800); font-size: 1.05rem;">6.2 Polimorfismo de loader seg&uacute;n versi&oacute;n</h3>
+
+  <div class="card">
+<pre><span class="cm"># backend/src/composition/documents_composition.py</span>
+<span class="kw">def</span> <span class="fn">_select_loader</span>(chunks_version: <span class="kw">str</span>) -&gt; DocumentLoader:
+    <span class="kw">if</span> chunks_version == <span class="str">"v6"</span>:
+        <span class="kw">return</span> JsonlDocumentLoader()
+    <span class="kw">return</span> ParquetDocumentLoader()
+
+_loader = _select_loader(settings.chunks_table_version)</pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .6rem;">
+      El use case no sabe nada de parquet ni de JSONL: ambos loaders implementan el mismo port. El cambio de formato fuente fue absorbido por la capa de infraestructura sin tocar dominio ni aplicaci&oacute;n. Encaja exactamente con el principio hexagonal del repositorio.
+    </p>
+  </div>
+
+  <h3 style="margin: 1.5rem 0 .5rem; color: var(--slate-800); font-size: 1.05rem;">6.3 Regla de OMISI&Oacute;N en plantillas v6</h3>
+
+  <div class="card">
+<pre><span class="kw">def</span> <span class="fn">_v6_sentence</span>(self, document, template, *keys):
+    <span class="str">"""Render a sentence template using one or more metadata keys.
+
+    Returns None if any required key is missing/empty so the
+    whole sentence is dropped per the OMISSION rule.
+    """</span>
+    values = []
+    <span class="kw">for</span> key <span class="kw">in</span> keys:
+        value = self._v6_value(document, key)
+        <span class="kw">if</span> value <span class="kw">is None</span>:
+            <span class="kw">return None</span>
+        values.append(value)
+    <span class="kw">return</span> template.format(*values)</pre>
+    <p style="font-size: .87rem; color: var(--slate-600); margin-top: .6rem;">
+      La omisi&oacute;n se eval&uacute;a a nivel de plantilla (no de campo), por lo que un campo faltante elimina la frase completa que lo iba a usar. Resultado:
+      el chunk enriquecido es siempre gramaticalmente correcto y no introduce ruido en el embedding.
+    </p>
+  </div>
+</section>
+
+<!-- ===================== 7. METRICAS ===================== -->
+<section id="metricas">
+  <h2 class="section-title"><span class="icon">&#128202;</span> M&eacute;tricas t&eacute;cnicas</h2>
+
+  <div class="card-grid">
+    <div class="card" style="border-top: 4px solid var(--amber-500);">
+      <h3>Diff agregado del periodo</h3>
+      <div class="kv">
+        <dt>Archivos modificados</dt><dd><strong>9</strong></dd>
+        <dt>L&iacute;neas a&ntilde;adidas</dt><dd><strong>+2.346</strong></dd>
+        <dt>L&iacute;neas eliminadas</dt><dd><strong>-39</strong></dd>
+        <dt>Ratio add / del</dt><dd>60 : 1</dd>
+        <dt>Archivos nuevos</dt><dd>3 (migraci&oacute;n v6, <code>jsonl_loader.py</code>, informe 15-may)</dd>
+        <dt>Migraciones nuevas</dt><dd>1 (<code>f7a8b9c0d1e2</code>)</dd>
+      </div>
+      <p style="font-size: .82rem; color: var(--slate-500); margin-top: .6rem;">
+        Nota: 1.362 l&iacute;neas a&ntilde;adidas corresponden a <code>informe_avances_2026-05-15.md</code>/<code>.html</code>, no a c&oacute;digo fuente. Excluyendo el informe: <strong>+984 / -39</strong> netas en c&oacute;digo de aplicaci&oacute;n.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--blue-500);">
+      <h3>Tests &mdash; 333 &rarr; 333</h3>
+      <div class="kv">
+        <dt>Funciones <code>test_*</code></dt><dd>333 &rarr; <strong>333</strong> (0)</dd>
+        <dt>Cobertura del nuevo c&oacute;digo</dt><dd><span class="badge badge-amber">0% (TODO)</span></dd>
+        <dt>Verificaci&oacute;n actual</dt><dd>Reingesta funcional sobre 134K registros</dd>
+        <dt>Riesgo</dt><dd><span class="badge badge-red">Medio-Alto</span></dd>
+      </div>
+      <p style="font-size: .82rem; color: var(--slate-500); margin-top: .6rem;">
+        La l&oacute;gica nueva (loader JSONL, plantillas v6, concurrencia con <code>batch_context</code>) no incorpora tests dedicados todav&iacute;a. Riesgo documentado en &sect;9.
+      </p>
+    </div>
+    <div class="card" style="border-top: 4px solid var(--green-500);">
+      <h3>Reparto por &aacute;rea (sin informe)</h3>
+      <div class="kv">
+        <dt>Backend domain</dt><dd>1 archivo &mdash; +398</dd>
+        <dt>Backend infrastructure</dt><dd>1 &mdash; +268</dd>
+        <dt>Backend application</dt><dd>1 &mdash; +131 / -33</dd>
+        <dt>Backend scripts</dt><dd>1 &mdash; +60</dd>
+        <dt>Backend composition</dt><dd>1 &mdash; +26</dd>
+        <dt>Alembic</dt><dd>1 &mdash; +136</dd>
+        <dt>Backend Makefile</dt><dd>1 &mdash; +2 / -2</dd>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; color: var(--slate-800);">Par&aacute;metros y configuraci&oacute;n</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Variable</th><th>15-may</th><th>22-may</th></tr></thead>
+      <tbody>
+        <tr><td><code>CHUNKS_TABLE_VERSION</code></td><td>v5</td><td><strong>v6</strong></td></tr>
+        <tr><td><code>EMBEDDING_BATCH_SIZE</code> (use case ingesta)</td><td>32</td><td><strong>16</strong> (con concurrencia 4 &rarr; throughput &times;2)</td></tr>
+        <tr><td><code>EMBEDDING_CONCURRENCY</code> (nueva)</td><td>n/a (secuencial)</td><td><strong>4</strong></td></tr>
+        <tr><td>Puerto FastAPI dev local</td><td>18080</td><td><strong>18082</strong></td></tr>
+        <tr><td>Estructura de cabecera de chunk</td><td>header pipe-separated o v4</td><td><strong>plantilla natural v6 con OMISI&Oacute;N</strong></td></tr>
+        <tr><td>&Iacute;ndice vectorial</td><td>IVFFlat (<code>lists=100</code>)</td><td><strong>HNSW</strong> (<code>vector_cosine_ops</code>)</td></tr>
+        <tr><td><code>tsvector</code></td><td>construido en ingesta</td><td><strong>mantenido por trigger PG</strong></td></tr>
+        <tr><td><code>metadata</code> JSONB</td><td>sin &iacute;ndice</td><td><strong>GIN</strong></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top: .8rem; font-size: .85rem; color: var(--slate-600);">
+      Sin cambios en thresholds RAG (<code>rag_score_threshold=0.50</code>, <code>search_score_threshold=0.55</code>) ni en los modelos servidos por el embedding service (sigue activo SINAI cultural).
+    </p>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; color: var(--slate-800);">Migraciones Alembic</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Revision</th><th>Padre</th><th>Descripci&oacute;n</th><th>Estado</th></tr></thead>
+      <tbody>
+        <tr><td>15</td><td><code>f7a8b9c0d1e2</code></td><td><code>e5f6a7b8c9d0</code></td><td><code>create_document_chunks_v6_for_sinai_enriched</code></td><td><span class="badge badge-green">NUEVA</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 8. PENDIENTES ===================== -->
+<section id="pendientes">
+  <h2 class="section-title"><span class="icon">&#128203;</span> Pendientes y pr&oacute;ximos pasos</h2>
+
+  <h3 style="margin-bottom: .5rem; font-size: 1.05rem;">8.1 Prioridad alta &mdash; antes del hackathon IAPH (lunes 25-may)</h3>
+  <div class="card">
+    <ol style="margin-left: 1.4rem; font-size: .9rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>Crear usuario com&uacute;n para el acceso del IAPH al hackathon</strong> (C3). Decidir si va en <code>seed_users.py</code> con un perfil espec&iacute;fico o si se gestiona como <code>User</code> manual con <code>ADMIN_USERNAME</code>/contrase&ntilde;a conocida.</li>
+      <li><strong>Compartir con Arturo los logs de b&uacute;squeda y el feedback acumulado</strong> (C4). Considerar un endpoint admin <code>/admin/feedback/export</code> o un script puntual <code>scripts/export_feedback.py</code>.</li>
+      <li><strong>Validar la reingesta v6</strong> muestreando 10-20 chunks renderizados de cada tipo patrimonial. Comprobar que la regla de OMISI&Oacute;N se aplica correctamente y que no se cuelan frases con placeholders vac&iacute;os.</li>
+      <li><strong>Smoke test del pipeline RAG end-to-end</strong> contra <code>document_chunks_v6</code> con las 14 consultas tipo del IAPH para detectar regresiones antes del hackathon.</li>
+    </ol>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; font-size: 1.05rem;">8.2 Prioridad media</h3>
+  <div class="card">
+    <ul style="margin-left: 1.4rem; font-size: .9rem; color: var(--slate-700); line-height: 1.85;">
+      <li><strong>Tests para la l&oacute;gica nueva</strong>: <code>_v6_value</code>, <code>_v6_sentence</code> (OMISI&Oacute;N), <code>JsonlDocumentLoader</code> (record sin <code>text</code>, sin <code>dataset_id</code>, con <code>metadata</code> con dotted keys), <code>IngestDocumentsUseCase</code> con <code>batch_context</code> (concurrencia, propagaci&oacute;n de excepciones, back-pressure).</li>
+      <li><strong>Quitar el lowercasing de la query</strong> en <code>RAGQueryUseCase</code> ahora que SINAI usa tokenizer cased (caveat documentado desde 15-may, sigue pendiente).</li>
+      <li><strong>Redeploy de Cloud Run con el fix de NaN</strong> (<code>make cloud-deploy-baked</code>) &mdash; caveat heredado del 15-may.</li>
+    </ul>
+  </div>
+
+  <h3 style="margin: 1.2rem 0 .5rem; font-size: 1.05rem;">8.3 Backlog t&eacute;cnico</h3>
+  <div class="card">
+    <ul style="margin-left: 1.4rem; font-size: .9rem; color: var(--slate-700); line-height: 1.85;">
+      <li>Documentar <code>data/iaph_nuevo/README.md</code> con la spec final de Samuel para que est&eacute; en el repo (actualmente fuera de git).</li>
+      <li>Limpiar artefactos de Qwen3 en <code>backend/models/</code> y tablas <code>document_chunks_v1..v4</code> una vez v6 est&eacute; validada.</li>
+      <li>Decidir si el frontend ajusta su default a <code>18082</code> cuando hay Docker corriendo en paralelo, o si se mantiene la convenci&oacute;n actual.</li>
+      <li>Reentrenamiento contrastivo del encoder (C5) cuando llegue una ronda significativa de feedback del hackathon.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================== 9. RIESGOS ===================== -->
+<section id="riesgos">
+  <h2 class="section-title"><span class="icon">&#9888;&#65039;</span> Riesgos y caveats</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>Riesgo</th><th>Impacto</th><th>Mitigaci&oacute;n</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Reingesta v6 en background sin validaci&oacute;n E2E todav&iacute;a</td>
+          <td><span class="badge badge-amber">Medio</span></td>
+          <td>Esperar logs de finalizaci&oacute;n; validar muestreo de chunks renderizados antes del hackathon</td>
+        </tr>
+        <tr>
+          <td>L&oacute;gica nueva (loader JSONL, plantillas v6, concurrencia) <strong>sin tests dedicados</strong></td>
+          <td><span class="badge badge-red">Medio-Alto</span></td>
+          <td>TODO: tests para <code>_v6_value</code>/<code>_v6_sentence</code> (OMISI&Oacute;N), <code>JsonlDocumentLoader</code>, <code>IngestDocumentsUseCase</code> con <code>batch_context</code></td>
+        </tr>
+        <tr>
+          <td><code>EMBEDDING_BATCH_SIZE=16</code> (vs 32 en v5) m&aacute;s concurrencia 4 puede saturar Cloud Run en picos</td>
+          <td><span class="badge badge-yellow">Bajo-Medio</span></td>
+          <td><code>drain_one_if_full</code> limita la cola a 8 tareas; <code>RERANKER_BATCH_SIZE=8</code> mantiene presi&oacute;n similar</td>
+        </tr>
+        <tr>
+          <td>Frontend sigue apuntando a <code>localhost:18080</code> por defecto; en dev local puede quedar desincronizado con el nuevo <code>18082</code></td>
+          <td><span class="badge badge-yellow">Bajo</span></td>
+          <td>Documentar en README; alternativamente alinear <code>NEXT_PUBLIC_API_URL</code> a <code>18082</code> cuando se trabaja sin Docker</td>
+        </tr>
+        <tr>
+          <td>El fallback de <code>_synthesize_text_fallback</code> puede generar chunks demasiado cortos para mueble sin metadatos suficientes</td>
+          <td><span class="badge badge-yellow">Bajo</span></td>
+          <td>El chunker conserva la l&oacute;gica de skip si el texto sintetizado queda vac&iacute;o</td>
+        </tr>
+        <tr>
+          <td>Tabla v5 sigue existiendo en producci&oacute;n sin uso</td>
+          <td><span class="badge badge-yellow">Bajo</span></td>
+          <td>Mantener 2-4 semanas como rollback; luego <code>DROP TABLE</code> en migraci&oacute;n limpia</td>
+        </tr>
+        <tr style="background: #fff1f2;">
+          <td><strong>C3</strong> (usuario com&uacute;n para hackathon) y <strong>C4</strong> (logs+feedback para Arturo) sin abordar y el hackathon arranca el lunes 25</td>
+          <td><span class="badge badge-red">Alto</span></td>
+          <td><strong>Prioridad #1 del pr&oacute;ximo periodo</strong> &mdash; ver &sect;8.1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== 10. GAPS ===================== -->
+<section id="gaps">
+  <h2 class="section-title"><span class="icon">&#128269;</span> Estado de gaps hist&oacute;ricos</h2>
+
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead><tr><th>#</th><th>Gap</th><th>15-may</th><th>22-may</th><th>Detalle</th></tr></thead>
+      <tbody>
+        <tr><td>G3</td><td>Datos sucios (~270 registros)</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>G4</td><td>Tests m&iacute;nimos</td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td><span class="badge badge-amber">AVANCE</span></td><td>Sin nuevos tests netos; el c&oacute;digo nuevo no est&aacute; cubierto</td></tr>
+        <tr><td>G5</td><td>LLM sin fine-tuning espec&iacute;fico</td><td><span class="badge badge-amber">AVANCE</span></td><td><span class="badge badge-amber">AVANCE</span></td><td>Estable</td></tr>
+        <tr><td>G6</td><td>96,6% assets sin coordenadas</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>G7</td><td>Paisaje Cultural sin contenido buscable</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-amber">AVANCE</span></td><td>Plantilla v6 paisaje renderiza al menos la l&iacute;nea inicial con <code>titulo</code>, <code>provincia</code>, <code>area</code>, <code>ambito</code>, <code>demarcacion_paisajistica</code> + <code>text</code>. Pendiente reconfirmar con el dataset reindexado.</td></tr>
+        <tr><td>G8</td><td>Chat / Accesibilidad deshabilitados en UI</td><td><span class="badge badge-red">PENDIENTE</span></td><td><span class="badge badge-red">PENDIENTE</span></td><td>Sin cambios</td></tr>
+        <tr><td>G9</td><td>Autenticaci&oacute;n hardcoded</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable</td></tr>
+        <tr><td>G10</td><td>Embedder y LLM no desplegados en Cloud Run</td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td>Estable</td></tr>
+        <tr><td>G11</td><td>Sin tests para auth, chunks v4, clarificaci&oacute;n</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable</td></tr>
+        <tr><td>G12</td><td>Trazabilidad granular de ediciones de ruta</td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td><span class="badge badge-green">RESUELTO REFORZADO</span></td><td>Estable</td></tr>
+        <tr><td>G13</td><td>Espacio vectorial v4 (1024) vs SINAI (768)</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable (v5/v6 ambas 768)</td></tr>
+        <tr><td>G14</td><td>Threshold de relevancia pre-rerank</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable</td></tr>
+        <tr><td>G15</td><td>Narrativa de ruta desactualizada</td><td><span class="badge badge-green">RESUELTO</span></td><td><span class="badge badge-green">RESUELTO</span></td><td>Estable</td></tr>
+        <tr><td>G16</td><td>Reranker SINAI devuelve None/NaN</td><td><span class="badge badge-amber">RESUELTO (parcial en prod)</span></td><td><span class="badge badge-amber">RESUELTO (parcial en prod)</span></td><td>Pendiente redeploy Cloud Run (caveat heredado)</td></tr>
+        <tr style="background: var(--green-100);"><td><strong>G17</strong> <em>(nuevo)</em></td><td>Cabecera de chunk sin autor / &eacute;poca / tipolog&iacute;a (caso Zurbar&aacute;n)</td><td>&mdash;</td><td><span class="badge badge-green">RESUELTO</span></td><td>Plantillas v6 en <code>document_enrichment_service.py</code></td></tr>
+        <tr style="background: var(--green-100);"><td><strong>G18</strong> <em>(nuevo)</em></td><td>Cabecera de chunk sin fuentes bibliogr&aacute;ficas y documentales (T4)</td><td>&mdash;</td><td><span class="badge badge-green">RESUELTO</span></td><td>Plantillas v6 inmueble / inmaterial / mueble</td></tr>
+        <tr style="background: var(--green-100);"><td><strong>G19</strong> <em>(nuevo)</em></td><td>Throughput de ingesta insuficiente para corpus completo en ventana</td><td>&mdash;</td><td><span class="badge badge-green">RESUELTO</span></td><td><code>cf095b3</code> (concurrencia 4 + sesi&oacute;n por batch + back-pressure)</td></tr>
+        <tr style="background: #fff1f2;"><td><strong>G20</strong> <em>(nuevo)</em></td><td>L&oacute;gica nueva v6 sin tests</td><td>&mdash;</td><td><span class="badge badge-red">PENDIENTE</span></td><td>Loader JSONL, plantillas v6, concurrencia de ingesta sin tests dedicados</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 1rem;">
+    <div class="stat-card" style="border-left-color: var(--green-500);">
+      <div class="stat-value" style="color: var(--green-700);">13</div>
+      <div class="stat-label">Resueltos</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--amber-500);">
+      <div class="stat-value" style="color: var(--amber-600);">3</div>
+      <div class="stat-label">Avance</div>
+    </div>
+    <div class="stat-card" style="border-left-color: var(--red-500);">
+      <div class="stat-value" style="color: var(--red-700);">4</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 1.5rem; border-left: 4px solid var(--amber-500); background: var(--amber-50);">
+    <h3 style="color: var(--amber-600);">Resumen ejecutivo final</h3>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7;">
+      La semana del 18 al 22 de mayo cierra el compromiso central de la reuni&oacute;n del 15-may: <strong>regenerar la base documental y reindexar el corpus con la cabecera de metadatos enriquecida</strong>.
+      Cuatro commits concentrados el viernes 22 entregan la migraci&oacute;n <code>document_chunks_v6</code> (con HNSW, trigger PG para <code>search_vector</code> y GIN sobre <code>metadata</code>),
+      un <code>JsonlDocumentLoader</code> nuevo capaz de procesar el dataset JSONL de Samuel/UJA, las plantillas v6 en lenguaje natural con regla estricta de OMISI&Oacute;N
+      (una por tipo patrimonial: inmueble, inmaterial, mueble, paisaje) y una refactorizaci&oacute;n del use case de ingesta para concurrencia con sesi&oacute;n de DB por lote,
+      cumpliendo la ventana objetivo de ~3 h en background.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-top: .8rem;">
+      El <strong>caso Zurbar&aacute;n</strong> y el TODO hist&oacute;rico <strong>T4</strong> (fuentes bibliogr&aacute;ficas y documentales en la cabecera) quedan resueltos por construcci&oacute;n:
+      el nombre del autor y las referencias <code>bibliografia.titulo_smv</code> / <code>documental.uni_docs_smv</code> entran al embedder dentro de frases naturales antes de vectorizar.
+      Para los ~16K registros de mueble que llegan sin cuerpo en el nuevo JSONL, un fallback sintetiza un mini-cuerpo a partir de los metadatos para evitar que el chunker los descarte.
+    </p>
+    <p style="font-size: .92rem; color: var(--slate-700); line-height: 1.7; margin-top: .8rem;">
+      El plan acordado se cumple con un <strong>retraso de 3-4 d&iacute;as</strong> (objetivo lunes/martes, entrega viernes) debido a la dependencia de los inputs externos (spec definitiva y dataset).
+      El corpus v6 queda operativo para el <strong>hackathon del IAPH del lunes 25</strong>. Quedan dos compromisos pendientes prioritarios para la pr&oacute;xima semana:
+      crear el usuario com&uacute;n para el acceso del IAPH (C3) y compartir con Arturo los logs+feedback acumulados (C4). Adem&aacute;s, la l&oacute;gica nueva (loader, plantillas v6, concurrencia)
+      <strong>carece de tests dedicados</strong> &mdash; riesgo medio-alto a cubrir como prioridad media.
+    </p>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- FOOTER -->
+<footer style="background: var(--slate-900); color: var(--slate-400); padding: 2rem; text-align: center; font-size: .82rem;">
+  <p>Informe de avances generado autom&aacute;ticamente &mdash; Periodo: <code style="color: var(--amber-400);">2026-05-18</code> &rarr; <code style="color: var(--amber-400);">2026-05-22</code></p>
+  <p style="margin-top: .3rem;">Rama <code style="color: var(--amber-400);">develop</code>, commit HEAD <code style="color: var(--amber-400);">6661210</code> &bull; Versi&oacute;n <code style="color: var(--amber-400);">1.1.1</code></p>
+  <p style="margin-top: .3rem;">IAPH RAG Monorepo &bull; Universidad de Ja&eacute;n &bull; 2026-05-22</p>
+</footer>
+
+<!-- Smooth scroll -->
+<script>
+document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>
