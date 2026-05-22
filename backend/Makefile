@@ -35,10 +35,10 @@ help:
 	@echo "  db-import-docker Import database (Docker, FILE=path/to/dump)"
 
 dev: infra
-	uv run fastapi dev src/main.py --port 18080
+	uv run fastapi dev src/main.py --port 18082
 
 dev-only:
-	uv run fastapi dev src/main.py --port 18080
+	uv run fastapi dev src/main.py --port 18082
 
 infra:
 	$(COMPOSE) up -d postgres embedding-service
