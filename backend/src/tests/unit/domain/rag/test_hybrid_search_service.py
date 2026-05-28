@@ -52,15 +52,31 @@ class TestRRFFusion:
 
         assert len(result) == 3
 
-    def test_best_chunk_has_score_zero(self):
-        """The top-ranked chunk should have normalized score = 0.0 (best)."""
+    def test_shared_top_chunk_with_unit_weights_reaches_score_zero(self):
+        """A chunk that ranks #1 in BOTH lists with summed weight = 1.0
+        hits the theoretical RRF maximum → score collapses to 0.0 (best)."""
         service = HybridSearchService()
-        vector = [_make_chunk("v1"), _make_chunk("v2")]
-        text = [_make_chunk("t1")]
+        shared = _make_chunk("shared")
+        vector = [shared, _make_chunk("v_only")]
+        text = [shared, _make_chunk("t_only")]
 
-        result = service.fuse(vector, text, top_k=10)
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.5)
 
+        assert result[0].chunk_id == "shared"
         assert result[0].score == pytest.approx(0.0)
+
+    def test_weak_match_does_not_inflate_to_score_zero(self):
+        """A chunk that only appears in one list (weak overall match) must
+        NOT be normalized to 0.0 just because it tops a sparse batch."""
+        service = HybridSearchService()
+        vector = [_make_chunk("v1")]
+        text: list[RetrievedChunk] = []
+
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.5)
+
+        # Only the semantic half contributes → score is at most 1 - 0.5 = 0.5.
+        assert result[0].score > 0.0
+        assert result[0].score == pytest.approx(0.5, abs=0.01)
 
     def test_all_scores_between_zero_and_one(self):
         service = HybridSearchService()

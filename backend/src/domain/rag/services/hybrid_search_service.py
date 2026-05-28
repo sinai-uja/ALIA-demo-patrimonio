@@ -24,9 +24,12 @@ class HybridSearchService:
 
     ``semantic_weight = 1.0 - lexical_weight``.
 
-    Output scores are normalized so that ``score = 1 - (rrf / max_rrf)``,
-    keeping the "lower = better" cosine-distance-like semantics expected by
-    downstream filters.
+    Output scores are normalized against the **theoretical maximum** RRF a
+    chunk could obtain (rank 0 in both lists, with the full unit weight), not
+    against the batch maximum. This avoids the misleading "every #1 looks
+    100% relevant" effect of relative normalization and yields scores that
+    actually reflect retrieval confidence (weak matches end up with high
+    cosine-distance-like scores). ``score = 1 - min(1, rrf / theoretical_max)``.
     """
 
     def __init__(self, k_param: int = 60) -> None:
@@ -68,13 +71,19 @@ class HybridSearchService:
         # Sort by RRF score descending (higher = more relevant).
         sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)
 
-        # Normalize to cosine-distance-like score (0 = best) for compatibility.
-        max_rrf = rrf_scores[sorted_ids[0]]
+        # Theoretical maximum: a chunk that ranks #1 in BOTH lists with the
+        # full unit weight (semantic + lexical = 1). Using this absolute
+        # anchor — instead of the batch maximum — prevents the top-ranked
+        # result from always scoring ~100% even when retrieval is weak.
+        theoretical_max = (semantic_weight + lexical_weight) / (self._k + 1)
 
         results = []
         for chunk_id in sorted_ids[:top_k]:
             chunk = chunk_map[chunk_id]
-            relevance = rrf_scores[chunk_id] / max_rrf if max_rrf > 0 else 0.0
+            if theoretical_max > 0:
+                relevance = min(1.0, rrf_scores[chunk_id] / theoretical_max)
+            else:
+                relevance = 0.0
             results.append(replace(chunk, score=1.0 - relevance))
 
         return results
