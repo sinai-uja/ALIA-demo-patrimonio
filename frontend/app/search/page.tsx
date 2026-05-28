@@ -9,6 +9,7 @@ import { FilterSidebar } from "@/components/search/FilterSidebar";
 import { AssetDetailPanel } from "@/components/search/AssetDetailPanel";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
 import { ScoreThresholdPopover } from "@/components/shared/ScoreThresholdPopover";
+import { LexicalWeightPopover } from "@/components/shared/LexicalWeightPopover";
 import { minDelay } from "@/lib/minDelay";
 
 export default function SearchPage() {
@@ -18,16 +19,24 @@ export default function SearchPage() {
   const hasSearched = useSearchStore((s) => s.hasSearched);
   const scoreThreshold = useSearchStore((s) => s.scoreThreshold);
   const setScoreThreshold = useSearchStore((s) => s.setScoreThreshold);
+  const lexicalWeight = useSearchStore((s) => s.lexicalWeight);
+  const setLexicalWeight = useSearchStore((s) => s.setLexicalWeight);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [ready, setReady] = useState(false);
 
   const searchRow = (
     <SearchInput
       rightAside={
-        <ScoreThresholdPopover
-          value={scoreThreshold}
-          onChange={setScoreThreshold}
-        />
+        <div className="flex items-stretch gap-2">
+          <LexicalWeightPopover
+            value={lexicalWeight}
+            onChange={setLexicalWeight}
+          />
+          <ScoreThresholdPopover
+            value={scoreThreshold}
+            onChange={setScoreThreshold}
+          />
+        </div>
       }
     />
   );

@@ -13,6 +13,7 @@ import { FilterChipsBase } from "@/components/shared/FilterChips";
 import { FilterSidebarBase } from "@/components/shared/FilterSidebar";
 import { CollapsibleDrawer } from "@/components/shared/CollapsibleDrawer";
 import { ScoreThresholdPopover } from "@/components/shared/ScoreThresholdPopover";
+import { LexicalWeightPopover } from "@/components/shared/LexicalWeightPopover";
 import { minDelay } from "@/lib/minDelay";
 
 function NumStopsSelector() {
@@ -60,15 +61,23 @@ function NumStopsSelector() {
 function RouteSearchRow() {
   const scoreThreshold = useRoutesStore((s) => s.scoreThreshold);
   const setScoreThreshold = useRoutesStore((s) => s.setScoreThreshold);
+  const lexicalWeight = useRoutesStore((s) => s.lexicalWeight);
+  const setLexicalWeight = useRoutesStore((s) => s.setLexicalWeight);
 
   return (
     <RouteSmartInput
       numStopsSelector={<NumStopsSelector />}
       rightAside={
-        <ScoreThresholdPopover
-          value={scoreThreshold}
-          onChange={setScoreThreshold}
-        />
+        <div className="flex items-stretch gap-2">
+          <LexicalWeightPopover
+            value={lexicalWeight}
+            onChange={setLexicalWeight}
+          />
+          <ScoreThresholdPopover
+            value={scoreThreshold}
+            onChange={setScoreThreshold}
+          />
+        </div>
       }
     />
   );

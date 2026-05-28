@@ -54,11 +54,11 @@ export function ScoreThresholdPopover({
   }, [open]);
 
   return (
-    <div ref={containerRef} className="relative shrink-0">
+    <div ref={containerRef} className="relative shrink-0 flex">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`relative flex items-center gap-2 h-full px-4 rounded-2xl border bg-white shadow-sm transition-all ${
+        className={`relative flex items-center gap-2 px-4 rounded-2xl border bg-white shadow-sm transition-all ${
           open
             ? "border-green-500 ring-2 ring-green-100 text-stone-700"
             : "border-stone-200 hover:border-stone-300 text-stone-500 hover:text-stone-700"
