@@ -22,6 +22,8 @@ interface SearchState {
   activeFilters: ActiveFilter[];
   /** Cosine distance cutoff sent to the backend. Lower = stricter. */
   scoreThreshold: number;
+  /** Lexical weight in [0, 1] for hybrid search. Semantic weight = 1 - lexicalWeight. */
+  lexicalWeight: number;
   /** Full suggestion response (for dropdown). Cleared when dropdown closes. */
   suggestions: SuggestionResponse | null;
   /** Detected entities persisted for overlay highlights. Only cleared on new query. */
@@ -41,6 +43,7 @@ interface SearchState {
 
   setQuery: (q: string) => void;
   setScoreThreshold: (value: number) => void;
+  setLexicalWeight: (value: number) => void;
   syncFiltersWithQuery: (q: string) => void;
   performSearch: (page?: number) => Promise<void>;
   goToPage: (page: number) => Promise<void>;
@@ -58,6 +61,15 @@ interface SearchState {
 const SEARCH_THRESHOLD_STORAGE_KEY = "search:scoreThreshold";
 const DEFAULT_SEARCH_THRESHOLD = 0.5;
 
+const SEARCH_LEXICAL_WEIGHT_STORAGE_KEY = "search:lexicalWeight";
+const DEFAULT_LEXICAL_WEIGHT = (() => {
+  const raw = process.env.NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT;
+  const parsed = Number(raw ?? "0.5");
+  if (!Number.isFinite(parsed)) return 0.5;
+  if (parsed < 0 || parsed > 1) return 0.5;
+  return parsed;
+})();
+
 function loadInitialThreshold(): number {
   if (typeof window === "undefined") return DEFAULT_SEARCH_THRESHOLD;
   try {
@@ -69,6 +81,20 @@ function loadInitialThreshold(): number {
     return parsed;
   } catch {
     return DEFAULT_SEARCH_THRESHOLD;
+  }
+}
+
+function loadInitialLexicalWeight(): number {
+  if (typeof window === "undefined") return DEFAULT_LEXICAL_WEIGHT;
+  try {
+    const raw = window.localStorage.getItem(SEARCH_LEXICAL_WEIGHT_STORAGE_KEY);
+    if (raw === null) return DEFAULT_LEXICAL_WEIGHT;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DEFAULT_LEXICAL_WEIGHT;
+    if (parsed < 0 || parsed > 1) return DEFAULT_LEXICAL_WEIGHT;
+    return parsed;
+  } catch {
+    return DEFAULT_LEXICAL_WEIGHT;
   }
 }
 
@@ -94,6 +120,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   totalPages: 0,
   activeFilters: [],
   scoreThreshold: loadInitialThreshold(),
+  lexicalWeight: loadInitialLexicalWeight(),
   suggestions: null,
   detectedEntities: [],
   filterValues: null,
@@ -126,6 +153,21 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     }
   },
 
+  setLexicalWeight: (value) => {
+    const clamped = Math.min(1.0, Math.max(0.0, Math.round(value * 100) / 100));
+    set({ lexicalWeight: clamped });
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(SEARCH_LEXICAL_WEIGHT_STORAGE_KEY, String(clamped));
+      } catch {
+        /* ignore storage quota / disabled storage */
+      }
+    }
+    if (get().query.trim() && get().hasSearched) {
+      get().performSearch();
+    }
+  },
+
   syncFiltersWithQuery: (q: string) => {
     const { activeFilters } = get();
     if (activeFilters.length === 0) return;
@@ -140,7 +182,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   },
 
   performSearch: async (page?: number) => {
-    const { query, activeFilters, pageSize, scoreThreshold } = get();
+    const { query, activeFilters, pageSize, scoreThreshold, lexicalWeight } = get();
     if (!query.trim()) return;
 
     const cleanQuery = buildCleanQuery(query);
@@ -171,6 +213,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         page: targetPage,
         page_size: pageSize,
         score_threshold: scoreThreshold,
+        lexical_weight: lexicalWeight,
         ...filters,
       }, controller.signal));
       if (controller.signal.aborted) return;

@@ -185,6 +185,8 @@ export type GenerateRouteParams = {
   province_filter?: string[] | null;
   municipality_filter?: string[] | null;
   score_threshold?: number;
+  /** Lexical weight in [0, 1] for hybrid search. Semantic weight = 1 - lexical_weight. */
+  lexical_weight?: number;
 };
 
 export const routes = {
@@ -536,6 +538,8 @@ export const search = {
     province_filter?: string[] | null;
     municipality_filter?: string[] | null;
     score_threshold?: number | null;
+    /** Lexical weight in [0, 1] for hybrid search. Semantic weight = 1 - lexical_weight. */
+    lexical_weight?: number | null;
   }, signal?: AbortSignal) =>
     apiFetch<SimilaritySearchResponse>("/search/similarity", {
       method: "POST",

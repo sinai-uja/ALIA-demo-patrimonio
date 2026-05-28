@@ -26,8 +26,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build with a known placeholder — replaced at runtime by entrypoint.sh
+# Build with known placeholders — replaced at runtime by entrypoint.sh
 ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL_PLACEHOLDER__
+ENV NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT=__NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT_PLACEHOLDER__
 
 RUN npm run build
 

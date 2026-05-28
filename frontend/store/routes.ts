@@ -27,6 +27,8 @@ interface RoutesState {
   numStops: number;
   /** Cosine distance hard cutoff applied before route construction. */
   scoreThreshold: number;
+  /** Lexical weight in [0, 1] for hybrid search. Semantic weight = 1 - lexicalWeight. */
+  lexicalWeight: number;
   suggestionsLoading: boolean;
 
   // Generation
@@ -63,6 +65,7 @@ interface RoutesState {
   setQuery: (q: string) => void;
   setNumStops: (n: number) => void;
   setScoreThreshold: (value: number) => void;
+  setLexicalWeight: (value: number) => void;
   syncFiltersWithQuery: (q: string) => void;
   fetchSuggestions: (q: string) => Promise<void>;
   loadFilterValues: (provinces?: string[]) => Promise<void>;
@@ -92,6 +95,15 @@ let _generateController: AbortController | null = null;
 const ROUTES_THRESHOLD_STORAGE_KEY = "routes:scoreThreshold";
 const DEFAULT_ROUTES_THRESHOLD = 0.5;
 
+const ROUTES_LEXICAL_WEIGHT_STORAGE_KEY = "routes:lexicalWeight";
+const DEFAULT_LEXICAL_WEIGHT = (() => {
+  const raw = process.env.NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT;
+  const parsed = Number(raw ?? "0.5");
+  if (!Number.isFinite(parsed)) return 0.5;
+  if (parsed < 0 || parsed > 1) return 0.5;
+  return parsed;
+})();
+
 function loadInitialRoutesThreshold(): number {
   if (typeof window === "undefined") return DEFAULT_ROUTES_THRESHOLD;
   try {
@@ -106,6 +118,20 @@ function loadInitialRoutesThreshold(): number {
   }
 }
 
+function loadInitialRoutesLexicalWeight(): number {
+  if (typeof window === "undefined") return DEFAULT_LEXICAL_WEIGHT;
+  try {
+    const raw = window.localStorage.getItem(ROUTES_LEXICAL_WEIGHT_STORAGE_KEY);
+    if (raw === null) return DEFAULT_LEXICAL_WEIGHT;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return DEFAULT_LEXICAL_WEIGHT;
+    if (parsed < 0 || parsed > 1) return DEFAULT_LEXICAL_WEIGHT;
+    return parsed;
+  } catch {
+    return DEFAULT_LEXICAL_WEIGHT;
+  }
+}
+
 export const useRoutesStore = create<RoutesState>((set, get) => ({
   // Smart input
   query: "",
@@ -115,6 +141,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   filterValues: null,
   numStops: 5,
   scoreThreshold: loadInitialRoutesThreshold(),
+  lexicalWeight: loadInitialRoutesLexicalWeight(),
   suggestionsLoading: false,
 
   // Generation
@@ -157,6 +184,18 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(ROUTES_THRESHOLD_STORAGE_KEY, String(clamped));
+      } catch {
+        /* ignore storage quota / disabled storage */
+      }
+    }
+  },
+
+  setLexicalWeight: (value) => {
+    const clamped = Math.min(1.0, Math.max(0.0, Math.round(value * 100) / 100));
+    set({ lexicalWeight: clamped });
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(ROUTES_LEXICAL_WEIGHT_STORAGE_KEY, String(clamped));
       } catch {
         /* ignore storage quota / disabled storage */
       }
@@ -278,7 +317,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
   },
 
   generateRoute: async () => {
-    const { query, activeFilters, numStops, scoreThreshold, generating } = get();
+    const { query, activeFilters, numStops, scoreThreshold, lexicalWeight, generating } = get();
     if (!query.trim()) throw new Error("La consulta no puede estar vacia");
 
     // Skip if a generation is already in progress (prevents same-tick duplicates)
@@ -307,6 +346,7 @@ export const useRoutesStore = create<RoutesState>((set, get) => ({
       query: query.trim(),
       num_stops: numStops,
       score_threshold: scoreThreshold,
+      lexical_weight: lexicalWeight,
       ...filters,
     };
 
