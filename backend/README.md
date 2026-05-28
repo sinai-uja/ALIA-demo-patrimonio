@@ -93,6 +93,7 @@ Configuration is loaded from a `.env` file via `pydantic-settings`. See `.env.ex
 | `RAG_TOP_K` | `5` | Number of chunks retrieved per query |
 | `RAG_CHUNK_SIZE` | `512` | Words per chunk during ingestion |
 | `RAG_CHUNK_OVERLAP` | `64` | Overlap words between consecutive chunks |
+| `SEARCH_DEFAULT_LEXICAL_WEIGHT` | `0.7` | Default lexical/semantic mix for `/search/similarity` when the request omits `lexical_weight`. `0.0` = pure semantic, `1.0` = pure lexical, `0.5` = balanced. |
 | `CHUNKS_TABLE_VERSION` | `v1` | Versioned chunk table suffix (table name: `document_chunks_{version}`) |
 | `API_V1_PREFIX` | `/api/v1` | API version prefix |
 | `PROJECT_NAME` | `IAPH Heritage RAG` | Project name (shown in OpenAPI docs) |

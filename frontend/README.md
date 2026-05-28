@@ -89,6 +89,11 @@ npm run build   # production build
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NEXT_PUBLIC_API_URL` | `http://localhost:18080/api/v1` | Backend API base URL |
+| `NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT` | `0.7` | Default value of the search lexical-vs-semantic slider |
+
+`NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT` lives in `[0, 1]`: `0.0` = pure semantic, `1.0` = pure lexical. Users override it via the popover on `/search` and `/routes`; the choice is persisted per page in `localStorage` (`search:lexicalWeight`, `routes:lexicalWeight`).
+
+Both `NEXT_PUBLIC_*` variables are injected at container runtime by `scripts/entrypoint.sh` (placeholders baked at build time, replaced when the container starts), so a single image works in any environment.
 
 ## API integration
 

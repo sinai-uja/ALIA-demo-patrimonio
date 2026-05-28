@@ -11,9 +11,9 @@ flowchart TD
     E["2. Embedding\n(MrBERT / Qwen3 / SINAI cultural, configurable)"] --> VS & TS
     VS["3a. Vector Search\npgvector coseno, k=20"] --> HF
     TS["3b. Text Search\ntsvector espanol, k=20"] --> HF
-    HF["4. Hybrid Fusion\nRRF (k=60, text_weight=1.5)"] --> RF
-    RF["5. Relevance Filter\numbral: cosine distance <= 0.35"] --> RK
-    RK["6. Reranking\nheuristico + lexical gate, top-k=5"] --> CA
+    HF["4. Hybrid Fusion\nRRF (k=60, lexical_weight configurable\nlegacy=0.6 ↔ text_weight=1.5)"] --> RK
+    RK["5. Reranking\nneural (Qwen3/SINAI) o heuristico"] --> RF
+    RF["6. Relevance Filter\numbral configurable por request\n(RAG default 0.50, similarity-only 0.45)"] --> CA
     CA["7. Context Assembly\nmax 6000 chars, metadata tipo-específica"] --> LLM
     LLM["8. LLM Generation\nsalamandra-7b, T=0.3, max_tokens=512"] --> RES
     RES["Respuesta con citas + sources"]
@@ -92,32 +92,55 @@ LIMIT 20
 
 **Servicio:** `domain/rag/services/hybrid_search_service.py`
 
-Combina los resultados de ambas búsquedas con **Reciprocal Rank Fusion**:
+Combina los resultados de ambas búsquedas con **Reciprocal Rank Fusion** parametrizado por un peso lexical en `[0, 1]`:
 
 ```
-RRF_score(chunk) = Σ weight / (k + rank + 1)
+RRF_score(chunk) = Σ weight_i / (k + rank_i + 1)
+   con  semantic_weight = 1 − lexical_weight
+        lexical_weight  = (recibido por llamada)
 ```
 
-| Parámetro | Valor | Descripción |
-|-----------|-------|-------------|
-| `k` | 60 | Constante RRF (suaviza diferencias de ranking) |
-| `text_weight` | 1.5 | Peso de full-text vs vector (1.0) |
+| Parámetro | Valor por defecto |
+|-----------|-------------------|
+| `k_param` | 60 (constante RRF, suaviza diferencias de ranking) |
+| `lexical_weight` (RAG) | `0.6` (default legado `_LEGACY_LEXICAL_WEIGHT` ≡ antiguo `text_weight=1.5`) |
+| `lexical_weight` (Search) | `0.7` (`SEARCH_DEFAULT_LEXICAL_WEIGHT`); override por request via slider |
+
+El parametro `lexical_weight ∈ [0, 1]` controla la mezcla lexico/semantico (semantic = `1 − lexical_weight`): `0.0` = solo vector, `1.0` = solo texto, valores intermedios = fusion ponderada. El use case del RAG no lo pasa explicitamente → conserva el comportamiento legado. El use case del Search lo recibe del slider del usuario (per-request) o del default del servidor.
 
 **Normalización post-RRF:**
-```
-score_normalizado = 1.0 - (rrf_score / max_rrf)
-```
-Resultado: escala 0 (mejor) → 1 (peor), compatible con cosine distance.
 
-### 5. Relevance Filter
+```
+theoretical_max = (semantic_weight + lexical_weight) / (k + 1)
+relevance       = min(1, rrf_score / theoretical_max)
+normalized_score = 1.0 - relevance
+```
+
+A diferencia de la implementacion previa (`rrf_score / max_rrf_en_batch`), la normalizacion ahora usa un **maximo teorico absoluto** (rank 0 en ambos lanes con peso unitario completo). Asi, el chunk top deja de salir siempre en ~100% — su score refleja la confianza real del retrieval. Sigue escala 0 (mejor) → 1 (peor), compatible con cosine distance.
+
+### 5. Reranking
+
+**Servicios:**
+
+- Neuronal: `NeuralRerankingService` → `RerankerPort` (HTTP `/rerank` en el servicio de embeddings). Activable con `RERANKER_ENABLED=true`.
+- Heuristico (fallback): `RerankingService` (ver detalle abajo).
+
+**RAG en modo hibrido**: el reranker recibe los chunks **fusionados** (RRF) y reordena todos los candidatos antes del filtro de relevancia. Esto ancla el umbral en una puntuacion calibrada en vez de la distribucion inestable del RRF.
+
+**RAG en modo similarity-only**: el reranker recibe los chunks crudos del vector search y aplica el filtro despues.
+
+> **Nota — Search context**: en el pipeline de busqueda (`SimilaritySearchUseCase`), cuando el modo es **hibrido**, el reranker se aplica **antes de la fusion** y **solo sobre el carril vectorial**. De esta forma el cross-encoder no penaliza matches lexicos fuertes en queries cortas tipo keyword (caso "Zurbarán"). Ver tambien la nota de "Search context" mas abajo en el bloque de `Pipelines del contexto Search`.
+
+### 6. Relevance Filter
 
 **Servicio:** `domain/rag/services/relevance_filter_service.py`
 
-- **Umbral:** `0.35` (configurable via `RAG_SCORE_THRESHOLD`)
-- Descarta chunks con `score > 0.35`
+- **Umbral por defecto:** `0.50` (configurable via `RAG_SCORE_THRESHOLD`); `0.45` en modo similarity-only (`RAG_SIMILARITY_THRESHOLD`)
+- **Override por request:** `override_threshold` permite sobreescribir el umbral por llamada sin reconstruir el servicio. Lo usan `/api/v1/search/similarity` (`score_threshold` opcional en el body) y `/api/v1/routes/generate*` (`score_threshold`, default `0.50`).
+- Descarta chunks con `score > umbral_efectivo`
 - Si todos se descartan → **abstención** (no hay info relevante)
 
-### 6. Reranking heurístico
+### 6b. Reranking heurístico (detalle)
 
 **Servicio:** `domain/rag/services/reranking_service.py`
 

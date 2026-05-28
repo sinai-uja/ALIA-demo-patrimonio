@@ -13,6 +13,7 @@ El pipeline RAG ha evolucionado sus medidas de similaridad, puntuacion y filtrad
 | v5 | pendiente | RAG: modo similarity-only configurable (`RAG_SIMILARITY_ONLY`) | Coseno puro (cuando activado) | — (bypass) | score <= 0.25 (`RAG_SIMILARITY_THRESHOLD`) | — (bypass) | Si |
 | v6 | pendiente | + instruccion Qwen3 en queries + recalibracion thresholds | = v5 | = v5 | similarity 0.45; RAG hibrido 0.50 | = v5 | Si |
 | v7 | pendiente | + reranking neuronal opcional (Qwen3-Reranker-0.6B) | = v6 | = v6 | = v6 | Neural cross-encoder (cuando `RERANKER_ENABLED=true`); heuristico como fallback | Si |
+| v8 | `2f4978a` `f68575e` `26a465c` | Search: 3 ramas (semantic / lexical / hybrid) por slider per-request; RAG: rerank antes de filtro | = v7 | RRF parametrizable por `lexical_weight ∈ [0,1]`, normalizacion contra **maximo teorico** (no batch) | Override per-request (`score_threshold` en `/search/similarity` y `/routes/generate*`) | Rerank **antes** de fusion en Search (solo vector lane); en RAG, **antes** del filtro de relevancia | Si |
 
 ## Versiones
 
@@ -345,6 +346,53 @@ El campo `reranker_type` se publica en `GET /health` para verificacion. Funcion 
 | Max seq | 8,192 tokens |
 | Licencia | Apache-2.0 |
 | Cloud Run | Activo en `uja-embedding-00012-wv2` con `RERANKER_BATCH_SIZE=8` |
+
+### v8 — Pipeline de Search con slider per-request + reorden rerank/filtro (2026-05-23)
+
+- **Commits**:
+  - `2f4978a` — _feat(search): add per-request lexical_weight and rerank semantic lane before fusion_
+  - `f68575e` — _fix(search): score reflects retrieval confidence, not batch position_
+  - `26a465c` — _chore(search): bias default lexical_weight to 0.7 for keyword queries_
+- **Espec de diseño**: `docs/superpowers/specs/2026-05-23-hybrid-search-slider-design.md`
+
+**Cambios respecto a v7**:
+
+1. **Slider per-request `lexical_weight ∈ [0, 1]`** en `/search/similarity` y `/routes/generate*`. Reemplaza la dicotomia hybrid / similarity-only por **tres ramas**:
+   - `effective_weight == 0.0` → **semantic-only**: vector → opt. rerank → filter.
+   - `effective_weight == 1.0` → **lexical-only**: text search → normalizacion `1 − rank/max_rank` → filter (sin embedding, sin rerank).
+   - `effective_weight ∈ (0, 1)` → **hibrido**: vector → opt. rerank (solo lane vector) → text → fuse RRF (con peso) → filter.
+2. **Reranker antes de la fusion** en el modo hibrido y **solo sobre el lane vectorial**. Resuelve el caso "Zurbarán" (queries cortas tipo keyword) donde el cross-encoder shadowiazba el match lexico fuerte.
+3. **HybridSearchService parametrizable**: `fuse(vector_results, text_results, top_k, lexical_weight=...)` deja de tener `text_weight=1.5` fijo en construccion. Default `_LEGACY_LEXICAL_WEIGHT=0.6` para preservar el RAG.
+4. **Normalizacion contra maximo teorico**: `theoretical_max = (semantic_weight + lexical_weight) / (k + 1)`. Antes se normalizaba contra `max_rrf_en_batch`, asi que el chunk #1 siempre salia ~100%. Ahora el score refleja la confianza real del retrieval.
+5. **`override_threshold` per-request** en `RelevanceFilterService`: `score_threshold` opcional en `/search/similarity` y nuevo en `/routes/generate*` (default `0.50`). Permite ajustar el cutoff sin redesplegar.
+6. **Resolucion de pesos** en `SimilaritySearchUseCase._resolve_effective_weight`:
+   1. `dto.lexical_weight` explicito gana siempre.
+   2. Si `RAG_SIMILARITY_ONLY=true` → fuerza `0.0` (semantic-only) como override de "fuerza mayor".
+   3. Si no → cae al default del servidor `SEARCH_DEFAULT_LEXICAL_WEIGHT=0.7`.
+7. **RAG hibrido**: el orden cambia a `fuse → rerank → filter` (antes era `fuse → filter → rerank`). Anclar el umbral en el score calibrado del reranker es mas robusto que cortarse sobre la distribucion inestable del RRF.
+
+**Justificacion del default `0.7`**: las queries de palabra clave (`Zurbarán`, `Fortuny`, `Itálica`) sufren mucho con el ruido sub-palabra del espacio de embeddings; sesgar hacia lexical mejora drasticamente la calidad. Para queries descriptivas/conversacionales el usuario baja el slider (`0.4-0.5`) desde el frontend (persistido en `localStorage`).
+
+#### Parametros nuevos (v8)
+
+| Parametro | Valor por defecto | Descripcion |
+|---|---|---|
+| `SEARCH_DEFAULT_LEXICAL_WEIGHT` (env) | `0.7` | Default del slider per-request cuando el cliente no envia `lexical_weight`. `0.0` = solo semantica, `1.0` = solo lexico. |
+| `search_default_lexical_weight` (config) | `0.7` | Inyectado en `SimilaritySearchUseCase` via `composition/search_composition.py`. |
+| `NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT` (frontend) | `0.7` | Default del slider en UI. Runtime-injected por `frontend/scripts/entrypoint.sh`. |
+| `SimilaritySearchRequest.lexical_weight` (API) | `null` | `null` = usar default del servidor. Rango `[0, 1]`. |
+| `SimilaritySearchRequest.score_threshold` (API) | `null` | `null` = usar default. Rango `[0, 2]` (escala cosine distance). |
+| `GenerateRouteRequest.score_threshold` (API) | `0.50` | Override del filtro de relevancia. Rango `[0, 2]`. |
+
+#### Implementacion (v8)
+
+- Use case: `application/search/use_cases/similarity_search_use_case.py` — tres ramas (`semantic-only`, `lexical-only`, `hybrid`), helper `_resolve_effective_weight`, helper `_normalize_text_scores` para la rama lexical-only.
+- Servicio: `domain/rag/services/hybrid_search_service.py` — `fuse(..., lexical_weight=...)` parametrizado; nuevo default `_LEGACY_LEXICAL_WEIGHT=0.6` (≡ antiguo `text_weight=1.5` despues de normalizacion).
+- Servicio: `domain/rag/services/relevance_filter_service.py` — `filter(..., override_threshold=...)`.
+- DTOs: `application/search/dto/search_dto.py`, `application/routes/dto/routes_dto.py` (+ `score_threshold` en GenerateRoute).
+- Esquemas API: `api/v1/endpoints/search/schemas.py`, `api/v1/endpoints/routes/schemas.py`.
+- Frontend: `components/shared/LexicalWeightControl.tsx`, `LexicalWeightPopover.tsx`; stores `store/search.ts` y `store/routes.ts` con `scoreThreshold` y `lexicalWeight` persistidos en `localStorage` (claves `search:scoreThreshold`, `search:lexicalWeight`, `routes:scoreThreshold`, `routes:lexicalWeight`).
+- Docker frontend: `frontend/scripts/entrypoint.sh` inyecta `NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT` y `NEXT_PUBLIC_API_URL` en tiempo de arranque (placeholders sustituidos en `.next/server.js`).
 
 ## Como anadir una nueva version
 

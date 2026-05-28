@@ -152,6 +152,39 @@ Detalle completo de un asset con `details` tipado según `heritage_type`.
 
 ---
 
+### Search
+
+#### `POST /search/similarity`
+
+Búsqueda facetada sobre el corpus patrimonial. El pipeline selecciona la rama segun el peso `lexical_weight ∈ [0, 1]`:
+
+- `0.0` → **semantic-only** (vector + opt. rerank + filtro).
+- `1.0` → **lexical-only** (text search + normalizacion `1 − rank/max_rank` + filtro).
+- `(0, 1)` → **hibrido** (vector + opt. rerank sobre el lane vector + text + RRF + filtro).
+
+**Request:**
+
+```json
+{
+  "query": "Zurbarán",
+  "page": 1,
+  "page_size": 10,
+  "heritage_type_filter": null,
+  "province_filter": null,
+  "municipality_filter": null,
+  "score_threshold": null,
+  "lexical_weight": null
+}
+```
+
+- `lexical_weight` (opcional, rango `[0, 1]`): `null` = usar `SEARCH_DEFAULT_LEXICAL_WEIGHT` del servidor (default `0.7`). El cliente puede sobrescribir desde el slider del UI (persistido en `localStorage` como `search:lexicalWeight`).
+- `score_threshold` (opcional, rango `[0, 2]`): `null` = usar `SEARCH_SCORE_THRESHOLD` del servidor. Cutoff sobre la distancia coseno final (lower = stricter). Persistido en `localStorage` como `search:scoreThreshold`.
+- Cuando `RAG_SIMILARITY_ONLY=true` y el request omite `lexical_weight` → el use case fuerza `0.0` (semantic-only) como override de "fuerza mayor".
+
+**Response:** `{ search_id, results[], total, page, page_size, total_pages }`. Cada `result` incluye `document_id`, `title`, `heritage_type`, `province`, `municipality`, `score`, `image_url`, `chunk_excerpt`, `chunk_count` y metadata adicional.
+
+---
+
 ### Routes
 
 #### `GET /routes/suggestions`
@@ -192,15 +225,19 @@ Devuelve los valores disponibles para los filtros de generación de rutas.
 Genera una ruta virtual personalizada. Pipeline: limpiar texto → extraer query vía LLM → RAG con filtros → generar narrativa vía LLM.
 
 **Request:**
+
 ```json
 {
   "query": "arte renacentista en la provincia de Jaén",
   "num_stops": 5,
   "heritage_type_filter": ["PATRIMONIO_INMUEBLE"],
   "province_filter": ["Jaén"],
-  "municipality_filter": null
+  "municipality_filter": null,
+  "score_threshold": 0.50
 }
 ```
+
+- `score_threshold` (opcional, default `0.50`, rango `[0, 2]`): override per-request del umbral del filtro de relevancia. El frontend lo persiste por sesion en `localStorage` (clave `routes:scoreThreshold`).
 
 **Response:** Objeto `VirtualRoute` con `id`, `title`, `province`, `stops[]`, `narrative`, `introduction`, `conclusion`, `total_duration_minutes`, `created_at`.
 
