@@ -98,9 +98,9 @@ const DEFAULT_ROUTES_THRESHOLD = 0.5;
 const ROUTES_LEXICAL_WEIGHT_STORAGE_KEY = "routes:lexicalWeight";
 const DEFAULT_LEXICAL_WEIGHT = (() => {
   const raw = process.env.NEXT_PUBLIC_DEFAULT_LEXICAL_WEIGHT;
-  const parsed = Number(raw ?? "0.5");
-  if (!Number.isFinite(parsed)) return 0.5;
-  if (parsed < 0 || parsed > 1) return 0.5;
+  const parsed = Number(raw ?? "0.7");
+  if (!Number.isFinite(parsed)) return 0.7;
+  if (parsed < 0 || parsed > 1) return 0.7;
   return parsed;
 })();
 

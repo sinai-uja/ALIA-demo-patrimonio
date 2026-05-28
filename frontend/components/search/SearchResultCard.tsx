@@ -231,7 +231,7 @@ export function SearchResultCard({
                 </span>
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs text-stone-600">Similitud:</span>
+                <span className="text-xs text-stone-600">Relevancia:</span>
                 <span className="text-xs font-semibold text-green-700">{similarity}%</span>
                 <span className="text-[10px] text-stone-400">
                   (distancia: {chunk.score.toFixed(4)})

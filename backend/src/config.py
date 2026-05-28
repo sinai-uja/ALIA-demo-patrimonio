@@ -40,7 +40,11 @@ class Settings(BaseSettings):
     # Default lexical/semantic weighting for the Search hybrid pipeline.
     # 0.0 = 100% semantic, 1.0 = 100% lexical, 0.5 = balanced.
     # Per-request `lexical_weight` overrides this default.
-    search_default_lexical_weight: float = 0.5
+    # 0.7 biases toward exact word match — better for keyword queries
+    # ("Zurbarán", "Fortuny") which suffer from subword similarity noise in
+    # the embedding space. Users can move the slider down for descriptive
+    # queries.
+    search_default_lexical_weight: float = 0.7
     rag_score_threshold: float = 0.50
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64
