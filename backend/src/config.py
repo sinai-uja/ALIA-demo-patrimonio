@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     rag_retrieval_k: int = 20
     search_retrieval_k: int = 200
     search_score_threshold: float = 0.55
+    # Default lexical/semantic weighting for the Search hybrid pipeline.
+    # 0.0 = 100% semantic, 1.0 = 100% lexical, 0.5 = balanced.
+    # Per-request `lexical_weight` overrides this default.
+    search_default_lexical_weight: float = 0.5
     rag_score_threshold: float = 0.50
     rag_chunk_size: int = 512
     rag_chunk_overlap: int = 64

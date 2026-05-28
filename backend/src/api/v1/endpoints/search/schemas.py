@@ -27,6 +27,14 @@ class SimilaritySearchRequest(BaseModel):
         default=None, ge=0.0, le=2.0,
         description="Cosine distance cutoff (lower = stricter). Null = use server default.",
     )
+    lexical_weight: float | None = Field(
+        default=None, ge=0.0, le=1.0,
+        description=(
+            "Lexical vs semantic mixing weight. "
+            "0.0 = 100% semantic, 1.0 = 100% lexical, 0.5 = balanced. "
+            "Null = use server default."
+        ),
+    )
 
 
 class ChunkHitSchema(BaseModel):

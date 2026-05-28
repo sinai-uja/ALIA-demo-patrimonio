@@ -2,47 +2,73 @@ from dataclasses import replace
 
 from src.domain.rag.entities.retrieved_chunk import RetrievedChunk
 
+# Default lexical weight that preserves the legacy RAG ranking behavior.
+# The previous implementation used a fixed ``text_weight=1.5`` for the
+# text-search contribution while vector contributions used weight ``1.0``.
+# That is equivalent — after the final RRF normalization — to splitting a
+# unit weight as ``lexical=0.6`` / ``semantic=0.4`` (ratio 1.5). Existing
+# callers that do not pass ``lexical_weight`` (notably the RAG use case)
+# therefore keep their previous ranking unchanged.
+_LEGACY_LEXICAL_WEIGHT = 0.6
+
 
 class HybridSearchService:
-    """Fuses vector and full-text search results using Reciprocal Rank Fusion (RRF).
+    """Fuses vector and full-text search results using Reciprocal Rank Fusion.
 
-    Text search results are weighted higher (1.5x) because exact keyword matches
-    are strong relevance signals, especially for proper nouns and specific terms.
-    Chunks appearing in both lists receive a bonus from both contributions.
+    The relative weight between lexical (text) and semantic (vector) signals
+    is parameterised per call via ``lexical_weight`` in ``[0.0, 1.0]``:
+
+    - ``lexical_weight=0.0`` → ranking driven entirely by vector results.
+    - ``lexical_weight=1.0`` → ranking driven entirely by text results.
+    - ``lexical_weight=0.5`` → balanced fusion.
+
+    ``semantic_weight = 1.0 - lexical_weight``.
+
+    Output scores are normalized so that ``score = 1 - (rrf / max_rrf)``,
+    keeping the "lower = better" cosine-distance-like semantics expected by
+    downstream filters.
     """
 
-    def __init__(self, k_param: int = 60, text_weight: float = 1.5) -> None:
+    def __init__(self, k_param: int = 60) -> None:
         self._k = k_param
-        self._text_weight = text_weight
 
     def fuse(
         self,
         vector_results: list[RetrievedChunk],
         text_results: list[RetrievedChunk],
         top_k: int,
+        lexical_weight: float = _LEGACY_LEXICAL_WEIGHT,
     ) -> list[RetrievedChunk]:
         """Combine two ranked lists via weighted RRF, return top_k results."""
+        # Clamp defensively in domain — outer layers should already validate,
+        # but this keeps the formula well-defined under any input.
+        if lexical_weight < 0.0:
+            lexical_weight = 0.0
+        elif lexical_weight > 1.0:
+            lexical_weight = 1.0
+        semantic_weight = 1.0 - lexical_weight
+
         rrf_scores: dict[str, float] = {}
         chunk_map: dict[str, RetrievedChunk] = {}
 
         for rank, chunk in enumerate(vector_results):
             rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0)
-            rrf_scores[chunk.chunk_id] += 1.0 / (self._k + rank + 1)
+            rrf_scores[chunk.chunk_id] += semantic_weight / (self._k + rank + 1)
             chunk_map[chunk.chunk_id] = chunk
 
         for rank, chunk in enumerate(text_results):
             rrf_scores[chunk.chunk_id] = rrf_scores.get(chunk.chunk_id, 0.0)
-            rrf_scores[chunk.chunk_id] += self._text_weight / (self._k + rank + 1)
+            rrf_scores[chunk.chunk_id] += lexical_weight / (self._k + rank + 1)
             if chunk.chunk_id not in chunk_map:
                 chunk_map[chunk.chunk_id] = chunk
 
         if not rrf_scores:
             return []
 
-        # Sort by RRF score descending (higher = more relevant)
+        # Sort by RRF score descending (higher = more relevant).
         sorted_ids = sorted(rrf_scores, key=lambda cid: rrf_scores[cid], reverse=True)
 
-        # Normalize to cosine-distance-like score (0 = best) for compatibility
+        # Normalize to cosine-distance-like score (0 = best) for compatibility.
         max_rrf = rrf_scores[sorted_ids[0]]
 
         results = []

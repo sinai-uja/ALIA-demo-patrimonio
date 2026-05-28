@@ -37,21 +37,11 @@ class TestRRFFusion:
         vector = [shared, _make_chunk("v_only")]
         text = [shared, _make_chunk("t_only")]
 
-        result = service.fuse(vector, text, top_k=10)
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.5)
 
-        # "shared" appears in both lists, should be ranked first (score closest to 0)
+        # "shared" appears in both lists, should be ranked first (score closest to 0).
         assert result[0].chunk_id == "shared"
         assert result[0].score < result[1].score
-
-    def test_text_weight_boost_favours_text_results(self):
-        service = HybridSearchService(text_weight=3.0)
-        vector = [_make_chunk("v1")]
-        text = [_make_chunk("t1")]
-
-        result = service.fuse(vector, text, top_k=10)
-
-        # With 3x text weight, t1 should rank above v1
-        assert result[0].chunk_id == "t1"
 
     def test_top_k_limits_output(self):
         service = HybridSearchService()
@@ -116,3 +106,84 @@ class TestRRFEmptyInputs:
         result = service.fuse(vector, [], top_k=0)
 
         assert result == []
+
+
+class TestLexicalWeight:
+    """Verify the per-call slider semantics of `lexical_weight`."""
+
+    def test_lexical_weight_zero_matches_vector_ranking(self):
+        """`lexical_weight=0.0` → ranking driven entirely by vector results."""
+        service = HybridSearchService()
+        vector = [_make_chunk("v1"), _make_chunk("v2"), _make_chunk("v3")]
+        # Text list has disjoint chunks — must not influence the order of
+        # the vector chunks at all.
+        text = [_make_chunk("t1"), _make_chunk("t2"), _make_chunk("t3")]
+
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.0)
+
+        # First three slots must be exactly the vector ranking.
+        assert [c.chunk_id for c in result[:3]] == ["v1", "v2", "v3"]
+
+    def test_lexical_weight_one_matches_text_ranking(self):
+        """`lexical_weight=1.0` → ranking driven entirely by text results."""
+        service = HybridSearchService()
+        vector = [_make_chunk("v1"), _make_chunk("v2"), _make_chunk("v3")]
+        text = [_make_chunk("t1"), _make_chunk("t2"), _make_chunk("t3")]
+
+        result = service.fuse(vector, text, top_k=10, lexical_weight=1.0)
+
+        # First three slots must be exactly the text ranking.
+        assert [c.chunk_id for c in result[:3]] == ["t1", "t2", "t3"]
+
+    def test_lexical_weight_balanced_prefers_chunks_present_in_both_lists(self):
+        """A chunk that appears in both lists must beat chunks present in only one."""
+        service = HybridSearchService()
+        shared = _make_chunk("shared")
+        vector = [shared, _make_chunk("v_only")]
+        text = [shared, _make_chunk("t_only")]
+
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.5)
+
+        assert result[0].chunk_id == "shared"
+        other_ids = {c.chunk_id for c in result[1:]}
+        assert other_ids == {"v_only", "t_only"}
+
+    def test_lexical_weight_out_of_range_is_clamped(self):
+        """Defensive clamping so the formula stays well-defined."""
+        service = HybridSearchService()
+        vector = [_make_chunk("v1")]
+        text = [_make_chunk("t1")]
+
+        # Negative weight → behaves like 0.0 (vector-only).
+        result_neg = service.fuse(vector, text, top_k=10, lexical_weight=-1.0)
+        assert result_neg[0].chunk_id == "v1"
+
+        # Weight > 1.0 → behaves like 1.0 (text-only).
+        result_high = service.fuse(vector, text, top_k=10, lexical_weight=5.0)
+        assert result_high[0].chunk_id == "t1"
+
+    def test_high_lexical_weight_favours_text_results(self):
+        """Sanity check on the slider direction."""
+        service = HybridSearchService()
+        vector = [_make_chunk("v1")]
+        text = [_make_chunk("t1")]
+
+        # Very lexical-heavy mix → text wins.
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.9)
+        assert result[0].chunk_id == "t1"
+
+        # Very semantic-heavy mix → vector wins.
+        result = service.fuse(vector, text, top_k=10, lexical_weight=0.1)
+        assert result[0].chunk_id == "v1"
+
+    def test_default_weight_preserves_legacy_text_weight_15_behavior(self):
+        """Without explicit `lexical_weight` the service must keep RAG's
+        legacy ranking (previous implementation used text_weight=1.5)."""
+        service = HybridSearchService()
+        vector = [_make_chunk("v1")]
+        text = [_make_chunk("t1")]
+
+        result = service.fuse(vector, text, top_k=10)
+
+        # Legacy ratio favoured the text result.
+        assert result[0].chunk_id == "t1"

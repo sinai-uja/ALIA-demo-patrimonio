@@ -15,6 +15,11 @@ class SimilaritySearchDTO:
     username: str | None = None
     user_profile_type: str | None = None
     score_threshold: float | None = None
+    # Lexical/semantic mixing slider in [0.0, 1.0].
+    # 0.0 = 100% semantic (vector only), 1.0 = 100% lexical (text only),
+    # values in between trigger hybrid fusion. None = let the use case decide
+    # using the configured server default.
+    lexical_weight: float | None = None
 
 
 @dataclass(frozen=True)

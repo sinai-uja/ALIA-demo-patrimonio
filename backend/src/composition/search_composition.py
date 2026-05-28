@@ -98,6 +98,7 @@ def build_search_application_service(
         similarity_only=settings.rag_similarity_only,
         similarity_threshold=settings.rag_similarity_threshold,
         reranker_enabled=settings.reranker_enabled,
+        default_lexical_weight=settings.search_default_lexical_weight,
         trace_repository=trace_repository,
     )
 

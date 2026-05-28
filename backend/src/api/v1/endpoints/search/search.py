@@ -49,6 +49,7 @@ async def similarity_search(
         username=user.username,
         user_profile_type=user.profile_type.name if user.profile_type else None,
         score_threshold=request.score_threshold,
+        lexical_weight=request.lexical_weight,
     )
 
     result = await service.similarity_search(dto)
