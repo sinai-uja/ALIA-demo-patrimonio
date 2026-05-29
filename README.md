@@ -32,7 +32,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 │   └── alembic/          # DB migrations
 ├── frontend/             # Next.js 16 web application
 │   └── docker/           # Frontend Dockerfile
-├── embedding/            # Embedding service (FastAPI + MrBERT / Qwen3)
+├── embedding/            # Embedding service (FastAPI + SINAI ALIA cultural / MrBERT / Qwen3)
 ├── llm/                  # LLM inference service (vLLM + bitsandbytes quantization)
 ├── data/                 # IAPH parquet data -- not committed
 ├── docker-compose.yml          # Full-stack service definitions
@@ -40,7 +40,7 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 ├── .env.example                # Environment configuration template
 ├── .gitlab-ci.yml              # CI/CD pipeline
 ├── Makefile                    # Root development commands
-└── VERSION                     # Semantic version (current: 0.1.5)
+└── VERSION                     # Semantic version (current: 1.1.2)
 ```
 
 ## Use cases
@@ -56,20 +56,23 @@ Conversational AI assistant for the **Instituto Andaluz de Patrimonio Histórico
 
 | Role | Model | Notes |
 |------|-------|-------|
-| Encoder (default) | `BSC-LT/MrBERT` | 308M params, 768-dim, 8,192 token context, mean pooling, Apache 2.0 |
-| Encoder (alt.) | `Qwen/Qwen3-Embedding-0.6B` | 600M params, 1,024-dim, 32K token context, last-token pooling |
+| Encoder (**Cloud Run active**) | `SINAI/ALIA-MrBERT-es-cultural-embeddings` | ~150M params, 768-dim, 8,192 token context, mean pooling, **cased** tokenizer, no instruction prefix, Apache 2.0 -- ModernBERT fine-tuned on Spanish cultural heritage |
+| Encoder (alt.) | `BSC-LT/MrBERT` | 308M params, 768-dim, 8,192 token context, mean pooling, Apache 2.0 |
+| Encoder (alt.) | `Qwen/Qwen3-Embedding-0.6B` | 600M params, 1,024-dim, 32K token context, last-token pooling, instruction-aware |
+| Reranker (**Cloud Run active**) | `SINAI/ALIA-MrBERT-es-cultural-reranker` | ~150M params, ModernBERT `ForSequenceClassification` head, sigmoid scoring on plain `[query, doc]` pairs, 8,192 max seq |
+| Reranker (alt.) | `Qwen/Qwen3-Reranker-0.6B` | 0.6B params, `*ForCausalLM` scoring via yes/no logits, 32K context |
 | Decoder (default) | `BSC-LT/salamandra-7b-instruct` | 7B params, Spanish-capable LLM, served via vLLM, 16 GB VRAM min |
 | Decoder (large) | `BSC-LT/ALIA-40b-instruct-2601` | 40.4B params, 163K token context, bitsandbytes 4-bit quantization, 32 GB VRAM min |
 | Decoder (cloud) | Gemini (`gemini-3.1-flash-lite-preview`) | Cloud LLM backend, selectable via `LLM_PROVIDER=gemini` |
 
-Both encoder models are self-hosted. Decoders are served via **vLLM** from the `llm/` directory (custom Docker image with bitsandbytes support). The Gemini backend is available as a lightweight alternative without GPU requirements.
+Encoders and rerankers are co-located in the self-hosted `embedding/` service. The active encoder is selected via `EMBEDDING_MODEL_DIR`, and the reranker via `RERANKER_MODEL_DIR` -- the service auto-detects the reranker architecture (`*ForCausalLM` vs `*ForSequenceClassification`) from `config.json` and picks the right scoring path. Decoders are served via **vLLM** from the `llm/` directory (custom Docker image with bitsandbytes support). The Gemini backend is available as a lightweight alternative without GPU requirements. See [CLAUDE.md](CLAUDE.md) and [backend/docs/](backend/docs/) for deeper model and pipeline details.
 
 ## Infrastructure
 
 | Service | Image | Internal port | Exposed (host) port |
 |---------|-------|:---:|:---:|
 | PostgreSQL + pgvector | `pgvector/pgvector:pg16` | 5432 | 15432 |
-| Embedding service | custom (MrBERT / Qwen3 + FastAPI) | 8001 | 18001 |
+| Embedding service | custom (SINAI ALIA cultural / MrBERT / Qwen3 + FastAPI) | 8001 | 18001 |
 | LLM service | custom vLLM *(profile: `llm`)* | 8000 | 18000 |
 | Backend API | custom (FastAPI) | 8080 | 18080 |
 | Frontend | custom (Next.js standalone) | 3000 | 3000 |
@@ -182,9 +185,10 @@ Copy `.env.example` to `.env` at the repo root (or `backend/config/.env.example`
 |---|---|---|
 | `DATABASE_URL` | `postgresql+asyncpg://uja:uja@localhost:5432/uja_iaph` | Use port 15432 when running locally against Docker |
 | `EMBEDDING_SERVICE_URL` | `http://localhost:8001` | Embedding service endpoint |
-| `EMBEDDING_DIM` | `768` | 768 for MrBERT, 1024 for Qwen3 |
-| `EMBEDDING_MODEL_DIR` | `MrBERT` | Model directory under `backend/models/` |
-| `POOLING_STRATEGY` | `mean` | `mean` (MrBERT) or `last_token` (Qwen3) |
+| `EMBEDDING_DIM` | `768` | 768 for SINAI ALIA cultural / MrBERT, 1024 for Qwen3 |
+| `EMBEDDING_MODEL_DIR` | `ALIA-MrBERT-es-cultural-embeddings` | Model directory under `backend/models/` (e.g. `ALIA-MrBERT-es-cultural-embeddings`, `MrBERT`, `Qwen3-Embedding-0.6B`) |
+| `POOLING_STRATEGY` | `mean` | `mean` (SINAI / MrBERT) or `last_token` (Qwen3) |
+| `RERANKER_MODEL_DIR` | `ALIA-MrBERT-es-cultural-reranker` | Reranker directory under `backend/models/`; architecture auto-detected at load time |
 | `LLM_PROVIDER` | `gemini` | LLM backend: `vllm` or `gemini` |
 | `LLM_SERVICE_URL` | `http://localhost:8000/v1` | vLLM OpenAI-compatible endpoint |
 | `LLM_MODEL_NAME` | `BSC-LT/salamandra-7b-instruct` | Or `BSC-LT/ALIA-40b-instruct-2601` |
